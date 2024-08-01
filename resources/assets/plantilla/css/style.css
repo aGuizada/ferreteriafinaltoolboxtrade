@@ -10191,7 +10191,7 @@ base-chart.chart {
   height: 58px;
   padding: 0;
   margin: 0;
-  background-color: #33b378;
+  background-color: #3b82f6;
   border-bottom: 1px solid #c2cfd6;
 }
 .app-header.navbar .navbar-brand {
@@ -10201,9 +10201,9 @@ base-chart.chart {
   padding: 0.5rem 1rem;
   margin-right: 0;
   background-color: #fff;
-  background-image: url("../img/AVATAR-RRSS_1-COLOR_NEGRO-2.png");
+  background-image: url("../img/toolboox.png");
   background-color: transparent;
-  background-image: url("../img/AVATAR-RRSS_1-COLOR_NEGRO-2.png");
+  background-image: url("../img/toolboox.png");
   background-repeat: no-repeat;
   background-position: center center;
   background-size: 89px auto;
@@ -10508,7 +10508,7 @@ base-chart.chart {
 .sidebar .navbar .dropdown-toggle:hover,
 .navbar .sidebar .dropdown-toggle:hover {
   color: #fff;
-  background: #a0a0a0;
+  background: #e01656 /* Este es el color cuando seleccionamos en la barra lateral */
 }
 .sidebar .nav-link:hover i,
 .sidebar .navbar .dropdown-toggle:hover i,

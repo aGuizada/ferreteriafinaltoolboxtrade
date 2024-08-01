@@ -1,174 +1,214 @@
 * {
-    margin: 0;
-    padding: 0;
-  }
-  p {
-    color: gray;
-    font-size: 10px;
-  }
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f0f0;
+  color: #333;
+}
 
-  .content {
-    background-color: #f4f4f4;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-  }
+.content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
 
+.container-login {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.left, .right {
+  flex: 1;
+  padding: 40px;
+}
+
+.container-title h1 {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.container-title p {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.container-input {
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.container-input input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.container-input input:focus {
+  outline: none;
+  border-color: #999;
+}
+
+.container-input input::placeholder {
+  color: #999;
+}
+
+.btn-ingresar {
+  width: 100%;
+  padding: 12px 20px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-ingresar:hover {
+  background: #555;
+}
+
+.btn-ingresar:active {
+  transform: translateY(2px);
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.portada {
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
+}
+
+.message {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
   .container-login {
-    border-radius: 1%;
-    margin: 25px;
-    font-family: sans-serif;
-    background-color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 800px;
-    height: 450px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .left {
-    padding: 10px;
-    width: 50%;
-    height: 100%;
-    display: flex;
     flex-direction: column;
-    justify-content: center;
   }
 
-  .formulario {
-    padding: 20px;
-    height: 100%;
+  .left, .right {
+    width: 100%;
+    padding: 30px;
   }
 
   .right {
-    width: 50%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    order: -1;
   }
+}
+/* Estilos generales */
+body {
+  background-color: #f4f4f4;
+  font-family: 'Roboto', sans-serif;
+}
 
-  .portada {
-    height: 100%;
-    max-width: 100%;
-    max-height: 100%;
-  }
+.container-login {
+  background: #ffffff;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
 
-  .container-title {
-    margin-bottom: 1rem;
-  }
+/* Estilos del formulario */
+.container-title h1 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
 
-  .container-input {
+.container-title p {
+  color: #7f8c8d;
+}
 
-    margin-bottom: 25px;
-    width: 100%;
-  }
+.container-input input {
+  border: 2px solid #bdc3c7;
+  transition: border-color 0.3s ease;
+}
 
-  .container-input input {
-    width: 100%;
-    border: none;
-    border-bottom: 1px solid #044b7b;;
-    height: 35px;
-  }
+.container-input input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
 
-  .container-input input:focus {
-    border: none;
-    outline: none;
-    transition: transform 0.2s ease-in-out;
-    border-bottom: 1px solid #044b7b;;
-  }
+/* Botón de ingreso */
+.btn-ingresar {
+  background-color: #e74c3c;
+  border: none;
+  color: white;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease;
+}
 
-  .container-input button {
-    margin-top: 20%;
-    background-color: none;
-    border-radius: 20px; /* Ajustar el valor para redondear los bordes */
-    padding: 5px;
-    width: 100%;
-    height: 35px;
-    background-color: #044b7b;;
-    border: none;
-    color: white;
-  }
+.btn-ingresar:hover {
+  background-color: #c0392b;
+}
 
-  .container-input button:hover {
-    cursor: pointer;
-    transform: scale(1.1);
-    transition: transform 0.2s ease-in-out;
-  }
+/* Imagen de fondo para la sección derecha */
+.right {
+  background-image: url('ruta/a/imagen-ferreteria.jpg');
+  background-size: cover;
+  background-position: center;
+}
 
-  .message {
-    color: red;
-    font-size: 10px;
-  }
+/* Icono de herramienta en el botón */
+.btn-ingresar::after {
+  content: '🔧';
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
 
-  /* Estilos para dispositivos con un ancho máximo de 767px (por ejemplo, smartphones) */
-  @media (max-width: 767px) {
+.btn-ingresar:hover::after {
+  opacity: 1;
+}
 
-      .content {
-          display: flex;
-          justify-content: left;
-          align-items: normal;
-      }
-      .formulario{
-          text-align: center;
-      }
-
-      .container-login {
-          padding: 0px;
-          border-radius: 0%;
-          margin: 0px;
-          flex-direction: column;
-          height: auto;
-      }
-      .portada {
-          border-radius: 0%;
-          width: 100%;
-          height: auto;
-          max-width: 100%;
-          max-height: 100%;
-      }
-
-      .left,
-      .right {
-          width: 100%;
-      }
-      .left{
-    padding: 0px;
-
-          background-color: white;
-          margin-top: -30px;
-          border-radius: 7%;
-          box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
-      }
-
-      .right {
-          height: 350px;
-          order: -1; /* Cambiar el orden del elemento a -1 para que aparezca arriba */
-      }
-      .container-input button {
-        margin-top: 0%;
-
-      }
-    
-  }
-
-  /* Estilo para el placeholder cuando el input tiene la clase 'texto-arriba' */
-  .container-input input.texto-arriba::placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    padding: 5px;
-    font-size: 10px;
-    pointer-events: none;
-    color: #044b7b;;
-  }
-
-  /* Estilo adicional para dar espacio arriba cuando el texto está arriba */
-  .container-input input.texto-arriba {
-    padding-top: 20px;
-  }
-  
+/* Borde superior con patrón de herramientas */
+.container-login::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: repeating-linear-gradient(
+    45deg,
+    #e74c3c,
+    #e74c3c 10px,
+    #f39c12 10px,
+    #f39c12 20px
+  );
+}
