@@ -62,30 +62,43 @@
             </DataTable>
 
             <template>
-                <Dialog :visible.sync="modal" :modal="true" :header="tituloModal" @hide="cerrarModal"
-                    containerStyle="width: 500px;">
-                    <form @submit.prevent="registrarCaja" class="p-fluid">
-                        <div class="p-field p-grid">
-                            <label for="saldoInicial" class="p-col-12 p-md-3">Saldo Inicial</label>
-                            <div class="p-col-12 p-md-9">
-                                <InputText id="saldoInicial" v-model="saldoInicial" placeholder="0.00"
-                                    @keyup.enter="registrarCaja" />
-                            </div>
-                        </div>
-                        <div v-if="errorCaja" class="p-field p-grid div-error">
-                            <div class="p-col text-center text-error">
-                                <div v-for="error in errorMostrarMsjCaja" :key="error" v-text="error"></div>
-                            </div>
-                        </div>
-                    </form>
-                    <template #footer>
-                        <Button label="Cerrar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal" />
-                        <Button v-if="tipoAccion == 1" label="Guardar" icon="pi pi-check" class="p-button-success"
-                            @click="registrarCaja" />
-                    </template>
-                </Dialog>
-            </template>
-
+  <Dialog 
+    :visible.sync="modal" 
+    :modal="true" 
+    :header="tituloModal" 
+    @hide="cerrarModal"
+    containerStyle="width: 500px;"
+  >
+    <form @submit.prevent="registrarCaja" class="p-fluid">
+      <div class="p-field p-grid">
+        <label for="saldoInicial" class="p-col-12 p-md-3">Saldo Inicial</label>
+        <div class="p-col-12 p-md-9">
+          <InputText 
+            id="saldoInicial" 
+            v-model="saldoInicial" 
+            placeholder="0.00"
+            @keyup.enter="registrarCaja"
+          />
+        </div>
+      </div>
+      <div v-if="errorCaja" class="p-field p-grid div-error">
+        <div class="p-col text-center text-error">
+          <div v-for="error in errorMostrarMsjCaja" :key="error" v-text="error"></div>
+        </div>
+      </div>
+    </form>
+    <template #footer>
+      <Button label="Cerrar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal" />
+      <Button 
+        v-if="tipoAccion == 1" 
+        label="Guardar" 
+        icon="pi pi-check" 
+        class="p-button-success"
+        @click="registrarCaja" 
+      />
+    </template>
+  </Dialog>
+</template>
 
             <template>
                 <Dialog :visible.sync="modal2" :modal="true" :header="tituloModal2" @hide="cerrarModal2"
@@ -423,6 +436,7 @@ export default {
     },
     data() {
         return {
+            estaRegistrando: false,
             resumenCaja: null,
             modalResumen: false,
             resumenCaja: {
@@ -615,33 +629,38 @@ export default {
             me.listarCaja(page, buscar, criterio);
         },
         registrarCaja() {
-            if (this.validarCaja()) {
-                return;
-            }
+      if (this.estaRegistrando) return; // Previene múltiples registros
+      this.estaRegistrando = true;
 
-            let me = this;
-            let formData = new FormData();
+      if (this.validarCaja()) {
+        this.estaRegistrando = false;
+        return;
+      }
 
-            formData.append('saldoInicial', this.saldoInicial);
+      let me = this;
+      let formData = new FormData();
 
-            axios.post('/caja/registrar', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            }).then(function (response) {
-                me.cerrarModal();
-                me.arqueoRealizado = false; // Reiniciamos arqueoRealizado
-                me.listarCaja(1, '', 'id');
-                swal(
-                    'Aperturada!',
-                    'Caja aperturada de forma satisfactoria!',
-                    'success'
-                )
-            }).catch(function (error) {
-                console.log(error);
-            });
-        },
+      formData.append('saldoInicial', this.saldoInicial);
 
+      axios.post('/caja/registrar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(function (response) {
+        me.cerrarModal();
+        me.arqueoRealizado = false; // Reiniciamos arqueoRealizado
+        me.listarCaja(1, '', 'id');
+        swal(
+          'Aperturada!',
+          'Caja aperturada de forma satisfactoria!',
+          'success'
+        )
+      }).catch(function (error) {
+        console.log(error);
+      }).finally(function () {
+        me.estaRegistrando = false;
+      });
+    },
         async registrarArqueo() {
             let me = this;
 
