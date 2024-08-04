@@ -913,6 +913,8 @@ Route::group(["middleware" => ["auth"]], function () {
         Route::delete('/cliente/eliminar/{id}', 'ClienteController@eliminarCliente');
         Route::get('/caja/saldo/{id}', 'CajaController@obtenerSaldoCaja');
         route::delete('/almacen/eliminar/{id}', 'AlmacenController@destroy');
+        Route::get('/caja/resumen/{id}', 'CajaController@resumen');
+        Route::get('/caja/resumen-pdf/{id}', 'CajaController@generarPDF');
     });
 
     //RUTA PARA RECUPERAR LA SESSION CON EL ID DE LA PERSONA LOGUEADA

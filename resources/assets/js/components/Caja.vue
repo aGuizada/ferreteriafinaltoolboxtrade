@@ -329,7 +329,57 @@
                             @click.prevent="registrarArqueo" />
                     </template>
                 </Dialog>
+
             </template>
+            <template>
+  <!-- ... resto de tu template ... -->
+
+  <div v-if="modalResumen" class="modal fade show" tabindex="-1" role="dialog" style="display: block;">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Resumen de Caja</h5>
+          <button type="button" class="close" @click="modalResumen = false">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" v-if="resumenCaja">
+          <h5>Movimientos:</h5>
+          <ul class="list-group mb-3">
+            <li class="list-group-item d-flex justify-content-between align-items-center" 
+                v-for="movimiento in resumenCaja.movimientos" :key="movimiento.concepto">
+              {{ movimiento.concepto }}
+              <span class="badge badge-primary badge-pill">${{ movimiento.monto }}</span>
+            </li>
+          </ul>
+          <h5>Resumen:</h5>
+          <div class="card">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Total Ingresos
+                <span class="text-success">${{ resumenCaja.totalIngresos.toFixed(2) }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Total Egresos
+                <span class="text-danger">${{ resumenCaja.totalEgresos.toFixed(2) }}</span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Saldo en Caja
+                <span class="font-weight-bold">${{ resumenCaja.saldoCaja }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="modalResumen = false">Cancelar</button>
+          <button type="button" class="btn btn-primary" @click="realizarCierreCaja">Cerrar Caja</button>
+          <button @click="generarPDF" class="btn btn-success">Generar PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-if="modalResumen" class="modal-backdrop fade show"></div>
+</template>
         </Panel>
     </main>
 </template>
@@ -373,6 +423,13 @@ export default {
     },
     data() {
         return {
+            resumenCaja: null,
+            modalResumen: false,
+            resumenCaja: {
+                ventas: [],
+                totalIngresos: 0,
+                totalEgresos: 0
+            },
             id: 0,
             idsucursal: 0,
             nombre_sucursal: '',
@@ -499,6 +556,31 @@ export default {
         }
     },
     methods: {
+        generarPDF() {
+  axios({
+    url: `/caja/resumen-pdf/${this.resumenCaja.id}`,
+    method: 'GET',
+    responseType: 'blob', // Importante para manejar archivos binarios
+  }).then((response) => {
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'resumen_caja.pdf');
+    document.body.appendChild(link);
+    link.click();
+  });
+},
+        abrirModalResumen() {
+            this.modalResumen = true;
+        },
+        cerrarDialog() {
+            console.log('Cerrando dialog, modalResumen antes:', this.modalResumen);
+            this.modalResumen = false;
+            console.log('modalResumen después:', this.modalResumen);
+        },
+        formatCurrency(value) {
+            return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(value);
+        },
         onPage(event) {
             this.listarCaja(event.page + 1, this.buscar, this.criterio);
         },
@@ -679,53 +761,37 @@ export default {
 
             this.totalMonedas = moneda5 * 5 + moneda2 * 2 + moneda1 * 1 + moneda050 * 0.50 + moneda020 * 0.20 + moneda010 * 0.10;
         },
-        cerrarCaja(id) {
-            const total = this.totalEfectivo;
-            Swal.fire({
-                title: '¿Está seguro de cerrar la caja?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Aceptar!',
-                cancelButtonText: 'Cancelar',
-                confirmButtonClass: 'btn btn-success',
-                cancelButtonClass: 'btn btn-danger',
-                buttonsStyling: false,
-                reverseButtons: true,
-                customClass: {
-                    confirmButton: 'btn btn-success',
-                    cancelButton: 'btn btn-danger'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    let me = this;
-
-                    axios.put('/caja/cerrar', {
-                        'id': id,
-                        'saldoFaltante': total
-                    }).then(function (response) {
-                        me.listarCaja(1, '', 'id');
-                        me.arqueoRealizado = false; // Reiniciamos arqueoRealizado
-                        Swal.fire(
-                            '¡Cerrada!',
-                            'La caja fue cerrada con éxito.',
-                            'success'
-                        );
-                    }).catch(function (error) {
-                        console.log(error);
-                    });
-
-
-                } else if (
-                    // Read more about handling dismissals
-                    result.dismiss === swal.DismissReason.cancel
-                ) {
-
-                }
-            })
+        async cerrarCaja(id) {
+            this.modalResumen = true;
+            console.log('cerrarCaja llamado con id:', id);
+            try {
+                const response = await axios.get(`/caja/resumen/${id}`);
+                console.log('Respuesta recibida:', response.data);
+                this.resumenCaja = response.data;
+                console.log('modalResumen establecido a true:', this.modalResumen);
+            } catch (error) {
+                console.error('Error al obtener el resumen de caja:', error);
+                this.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener el resumen de caja', life: 3000 });
+            }
         },
 
+        async realizarCierreCaja() {
+            try {
+                await axios.put('/caja/cerrar', {
+                    'id': this.resumenCaja.id,
+                    'saldoFaltante': this.totalEfectivo
+                });
+
+                this.listarCaja(1, '', 'id');
+                this.arqueoRealizado = false;
+                this.modalResumen = false;
+
+                this.$toast.add({ severity: 'success', summary: 'Éxito', detail: 'La caja fue cerrada con éxito', life: 3000 });
+            } catch (error) {
+                console.error('Error al cerrar la caja:', error);
+                this.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cerrar la caja', life: 3000 });
+            }
+        },
         cajaAbierta() {
             for (let i = 0; i < this.arrayCaja.length; i++) {
                 if (this.arrayCaja[i].estado) {
@@ -953,5 +1019,41 @@ export default {
 
 .p-col-5 {
     margin-left: 115px;
+}
+.modal-content {
+  border-radius: 6px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+  font-weight: 700;
+  color: #495057;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.badge-primary {
+  background-color: #007bff;
+}
+
+.list-group-item {
+  border: 1px solid #e9ecef;
+}
+
+.card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 }
 </style>

@@ -1,13 +1,18 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use PDF;
 use App\Caja;
 use App\TransaccionesCaja;
 use Illuminate\Http\Request;
 use App\ArqueoCaja;
 use App\User;
+use Carbon\Carbon;  
+use App\Venta;
+use App\Ingreso;
+
 use Illuminate\Support\Facades\DB;
+use App\TipoPago;
 
 class CajaController extends Controller
 {
@@ -145,5 +150,108 @@ class CajaController extends Controller
         $caja = Caja::findOrFail($id);
         return response()->json(['saldo' => floatval($caja->saldoCaja)]);
     }
+    public function resumen($id)
+    {
+        $caja = Caja::findOrFail($id);
+
+        if (!$caja->estado) {
+            return response()->json(['error' => 'La caja ya está cerrada'], 400);
+        }
+
+        $fechaApertura = Carbon::parse($caja->fechaApertura);
+
+        // Obtener ventas del día
+        $ventas = Venta::where('idcaja', $caja->id)
+        ->select('id', 'created_at as fecha', 'total')
+        ->orderBy('created_at', 'desc')
+        ->get();
+        // Calcular total de ingresos
+        $totalIngresos = $caja->saldoInicial + $caja->depositos + $caja->ventas;
+
+        // Calcular total de egresos
+        $totalEgresos = $caja->salidas + $caja->compras;
+
+        // Detalle de movimientos
+        $movimientos = [
+            ['concepto' => 'Saldo Inicial', 'monto' => $caja->saldoInicial],
+            ['concepto' => 'Ventas al Contado', 'monto' => $caja->ventasContado],
+            ['concepto' => 'Pagos de Ventas a Crédito', 'monto' => $caja->pagosEfectivoVentas],
+            ['concepto' => 'Depósitos', 'monto' => $caja->depositos],
+            ['concepto' => 'Compras al Contado', 'monto' => $caja->comprasContado],
+            ['concepto' => 'Pagos de Compras a Crédito', 'monto' => $caja->pagosEfecivocompras],
+            ['concepto' => 'Salidas', 'monto' => $caja->salidas],
+        ];
+
+        return response()->json([
+            'id' => $caja->id,
+            'fechaApertura' => $caja->fechaApertura,
+            'ventas' => $ventas,
+            'totalIngresos' => $totalIngresos,
+            'totalEgresos' => $totalEgresos,
+            'saldoCaja' => $caja->saldoCaja,
+            'movimientos' => $movimientos
+        ]);
+    }
+    public function generarPDF($id)
+    {
+        // Obtén los datos del resumen de caja
+        $resumenCaja = $this->obtenerResumenCaja($id);
+    
+        // Verifica si la respuesta contiene errores
+        if (isset($resumenCaja['error'])) {
+            return response()->json(['error' => $resumenCaja['error']], 400);
+        }
+    
+        // Genera el PDF
+        $pdf = PDF::loadView('pdf.resumen_caja', ['resumenCaja' => $resumenCaja]);
+    
+        // Descarga el PDF
+        return $pdf->download('resumen_caja.pdf');
+    }
+    
+public function obtenerResumenCaja($id)
+{
+    if (!request()->ajax()) return redirect('/');
+
+    $caja = Caja::findOrFail($id);
+
+    if (!$caja->estado) {
+        return response()->json(['error' => 'La caja ya está cerrada'], 400);
+    }
+
+    // Obtener ventas del día
+    $ventas = Venta::where('idcaja', $caja->id)
+        ->select('id', 'created_at as fecha', 'total')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Calcular total de ingresos
+    $totalIngresos = $caja->saldoInicial + $caja->depositos + $caja->ventas;
+
+    // Calcular total de egresos
+    $totalEgresos = $caja->salidas + $caja->compras;
+
+    // Detalle de movimientos
+    $movimientos = [
+        ['concepto' => 'Saldo Inicial', 'monto' => $caja->saldoInicial],
+        ['concepto' => 'Ventas al Contado', 'monto' => $caja->ventasContado],
+        ['concepto' => 'Pagos de Ventas a Crédito', 'monto' => $caja->pagosEfectivoVentas],
+        ['concepto' => 'Depósitos', 'monto' => $caja->depositos],
+        ['concepto' => 'Compras al Contado', 'monto' => $caja->comprasContado],
+        ['concepto' => 'Pagos de Compras a Crédito', 'monto' => $caja->pagosEfecivocompras],
+        ['concepto' => 'Salidas', 'monto' => $caja->salidas],
+    ];
+
+    return [
+        'id' => $caja->id,
+        'fechaApertura' => $caja->fechaApertura,
+        'ventas' => $ventas,
+        'totalIngresos' => $totalIngresos,
+        'totalEgresos' => $totalEgresos,
+        'saldoCaja' => $caja->saldoCaja,
+        'movimientos' => $movimientos
+    ];
+}
+
 
 }
