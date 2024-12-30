@@ -69,18 +69,13 @@
 </head>
 <body>
     <header>
-            <div id="logo">
-                <img src="img/logocodensa.png" alt="CompartiendoCodigo" id="imagen">
-            </div>
+           
             <div id="datos">
                 <p id="encabezado">
-                    <b>365 Group</b><br>Cochabamba, Bolivia<br>Telefono:(+591)999999999<br>Email: Group365@gmail.com
+                    <b>COTIZACION</b>
                 </p>
             </div>
-            <div id="fact">
-                <p>COTIZACION<br>
-                0000001</p>
-            </div>
+           
     </header>   
     <br>
     <br>

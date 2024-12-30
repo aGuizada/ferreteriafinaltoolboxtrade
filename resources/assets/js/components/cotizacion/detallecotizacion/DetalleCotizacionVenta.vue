@@ -1,74 +1,111 @@
 <template>
-    <Dialog :visible="true" :containerStyle="{width: '700px'}" :modal="true" :closable="false" header="Cotizacion Venta">
-      <div class="p-d-flex p-jc-between p-ai-center p-mb-4">
-        <Button label="Realizar Venta" icon="pi pi-shopping-cart" class="p-button-success" @click="abrirVenta" />
+  <div class="modal fade" tabindex="-1" :class="{ 'mostrar': true }" role="dialog" aria-labelledby="myModalLabel"
+      style="display: none;" aria-hidden="true">
+      <div class="modal-dialog modal-primary modal-lg" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  Cotizacion Venta
+              </div>
+              <div class="modal-body">
+                  <div class="row mx-2 flex justify-content-between">
+                      <!-- <p class="h4"> Cotizacion Venta:</p> -->
+                      <button type="button" class="btn btn-outline-success" @click="abrirVenta()">
+                              <i class="fa fa-shopping-cart"></i>
+                              Realizar Venta
+                      </button>
+                  </div>
+                      <div>
+                          <dl class="row">
+                          <dt class="col-sm-3">ID:</dt>
+                          <dd class="col-sm-9">
+                              {{ arrayCotizacionSeleccionado.id }}
+                          </dd>
+                          <dt class="col-sm-3">Fecha Venta:</dt>
+                          <dd class="col-sm-9">
+                              {{ arrayCotizacionSeleccionado.fecha_hora }}
+                          </dd>
+                          <dt class="col-sm-3">Cliente:</dt>
+                          <dd class="col-sm-9">
+                              {{ arrayCotizacionSeleccionado.nombre }}
+                          </dd>
+                          <dt class="col-sm-3">NIT/CI:</dt>
+                          <dd class="col-sm-9">
+                              {{ arrayCotizacionSeleccionado.num_documento }}
+                          </dd>
+                         
+                      </dl>
+                      <table class="table table-responsive table-bordered table-striped table-sm"> 
+                          <thead> 
+                              <tr>
+                                  <td colspan="7">
+                                      <h6 class="text-center font-weight-bold ">Detalle de Cotizacion Venta</h6>
+                                  </td>
+                              </tr>                   
+                              <tr>
+                                  <th>CODIGO</th>
+                                  <th>PRODUCTO</th>
+                                  <th>CANTIDAD</th>
+                                  <th>DESCUENTO</th>
+                                  <th>IMPORTE</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <tr v-for="cotventa in arrayCotizacionVentDet" :key="cotventa.id">
+                                  <td v-text="cotventa.codigo"></td>
+                                  <td v-text="cotventa.nombre_articulo"></td>
+                                  <td v-text="cotventa.cantidad"></td>
+                                  <td v-text="cotventa.descuento"></td>
+                                  <td >{{ cotventa.prectotal}}</td>
+                              </tr>
+                          </tbody>
+                      </table>
+                  </div>
+                  <button type="button" class="btn btn-secondary" @click="cerrarModal()">Cerrar</button>
+              </div>
+              
+          </div>
       </div>
-      
-      <div class="p-grid">
-        <div class="p-col-3"><strong>ID:</strong></div>
-        <div class="p-col-9">{{ arrayCotizacionSeleccionado.id }}</div>
-        
-        <div class="p-col-3"><strong>Fecha Venta:</strong></div>
-        <div class="p-col-9">{{ arrayCotizacionSeleccionado.fecha_hora }}</div>
-        
-        <div class="p-col-3"><strong>Cliente:</strong></div>
-        <div class="p-col-9">{{ arrayCotizacionSeleccionado.nombre }}</div>
-        
-        <div class="p-col-3"><strong>NIT/CI:</strong></div>
-        <div class="p-col-9">{{ arrayCotizacionSeleccionado.fecha_hora }}</div>
-        
-        <div class="p-col-3"><strong>IMPUESTO:</strong></div>
-        <div class="p-col-9">{{ arrayCotizacionSeleccionado.impuesto }}</div>
-      </div>
-      
-      <DataTable :value="arrayCotizacionVentDet" class="p-mt-4">
-        <Column field="codigo" header="CODIGO"></Column>
-        <Column field="nombre_articulo" header="PRODUCTO"></Column>
-        <Column field="cantidad" header="CANTIDAD"></Column>
-        <Column field="descuento" header="DESCUENTO"></Column>
-        <Column field="prectotal" header="IMPORTE"></Column>
-      </DataTable>
-      
-      <template #footer>
-        <Button label="Cerrar" icon="pi pi-times" class="p-button-text" @click="cerrarModal" />
-      </template>
-    </Dialog>
-  </template>
-  
-  <script>
-  import Dialog from 'primevue/dialog';
-  import Button from 'primevue/button';
-  import DataTable from 'primevue/datatable';
-  import Column from 'primevue/column';
-  
+  </div>
+</template>
+<script>
   export default {
-    components: {
-      Dialog,
-      Button,
-      DataTable,
-      Column
-    },
-    props: {
-      arrayCotizacionVentDet: {
-        type: Array,
-        required: true
+
+      props: {
+          arrayCotizacionVentDet: {
+          type: Array, // Indica que esperas un array
+          required: true // Opcional: indica si la prop es obligatoria o no
+          },
+          arrayCotizacionSeleccionado: {
+          type: Object, // Indica que esperas un array
+          required: true // Opcional: indica si la prop es obligatoria o no
+          }
       },
-      arrayCotizacionSeleccionado: {
-        type: Object,
-        required: true
-      }
-    },
-    methods: {
-      abrirVenta() {
-        const datos = {
-          cotizacion: this.arrayCotizacionSeleccionado,
-          detalles: this.arrayCotizacionVentDet
-        }
-        this.$emit('abrirVenta', datos);
+      data() {
+          return {
+          // Inicializa los datos locales si es necesario
+          };
       },
-      cerrarModal() {
-        this.$emit('cerrar');
+      methods: {
+          abrirVenta(){
+              const datos={
+                  cotizacion:this.arrayCotizacionSeleccionado,
+                  detalles:this.arrayCotizacionVentDet
+              }
+              this.$emit('abrirVenta',datos);
+
+          },
+          cerrarModal(){
+              this.$emit('cerrar');
+          },
+          // abrirVenta(){
+          //     const datos={
+          //         pedido:this.arrayPedidoSeleccionado,
+          //         detalles:this.arrayPedidoProvDet
+          //     }
+          //     this.$emit('abrirVenta',datos);
+
+          // }
       }
-    }
+
   };
-  </script>
+</script>

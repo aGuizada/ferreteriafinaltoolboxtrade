@@ -11,18 +11,18 @@
                 </div>
             </template>
             <!-- Buscador -->
-          <div class="p-d-flex p-ai-center p-mb-4">
-  <Button @click="abrirTipoVenta" label="Nueva" icon="pi pi-plus" class="p-button-success-sm p-mr-2"/>
-  <span class="p-input-icon-left p-input-icon-right p-w-100">
-    <i class="pi pi-search" />
-    <InputText v-model="buscar" @input="buscarVenta" placeholder="Buscar venta..." 
-               class="p-inputtext-lg-sm moto-search p-w-100" />
-    <i class="pi pi-times" v-if="buscar" @click="
-      buscar = '';
-      buscarVenta();
-    " style="cursor: pointer" />
-  </span>
-</div>
+            <div class="p-d-flex p-ai-center p-mb-4">
+                <Button @click="abrirTipoVenta" label="Nueva" icon="pi pi-plus" class="p-button-success-sm p-mr-2" />
+                <span class="p-input-icon-left p-input-icon-right p-w-100">
+                    <i class="pi pi-search" />
+                    <InputText v-model="buscar" @input="buscarVenta" placeholder="Buscar venta..."
+                        class="p-inputtext-lg-sm moto-search p-w-100" />
+                    <i class="pi pi-times" v-if="buscar" @click="
+                        buscar = '';
+                    buscarVenta();
+                    " style="cursor: pointer" />
+                </span>
+            </div>
 
             <!-- Listado de Ventas -->
             <template v-if="listado == 1">
@@ -174,7 +174,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group">
+                                    <!-- <div class="form-group">
                                         <span class="p-float-label">
                                             <Dropdown id="tipoComprobante" v-model="tipo_comprobante"
                                                 :options="tipoComprobanteOptions" optionLabel="name" optionValue="code"
@@ -182,7 +182,7 @@
                                             <label for="tipoComprobante">Comprobante <span
                                                     class="p-error">*</span></label>
                                         </span>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </template>
@@ -376,7 +376,7 @@
                     </div>
 
                     <div v-show="step === 3" class="step-content">
-                        <template>
+                        <!-- <template>
                             <div class="p-d-flex p-jc-center p-mb-3">
                                 <div v-if="!tipoVentaSeleccionado" class="p-d-flex">
                                     <Button class="p-button-lg p-mr-3"
@@ -407,51 +407,65 @@
                                         }}</span>
                                 </div>
                             </div>
-                        </template>
+                        </template> -->
                         <template>
-  <div v-if="tipoVenta === 'contado'" class="payment-options">
-    <TabView class="custom-tabview">
-      <TabPanel header="Efectivo">
-        <div class="p-grid p-fluid">
-          <div class="p-col-12 p-md-7">
-            <Card>
-              <template #content>
-                <div class="p-fluid">
-                  <div class="p-field">
-                    <label for="montoEfectivo"><i class="pi pi-money-bill p-mr-2" /> Monto Recibido:</label>
-                    <div class="p-inputgroup">
-                      <span class="p-inputgroup-addon">{{ monedaVenta[1] }}</span>
-                      <InputNumber id="montoEfectivo" v-model="recibido" placeholder="Ingrese el monto recibido" />
-                    </div>
-                  </div>
-                  <div class="p-field">
-                    <label for="cambioRecibir"><i class="pi pi-sync p-mr-2" /> Cambio a Entregar:</label>
-                    <InputText id="cambioRecibir" :value="(recibido - calcularTotal * parseFloat(monedaVenta[0])).toFixed(2)" readonly />
-                  </div>
-                </div>
-              </template>
-            </Card>
-          </div>
-          <div class="p-col-12 p-md-5">
-            <Card>
-              <template #content>
-                <h5>Detalle de Venta</h5>
-                <div class="p-d-flex p-jc-between p-mb-2">
-                  <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
-                  <span class="p-text-bold">{{ (calcularTotal * parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1] }}</span>
-                </div>
-                <div class="p-d-flex p-jc-between">
-                  <span><i class="pi pi-money-bill p-mr-2" /> Total a Pagar:</span>
-                  <span class="p-text-bold p-text-xl">{{ (calcularTotal * parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1] }}</span>
-                </div>
-              </template>
-            </Card>
-            <Button label="Registrar Pago" icon="pi pi-check" class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="aplicarDescuento" />
-          </div>
-        </div>
-      </TabPanel>
-      
-      <TabPanel header="QR">
+                            <!-- <div v-if="tipoVenta === 'contado'" class="payment-options"> -->
+                            <TabView class="custom-tabview">
+                                <TabPanel header="Efectivo">
+                                    <div class="p-grid p-fluid">
+                                        <div class="p-col-12 p-md-7">
+                                            <Card>
+                                                <template #content>
+                                                    <div class="p-fluid">
+                                                        <div class="p-field">
+                                                            <label for="montoEfectivo"><i
+                                                                    class="pi pi-money-bill p-mr-2" /> Monto
+                                                                Recibido:</label>
+                                                            <div class="p-inputgroup">
+                                                                <span class="p-inputgroup-addon">{{ monedaVenta[1]
+                                                                    }}</span>
+                                                                <InputNumber id="montoEfectivo" v-model="recibido"
+                                                                    placeholder="Ingrese el monto recibido" />
+                                                            </div>
+                                                        </div>
+                                                        <div class="p-field">
+                                                            <label for="cambioRecibir"><i class="pi pi-sync p-mr-2" />
+                                                                Cambio a Entregar:</label>
+                                                            <InputText id="cambioRecibir"
+                                                                :value="(recibido - calcularTotal * parseFloat(monedaVenta[0])).toFixed(2)"
+                                                                readonly />
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </Card>
+                                        </div>
+                                        <div class="p-col-12 p-md-5">
+                                            <Card>
+                                                <template #content>
+                                                    <h5>Detalle de Venta</h5>
+                                                    <div class="p-d-flex p-jc-between p-mb-2">
+                                                        <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
+                                                        <span class="p-text-bold">{{ (calcularTotal *
+                                                            parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1]
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="p-d-flex p-jc-between">
+                                                        <span><i class="pi pi-money-bill p-mr-2" /> Total a
+                                                            Pagar:</span>
+                                                        <span class="p-text-bold p-text-xl">{{ (calcularTotal *
+                                                            parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1]
+                                                            }}</span>
+                                                    </div>
+                                                </template>
+                                            </Card>
+                                            <Button label="Registrar Pago" icon="pi pi-check"
+                                                class="p-button-success p-mt-2 p-button-lg p-button-raised"
+                                                @click="aplicarDescuento" />
+                                        </div>
+                                    </div>
+                                </TabPanel>
+
+                                <!-- <TabPanel header="QR">
         <div class="p-grid p-fluid">
           <div class="p-col-12 p-md-8 p-lg-6 p-mx-auto">
             <Card>
@@ -479,10 +493,10 @@
             <Button @click="registrarVenta(7)" label="Registrar Pago" icon="pi pi-check" class="p-button-success p-mt-2 p-button-lg p-button-raised" />
           </div>
         </div>
-      </TabPanel>
-    </TabView>
-  </div>
-</template>
+      </TabPanel> -->
+                            </TabView>
+                            <!-- </div> -->
+                        </template>
 
                         <div v-if="tipoVenta === 'credito'">
                             <div class="p-grid">
@@ -1043,7 +1057,7 @@ export default {
             axios.get(url)
                 .then(response => {
                     this.arrayArticulo = response.data.articulos;
-            
+
                 })
                 .catch(error => {
                     console.error("Error en la búsqueda:", error);
@@ -1324,7 +1338,7 @@ export default {
                 this.modal2 = true;
                 this.cliente = this.nombreCliente;
                 this.tipoAccion2 = 1;
-              
+
             }
         },
 
@@ -1402,7 +1416,7 @@ export default {
                 .get(url)
                 .then(function (response) {
                     var respuesta = response.data;
-                   
+
                     me.arrayVenta = respuesta.ventas.data;
                     me.pagination = respuesta.pagination;
                 })
@@ -1420,7 +1434,7 @@ export default {
                     let respuesta = response.data;
                     q: numero;
                     me.arrayCliente = respuesta.clientes;
-             
+
                     me.cantidadClientes = me.arrayCliente.length;
                 })
                 .catch(function (error) {
@@ -1437,7 +1451,7 @@ export default {
                     let respuesta = response.data;
                     q: nombre;
                     me.arrayCliente = respuesta.clientes;
-           
+
                     me.cantidadClientes = me.arrayCliente.length;
                 })
                 .catch(function (error) {
@@ -1504,7 +1518,7 @@ export default {
                     .then(function (response) {
                         let respuesta = response.data;
                         me.arraySeleccionado = respuesta.articulos[0];
-                
+
                     })
                     .catch(function (error) {
                         console.log(error);
@@ -1658,7 +1672,7 @@ export default {
             axios.get(url)
                 .then(response => {
                     this.arrayArticulo = response.data.articulos;
-                
+
                 })
                 .catch(error => {
                     console.error("Error en la búsqueda:", error);
@@ -1740,7 +1754,7 @@ export default {
             this.registrarVenta(idtipo_pago);
         },
 
-     
+
 
         otroMetodo(metodoPago) {
             const idtipo_pago = metodoPago;
@@ -1786,7 +1800,7 @@ export default {
             var resivo = [];
             resivo.push({
                 cabecera: {
-                    municipio: "Cochabamba",        
+                    municipio: "Cochabamba",
                     telefono: "77490451",
                     numeroResivo: numeroResivo,
                     codigoSucursal: 0,
@@ -2110,7 +2124,7 @@ export default {
                 }
             });
 
-           
+
             // Verificar si hay errores
             if (me.errorMostrarMsjVenta.length) {
                 me.errorVenta = 1;
@@ -2168,7 +2182,7 @@ export default {
         },
         cerrarModal() {
             this.modal = false;
-      
+
         },
         abrirModal() {
             this.listarArticulo("", "nombre");
@@ -2176,7 +2190,7 @@ export default {
             this.arrayArticulo = [];
             this.modal = true;
             this.tituloModal = "Seleccione los articulos que desee";
-           
+
         },
 
         advertenciaFechaVencimiento() {
@@ -2241,22 +2255,22 @@ export default {
                 .then(function (response) {
                     var respuesta = response.data;
                     me.arrayPrecios = respuesta.precio.data;
-                   
+
                     //me.precioCount = me.arrayBuscador.length;
                 })
                 .catch(function (error) {
                     console.log(error);
                 });
         },
-    
+
         cerrarModal2() {
-    this.modal2 = false;
-    this.reiniciarFormulario();
-    // Restablecer campos específicos del modal
-    this.tituloModal2 = "";
-    this.idtipo_pago = "";
-    this.tipoPago = "";
-},
+            this.modal2 = false;
+            this.reiniciarFormulario();
+            // Restablecer campos específicos del modal
+            this.tituloModal2 = "";
+            this.idtipo_pago = "";
+            this.tipoPago = "";
+        },
         cerrarModal3() {
             this.modal3 = false;
             this.tituloModal3 = "";
@@ -2272,7 +2286,7 @@ export default {
             );
             if (recibidoNumero === 0) {
                 this.efectivo = recibidoNumero;
-            
+
                 this.cambio = 0;
                 this.faltante = 0;
             } else if (recibidoNumero < this.calcularTotal) {
@@ -2533,49 +2547,50 @@ export default {
 .p-dropdown {
     width: 100%;
 }
+
 .payment-options {
-  .custom-tabview {
-    .p-tabview-nav {
-      li {
-        .p-tabview-nav-link {
-          background-color: #f8f9fa;
-          color: #495057;
-          border: 1px solid #dee2e6;
-          border-bottom: none;
-          margin-right: 2px;
-          border-top-left-radius: 4px;
-          border-top-right-radius: 4px;
-          transition: background-color 0.2s, color 0.2s;
+    .custom-tabview {
+        .p-tabview-nav {
+            li {
+                .p-tabview-nav-link {
+                    background-color: #f8f9fa;
+                    color: #495057;
+                    border: 1px solid #dee2e6;
+                    border-bottom: none;
+                    margin-right: 2px;
+                    border-top-left-radius: 4px;
+                    border-top-right-radius: 4px;
+                    transition: background-color 0.2s, color 0.2s;
 
-          &:not(.p-disabled):focus {
-            box-shadow: inset 0 0 0 0.2rem rgba(0,123,255,0.25);
-          }
+                    &:not(.p-disabled):focus {
+                        box-shadow: inset 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+                    }
+                }
+
+                &.p-highlight .p-tabview-nav-link {
+                    background-color: #ffffff;
+                    color: #007bff;
+                    border-bottom: 2px solid #007bff;
+                }
+            }
         }
 
-        &.p-highlight .p-tabview-nav-link {
-          background-color: #ffffff;
-          color: #007bff;
-          border-bottom: 2px solid #007bff;
+        .p-tabview-panels {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+            padding: 1.5rem;
         }
-      }
     }
 
-    .p-tabview-panels {
-      background-color: #ffffff;
-      border: 1px solid #dee2e6;
-      border-top: none;
-      border-bottom-left-radius: 4px;
-      border-bottom-right-radius: 4px;
-      padding: 1.5rem;
+    .p-card {
+        margin-bottom: 1rem;
     }
-  }
 
-  .p-card {
-    margin-bottom: 1rem;
-  }
-
-  .p-button-lg {
-    width: 100%;
-  }
+    .p-button-lg {
+        width: 100%;
+    }
 }
 </style>

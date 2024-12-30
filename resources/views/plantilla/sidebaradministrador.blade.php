@@ -56,10 +56,10 @@
                         <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> REGISTRO
                             VENTAS</a>
                     </li> -->
-                    <li @click="menu=53" class="nav-item">
+                    <!-- <li @click="menu=53" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-credit-card" style="font-size: 16px;"></i> VENTAS A
                             CREDITO</a>
-                    </li>
+                    </li> -->
                     <li @click="menu=6" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-users" style="font-size: 16px;"></i> CLIENTES</a>
                     </li>
@@ -156,95 +156,7 @@
                     </li>
                 </ul>
             </li>
-            <li class="nav-item nav-dropdown">
-                <a class="nav-link nav-dropdown-toggle" href="#"><i class="fa fa-line-chart"></i> REPORTES
-                    INVENTARIO</a>
-                <ul class="nav-dropdown-items">
-
-                    <!--<li @click="menu=49" class="nav-item">
-                        <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> INVENTARIOS</a>
-                    </li>-->
-                    <li @click="menu=51" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-file-text-o" style="font-size: 19px;"></i> KARDEX
-                            FISICO VALORADO</a>
-                    </li>
-                    <li @click="menu=52" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-file-o" style="font-size: 19px;"></i> KARDEX
-                            FISICO</a>
-                    </li>
-                    <li @click="menu=58" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-list-alt" style="font-size: 19px;"></i> RESUMEN
-                            FISICO</a>
-                    </li>
-                    <li @click="menu=60" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-exchange" style="font-size: 19px;"></i> DETALLADO
-                            FISICO DE MOVIMIENTOS</a>
-                    </li>
-                    <li @click="menu=63" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-archive" style="font-size: 19px;"></i> INVENTARIO
-                            FISICO VALORADO</a>
-                    </li>
-                    <li @click="menu=64" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-cubes" style="font-size: 19px;"></i> INVENTARIO
-                            FISICO</a>
-                    </li>
-                </ul>
-            </li>
-
-            <li class="nav-item nav-dropdown">
-                <a class="nav-link nav-dropdown-toggle" href="#"><i class="fa fa-line-chart"></i> REPORTES VENTAS</a>
-                <ul class="nav-dropdown-items">
-                    <li @click="menu=45" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-calendar-check-o" style="font-size: 19px;"></i>
-                            VENTAS DIARIAS</a>
-                    </li>
-                    <!--
-                    <li @click="menu=62" class="nav-item">
-                        <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> VENTAS DETALLADO</a>
-                    </li>
-                    <li @click="menu=55" class="nav-item">
-                        <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> VENTAS X DOCUMENTO</a>
-                    </li>
-                    <li @click="menu=57" class="nav-item">
-                        <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> VENTAS X PRODUCTO</a>
-                    </li>-->
-
-                </ul>
-            </li>
-
-            <li class="nav-item nav-dropdown">
-                <a class="nav-link nav-dropdown-toggle" href="#"><i class="fa fa-line-chart"></i> REPORTES CLIENTES</a>
-                <ul class="nav-dropdown-items">
-
-                    <li @click="menu=10" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-users" style="font-size: 19px;"></i> REPORTE
-                            USUARIOS</a>
-                    </li>
-                    <li @click="menu=50" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-user-circle" style="font-size: 19px;"></i> RESUMEN
-                            DE CLIENTES</a>
-                    </li>
-                    <!--
-                    <li @click="menu=56" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> KARDEX CLIENTES DETALLADO GLOBAL</a>
-                            </li>
-
-                            <li @click="menu=59" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> KARDEX CLIENTES RESUMEN GLOBAL</a>
-                            </li>
-
-                            <li @click="menu=61" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> DETALLE - RECIBO CLIENTE POR DOCUMENTO</a>
-                            </li>
-
-                            <li @click="menu=68" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> RESUMEN VENTAS Y COBRANZAS</a>
-                            </li>
-
-                        </ul>
-                    </li>
-                    -->
-                </ul>
+          
     </nav>
 
 </div>
