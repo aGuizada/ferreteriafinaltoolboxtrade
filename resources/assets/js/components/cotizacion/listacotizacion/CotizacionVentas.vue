@@ -1,564 +1,293 @@
 <template>
-    <main class="main">
-        <!-- <div class="m-2 p-2"></div> -->
-        <div class="container-fluid">
-            <!-- Ejemplo de tabla Listado -->
-            <div class="card" v-if="!showRegistrarVenta">
-                <!-- <div class="card-header" v-if="listado==1" > -->
-                <div class="card-header">
-                    <i class="fa fa-align-justify"></i> {{ titulo }}
-                    <button v-if="listado == 1" type="button" @click="mostrarDetalle('venta', 'cotizacion')"
-                        class="btn btn-secondary">
-                        <i class="icon-plus"></i>&nbsp;Nuevo
-                    </button>
-                </div>
-
-                <!-- <div class="card-header" v-if="listado!=1 ">
-                    <i class="icon-basket"></i><label v-text="titulocard"></label>
-                </div> -->
-                <!--################ Listado al inicio ###########################-->
-                <template v-if="listado == 1">
-                    <div class="card-body">
-                        <div class="form-group row">
-                            <div class="col-md-6">
-                                <div class="input-group">
-                                    <select class="form-control col-md-3" v-model="criterio">
-                                        <option value="tipo_comprobante">Tipo Comprobante</option>
-                                        <option value="num_comprobante">Número Comprobante</option>
-                                        <option value="fecha_hora">Fecha-Hora</option>
-                                    </select>
-                                    <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar, criterio)"
-                                        class="form-control" placeholder="Texto a buscar">
-                                    <!--button type="submit" @click="listarCotizacion(1, buscar, criterio)" class="btn btn-primary"><i
-                                            class="fa fa-search"></i> Buscar</button-->
-                                </div>
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-
-                                        <th>FECHA</th>
-                                        <th>HORA</th>
-
-                                        <th>CLIENTE</th>
-                                        <th>NIT/CI</th>
-
-                                        <th>IMPUESTO</th>
-                                        <th>TOTAL</th>
-                                        <th>USUARIO</th>
-                                        <th>EXPIRA EN</th>
-                                        <th>NOTA/REF</th>
-                                        <th class="fit-content">ACCIONES</th>
-
-
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="venta in arrayVenta" :key="venta.id">
-                                        <td v-text="venta.id"></td>
-
-                                        <td>{{ new Intl.DateTimeFormat('es-ES').format(new Date(venta.fecha_hora)) }}
-                                        </td>
-                                        <td>{{ new Date(venta.fecha_hora).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-            }) }}</td>
-                                        <td v-text="venta.nombre"></td>
-                                        <td v-text="venta.num_documento"></td>
-                                        <td v-text="venta.impuesto"></td>
-
-                                        <td v-text="venta.total"></td>
-                                        <td v-text="venta.usuario"></td>
-
-                                        <td>{{ Math.floor((new Date(venta.validez) - new Date()) / (1000 * 60 * 60 *
-                24)) + 1 }} dias</td>
-
-                                        <!-- <td>{{ new Date(venta.validez).toLocaleString() }} {{ new Date(venta.fecha_hora).toLocaleString() }} </td> -->
-
-
-                                        <td v-text="venta.nota"></td>
-                                        <td>
-                                            <div class="d-flex justify-content-start align-items-center">
-                                                <!-- <button type="button" @click="verVenta(venta.id)" class="btn btn-sm rounded">
-                                                    <i class="icon-eye fa-lg" style="color: blue;"></i>
-
-                                                </button> -->
-                                                <button type="button" @click="abrirModalDetalles(venta)"
-                                                    class="btn btn-outline-success btn-sm rounded">
-                                                    <i class="fa fa-eye fa-sm"></i>
-                                                </button>
-                                                <button type="button" @click="pdfVenta(venta.id)"
-                                                    class="btn  btn-sm rounded">
-                                                    <i class="icon-doc fa-lg" style="color: skyblue;"></i>
-
-                                                </button>
-
-                                                <button type="button" @click="abrirVenta(venta.id)"
-                                                    class="btn btn-sm rounded">
-                                                    <i class="icon-basket fa-lg" style="color: green;"></i>
-
-                                                </button>
-                                                <!-- <button type="button" @click="mostrarDetalle('EDITAR COTIZACIÒN',venta.id)" class="btn btn-sm rounded">
-                                                    <i class="icon-pencil fa-lg" style="color: orange;"></i>
-
-                                                </button> -->
-                                                <button type="button" @click="mostrarDetalle('venta', 'editar', venta)"
-                                                    class="btn btn-outline-warning btn-sm rounded">
-                                                    <i class="fa fa-pencil fa-sm"></i>
-                                                </button>
-                                                <template v-if="venta.condicion">
-                                                    <button type="button" class="btn btn-sm rounded"
-                                                        @click="desactivarCotizacion(venta.id)">
-                                                        <i class="icon-trash fa-lg" style="color: red;"></i>
-
-                                                    </button>
-                                                </template>
-                                                <template v-else>
-                                                    <button type="button" class="btn btn-sm rounded"
-                                                        @click="activarCotizacion(venta.id)">
-                                                        <i class="icon-check"></i>
-                                                    </button>
-                                                </template>
-                                            </div>
-                                        </td>
-
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <nav>
-                            <ul class="pagination">
-                                <li class="page-item" v-if="pagination.current_page > 1">
-                                    <a class="page-link" href="#"
-                                        @click.prevent="cambiarPagina(pagination.current_page - 1, buscar, criterio)">Ant</a>
-                                </li>
-                                <li class="page-item" v-for="page in pagesNumber" :key="page"
-                                    :class="[page == isActived ? 'active' : '']">
-                                    <a class="page-link" href="#" @click.prevent="cambiarPagina(page, buscar, criterio)"
-                                        v-text="page"></a>
-                                </li>
-                                <li class="page-item" v-if="pagination.current_page < pagination.last_page">
-                                    <a class="page-link" href="#"
-                                        @click.prevent="cambiarPagina(pagination.current_page + 1, buscar, criterio)">Sig</a>
-                                </li>
-                            </ul>
-                        </nav>
+    <div class="main">
+        <Panel>
+            <Toast :breakpoints="{ '920px': { width: '100%', right: '0', left: '0' } }" style="padding-top: 40px;">
+                </Toast>
+                <template #header>
+                    <div class="panel-header">
+                        
+                        <h3>{{ titulo }}</h3>
                     </div>
                 </template>
-                <!-- ######################## Fin Listado inicio ###########################3-->
-                <!-- Registrar cotizacion-->
-                <template v-else-if="listado == 0">
-                    <div class="card-body">
-                        <div class="form-group row border">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="" class="font-weight-bold">Cliente <span
-                                            class="text-danger">*</span></label>
-                                    <v-select :on-search="selectCliente" label="num_documento" :options="arrayCliente"
-                                        placeholder="Num de documento..." :onChange="getDatosCliente"
-                                        v-model="clienteSeleccionado">
-                                    </v-select>
-                                </div>
-                            </div>
-                            <!-- <div class="col-md-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <label for="" class="font-weight-bold">Cliente <span class="text-danger">*</span></label>
-                                    <div class="col-8">
-                                        <v-select :on-search="selectCliente" label="nombre" :options="arrayCliente" placeholder="Buscar Clientes..." :onChange="getDatosCliente">
-                                        </v-select>
-                                    </div>
-                                </div>
-                            </div> -->
-                            <div class="col-md-2">
-                                <label for="">NIT/CI</label>
-                                <input type="text" class="form-control" v-model="nitcliente" readonly>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="">Celular</label>
-                                <input type="text" class="form-control" v-model="telefono" ref="nombreRef" readonly>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="" class="font-weight-bold">Almacen <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-control" v-model="AlmacenSeleccionado"
-                                        @change="getDatosAlmacen">
-                                        <option value="0" disabled>Seleccione</option>
-                                        <option v-for="opcion in arrayAlmacenes" :key="opcion.id" :value="opcion.id">{{
-                opcion.nombre_almacen }}</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-2">
-                                <label for="">Impuesto(*)</label>
-                                <input type="text" class="form-control" v-model="impuesto" ref="impuestoRef">
-                                <label for="" class="small-text">Shift + Q</label>
-                            </div>
-
-
-                        </div>
-                        <div class="form-group row border">
-
-                            <!-- <div class="col-md-4">
-                                <div class="form-group">
-                                    <label><b>ARTICULO</b> <span style="color: red;" v-show="idarticulo == 0">*</span></label>
-                                    <div class="form-inline">
-                                        <input type="text" class="form-control" v-model="codigo" ref="articuloRef" @keyup="buscarArticulo()" placeholder="Codigo del artículo">
-                                        <button @click="abrirModal()" class="btn btn-primary">...</button>
-                                        <input type="text" readonly class="form-control" v-model="articulo">
-                                        <label for="" class="small-text">Shift + R</label>
-                                    </div>
-                                </div>
-                            </div> -->
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <div class="form-inline">
-                                        <button @click="abrirModal()" class="btn btn-primary">Buscar</button>
-                                        <input type="text" class="form-control" v-model="codigo" ref="articuloRef"
-                                            @keyup="buscarArticulo()" placeholder="Codigo del artículo">
-                                        <!-- <input type="text" id="nombre_producto" readonly class="form-control"
-                                            v-model="articulo"> -->
-                                        <label for="">Shift + R</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card-body" v-if="nombre_articulo !== ''">
-                                    <h3>{{ nombre_articulo }}</h3>
-                                </div>
-                            </div>
-
-                            <div class="col-md-2">
-                                <img v-if="arrayArticuloSeleccionado.length > 0 && arrayArticuloSeleccionado[0].fotografia"
-                                    :src="'img/articulo/' + arrayArticuloSeleccionado[0].fotografia + '?t=' + new Date().getTime()"
-                                    width="50" height="50" ref="imagen" class="card-img" />
-                                <img v-else
-                                    src="https://www.bicifan.uy/wp-content/uploads/2016/09/producto-sin-imagen.png"
-                                    alt="Imagen del Card" class="card-img">
-                            </div>
-
-                            <div class="col-md-1">
-                                <div class="form-group">
-                                    <label>Total Uni/Stock</label>
-                                    <input type="text" id="stock" style="color: red;" class="form-control"
-                                        v-model="saldo_stock" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Precios(*)</label>
-                                    <select class="form-control" v-model="precioseleccionado"
-                                        @change="mostrarSeleccion">
-
-                                        <option :value="precio_uno" v-if="arrayPrecios[0]">{{
-                arrayPrecios[0].nombre_precio }}</option>
-                                        <option :value="precio_dos" v-if="arrayPrecios[1]">
-                                            {{ arrayPrecios[1].nombre_precio }}</option>
-                                        <option :value="precio_tres" v-if="arrayPrecios[2]">
-                                            {{ arrayPrecios[2].nombre_precio }}</option>
-                                        <option :value="precio_cuatro" v-if="arrayPrecios[3]">
-                                            {{ arrayPrecios[3].nombre_precio }}</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Precio Unitario<span style="color: red;"
-                                            v-show="precio == 0">*</span></label>
-                                    <input disabled type="number" value="0" step="any" class="form-control"
-                                        v-model="precioseleccionado" ref="precioRef">
-                                    <label for="" class="small-text">Shift + T</label>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Cantidad <span style="color: red;" v-show="cantidad == 0">*</span></label>
-                                    <input type="number" value="0" class="form-control" v-model="cantidad"
-                                        ref="cantidadRef">
-                                    <label for="" class="small-text">Shift + Y</label>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Descuento</label>
-                                    <input type="number" value="0" class="form-control" v-model="descuento"
-                                        ref="descuentoRef">
-                                    <label for="" class="small-text">Shift + U</label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Prec.Total</label>
-                                    <input type="number" value="0" class="form-control" v-model="prectotal"
-                                        ref="descuentoRef">
-                                    <label for="" class="small-text">Shift + U</label>
-                                </div>
-                            </div>
-
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <button @click="agregarDetalle()" class="btn btn-success form-control btnagregar">
-                                        <i class="icon-plus"></i> Añadir item
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- <div class="col-md-2">
-                                <div class="form-group">
-                                    <button @click="agregarDetalle()" class="btn btn-outline-success btn-block ">
-                                        <i class="fa fa-plus"></i>Añadir item
-                                    </button>
+            
+                 <template>
+                    <div v-if="listado == 1">
+                        <Button v-if="listado == 1" icon="pi pi-plus" label="Nuevo"
+                            @click="mostrarDetalle('venta', 'cotizacion')" />
+              
+                        <div class="p-fluid p-formgrid p-grid">
+                            
+                            <div class="p-field p-col-6 ">
+                                <span class="p-float-label">
                                     
-                                </div>
-                            </div> -->
+                                    <input v-model="buscar" @input="debounceSearch" placeholder="Buscar"
+                                        class="form-control" type="text">
+                                </span>
+                            </div>  
                         </div>
-                        <!--######################################-LISTADO CUANDO yA SE AGREGO CON LA "CANTIDAD" ##################-->
-                        <div class="form-group row border">
-                            <div class="table-responsive col-md-12">
-                                <h6 class="text-center" style="font-weight: normal;"> DETALLE DE LA COTIZACIÒN5</h6>
-                                <table class="table table-bordered table-striped table-sm">
-
-                                    <thead>
-                                        <tr>
-                                            <th>Opciones</th>
-                                            <th>Codigo</th>
-                                            <th>Artículo</th>
-                                            <th>Precio/U</th>
-                                            <th>Unid/Paq</th>
-                                            <th>Paquetes</th>
-                                            <th>Total</th>
-                                            <!-- <th>Cantidad</th>
-                                            <th>Descuento</th>
-                                            <th>Subtotal</th> -->
-                                        </tr>
-                                    </thead>
-                                    <tbody v-if="arrayDetalle.length">
-                                        <tr v-for="(detalle, index) in arrayDetalle" :key="detalle.id">
-                                            <td>
-                                                <button @click="eliminarDetalle(index)" type="button"
-                                                    class="btn btn-danger btn-sm">
-                                                    <i class="icon-close"></i>
-                                                </button>
-                                            </td>
-                                            <td v-text="detalle.codigo"></td>
-                                            <td v-text="detalle.nombre_articulo"></td>
-                                            <td v-text="detalle.precioseleccionado"></td>
-                                            <td v-text="detalle.unidad_envase"></td>
-                                            <td v-text="detalle.cantidad"></td>
-                                            <td v-text="detalle.prectotal"></td>
-                                            <!-- <td>
-                                                <input disabled v-model="detalle.precio" type="number" class="form-control">
-                                            </td>
-                                            <td>
-                                                <span style="color:red;" v-show="detalle.cantidad > detalle.stock">Stock: {{ detalle.stock }}</span>
-                                                <input v-model="detalle.cantidad" type="number" class="form-control">
-                                            </td>
-                                            <td>
-                                                <span style="color:red;" v-show="detalle.descuento > (detalle.precio * detalle.cantidad)">Descuento superior</span>
-                                                <input v-model="detalle.descuento" type="number" class="form-control">
-                                            </td>
-                                            <td>{{ detalle.precio * detalle.cantidad - detalle.descuento }}</td> -->
-                                        </tr>
-                                        <!-- <tr style="background-color: #CEECF5;">
-                                            
-                                            <td colspan="5" align="right"><strong>Total Parcial:</strong></td>
-                                            <td>$ {{ totalParcial=(total - totalImpuesto).toFixed(2) }}</td>
-                                        </tr>
-                                        <tr style="background-color: #CEECF5;">
-                                            <td colspan="5" align="right"><strong>Total Impuesto:</strong></td>
-                                            <td>$ {{ totalImpuesto=((total * impuesto) / (1 + impuesto)).toFixed(2) }}</td>
-                                        </tr>
-                                        <tr style="background-color: #CEECF5;">
-                                            <td colspan="5" align="right"><strong>Total Neto:</strong></td>
-                                            <td>$ {{ total=calcularTotal }}</td>
-                                        </tr> -->
-                                    </tbody>
-                                    <tbody v-else>
-                                        <tr>
-                                            <td colspan="6">No hay articulos agregados</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-2">
-                                <label for="">Dias de validez</label>
-                                <input type="number" class="form-control" v-model="dias_validez">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Tiempo de entrega</label>
-                                <input type="text" class="form-control" v-model="tiempo_entrega">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Lugar de entrega</label>
-                                <input type="text" class="form-control" v-model="lugar_entrega">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Forma de pago</label>
-                                <input type="text" class="form-control" v-model="forma_pago">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Nota</label>
-                                <input type="text" class="form-control" v-model="nota">
-                            </div>
-                            <div class="col-md-1.5">
-                                <label for="my-selector">Imprimir:</label>
-                                <select class="form-control" id="my-selector" v-model="imprimir">
-                                    <option value="">Ninguno</option>
-                                    <option v-for="option in options_print" :value="option.value" :key="option.value">{{
-                option.label }}</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <div class="col-md-12 text-right">
-                                <button type="button" @click="ocultarDetalle()"
-                                    class="btn btn-secondary">Cerrar</button>
-                                <!-- <button v-if="titulocard=='REGISTRAR COTIZACIÒN'" type="button" class="btn btn-primary" @click="registrarCotizacion()">Registrar Cotización</button> -->
-                                <button v-if="idcotizacionv != ''" type="button" class="btn btn-primary"
-                                    @click="editarCotizacion()">Editar Cotización</button>
-                                <button v-else type="button" class="btn btn-primary"
-                                    @click="registrarCotizacion()">Registrar Cotización</button>
-
-                            </div>
-                        </div>
-
+                        <DataTable :value="arrayVenta" :paginator="true" :rows="10" :rowsPerPageOptions="[5, 10, 20]">
+                            <Column field="id" header="ID"></Column>
+                            <Column field="fecha_hora" header="FECHA">
+                                <template #body="slotProps">
+                                    {{ new Intl.DateTimeFormat('es-ES').format(new Date(slotProps.data.fecha_hora)) }}
+                                </template>
+                            </Column>
+                            <Column field="fecha_hora" header="HORA">
+                                <template #body="slotProps">
+                                    {{ new Date(slotProps.data.fecha_hora).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }) }}
+                                </template>
+                            </Column>
+                            <Column field="nombre" header="CLIENTE"></Column>
+                            <Column field="num_documento" header="NIT/CI"></Column>
+                            <Column field="impuesto" header="IMPUESTO"></Column>
+                            <Column field="total" header="TOTAL"></Column>
+                            <Column field="usuario" header="USUARIO"></Column>
+                            <Column field="validez" header="EXPIRA EN">
+                                <template #body="slotProps">
+                                    {{ Math.floor((new Date(slotProps.data.validez) - new Date()) / (1000 * 60 * 60 *
+                                        24)) + 1 }} dias
+                                </template>
+                            </Column>
+                            <Column field="nota" header="NOTA/REF"></Column>
+                            <Column header="ACCIONES">
+                                <template #body="slotProps">
+                                    <Button icon="pi pi-eye" class="p-button-sm p-button-success "
+                                        @click="abrirModalDetalles(slotProps.data)" />
+                                    <Button icon="pi pi-file-pdf" class="p-button-sm p-button-info "
+                                        @click="pdfVenta(slotProps.data.id)" />
+                                    <Button icon="pi pi-shopping-cart" class="p-button-sm p-button-success "
+                                        @click="abrirVenta(slotProps.data.id)" />
+                                    <Button icon="pi pi-pencil" class="p-button-sm p-button-warning"
+                                        @click="mostrarDetalle('venta', 'editar', slotProps.data)" />
+                                    <Button v-if="slotProps.data.condicion" icon="pi pi-trash"
+                                        class="p-button-sm p-button-danger "
+                                        @click="desactivarCotizacion(slotProps.data.id)" />
+                                    <Button v-else icon="pi pi-check" class="p-button-sm p-button-success"
+                                        @click="activarCotizacion(slotProps.data.id)" />
+                                </template>
+                            </Column>
+                        </DataTable>
+                        <Paginator :rows="10" :totalRecords="pagination.total" @page="onPageChange($event)" />
                     </div>
 
-                </template>
-                <!-- Fin registro-->
-                <!-- ###-ELIMINAR-###-INICIO REGISTRAR VENTA -->
-                <template v-else-if="listado == 3">
-                    <div class="card-body">
-                        <div class="form-group row">
-                            <div class="col-md-12">
-                                <button type="button" @click="ocultarDetalle()"
-                                    class="btn btn-secondary">Cerrar</button>
-                                <button type="button" class="btn btn-primary" @click="registrarVenta()">Registrar
-                                    Venta</button>
+                    <div v-else-if="listado == 0">
+                        <!-- Form for registering/editing cotizacion -->
+                        <div class="p-fluid p-formgrid p-grid">
+                            <div class="p-field p-col-12 p-md-4">
+                                <label for="cliente">Cliente*</label>
+                                <Dropdown id="cliente" v-model="clienteSeleccionado" :options="arrayCliente"
+                                    optionLabel="num_documento" placeholder="Num de documento..."
+                                    @change="getDatosCliente" />
                             </div>
-                        </div>
-                    </div>
-                </template>
-                <!-- FIN REGISTRAR VENTA -->
+                            <div class="p-field p-col-12 p-md-2">
+                                <label for="nitci">NIT/CI</label>
+                                <InputText id="nitci" v-model="nitcliente" readonly />
+                            </div>
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="celular">Celular</label>
+                                <InputText id="celular" v-model="telefono" readonly />
+                            </div>
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="almacen">Almacen*</label>
+                                <Dropdown id="almacen" v-model="AlmacenSeleccionado" :options="arrayAlmacenes"
+                                    optionLabel="nombre_almacen" optionValue="id" placeholder="Seleccione"
+                                    @change="getDatosAlmacen" />
+                            </div>
 
+                            <div class="p-field p-col-12 p-md-2">
+                                <label for="impuesto">Impuesto*</label>
+                                <InputNumber id="impuesto" v-model="impuesto" mode="decimal" :minFractionDigits="2"
+                                    :maxFractionDigits="2" />
+                            </div>
 
-            </div>
-            <!-- Fin ejemplo de tabla Listado -->
-        </div>
-        <!--################## Inicio del modal LISTAR /PRODUCTO DE INVENTARIO ######################-->
-        <div class="modal fade" tabindex="-1" :class="{ 'mostrar': modal }" role="dialog" aria-labelledby="myModalLabel"
-            style="display: none;" aria-hidden="true">
-            <div class="modal-dialog modal-primary modal-lg" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title" v-text="tituloModal"></h4>
-                        <button type="button" class="close" @click="cerrarModal()" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group row">
-                            <div class="col-md-6">
-                                <div class="input-group">
-                                    <select class="form-control col-md-3" v-model="criterioA">
-                                        <option value="nombre">Nombre</option>
-                                        <option value="descripcion">Descripción</option>
-                                        <option value="codigo">Código</option>
-                                    </select>
-                                    <input type="text" v-model="buscarA" @keyup="listarArticulo(buscarA, criterioA)"
-                                        class="form-control" placeholder="Texto a buscar">
-                                    <!--button type="submit" @click="listarArticulo(buscarA, criterioA)"
-                                        class="btn btn-primary"><i class="fa fa-search"></i> Buscar</button-->
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="codigo">Código del artículo</label>
+                                <div class="p-inputgroup">
+                                    <Button icon="pi pi-search" @click="abrirModal" />
+                                    <InputText id="codigo" v-model="codigo" placeholder="Codigo del artículo"
+                                        @keyup="buscarArticulo" />
                                 </div>
                             </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Opciones</th>
-                                        <th>Código</th>
-                                        <th>Nombre</th>
-                                        <th>Categoría</th>
-                                        <th>Precio Venta</th>
-                                        <th>Stock</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="articulo in arrayArticulo" :key="articulo.id">
-                                        <td>
-                                            <button type="button" @click="agregarDetalleModal(articulo)"
-                                                class="btn btn-success btn-sm">
-                                                <i class="icon-check"></i>
-                                            </button>
-                                        </td>
-                                        <td v-text="articulo.codigo"></td>
-                                        <td v-text="articulo.nombre"></td>
-                                        <td v-text="articulo.nombre_categoria"></td>
-                                        <td v-text="articulo.precio_venta"></td>
-                                        <td v-text="articulo.saldo_stock"></td>
-                                        <td>
-                                            <div v-if="articulo.condicion">
-                                                <span class="badge badge-success">Activo</span>
-                                            </div>
-                                            <div v-else>
-                                                <span class="badge badge-danger">Desactivado</span>
-                                            </div>
 
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="p-field p-col-12 p-md-4">
+                                <label for="nombre_articulo">Nombre del artículo</label>
+                                <InputText id="nombre_articulo" v-model="nombre_articulo" readonly />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-2">
+                                <label for="stock">Stock</label>
+                                <InputText id="stock" v-model="saldo_stock" readonly />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="precio">Precios*</label>
+                                <Dropdown id="precio" v-model="precioseleccionado" :options="arrayPrecios"
+                                    optionLabel="nombre_precio" optionValue="precio" @change="mostrarSeleccion" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-2">
+                                <label for="precio_unitario">Precio Unitario</label>
+                                <InputNumber id="precio_unitario" v-model="precioseleccionado" mode="currency"
+                                    currency="BOB" locale="es-BO" :disabled="true" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-2">
+                                <label for="cantidad">Cantidad*</label>
+                                <InputNumber id="cantidad" v-model="cantidad" :min="0" :step="1" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-2">
+                                <label for="descuento">Descuento</label>
+                                <InputNumber id="descuento" v-model="descuento" mode="decimal" :minFractionDigits="2"
+                                    :maxFractionDigits="2" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="prec_total">Precio Total</label>
+                                <InputNumber id="prec_total" v-model="prectotal" mode="currency" currency="BOB"
+                                    locale="es-BO" :readonly="true" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3 p-d-flex p-ai-end">
+                                <Button label="Añadir item" icon="pi pi-plus" @click="agregarDetalle" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="dias_validez">Días de validez</label>
+                                <InputNumber id="dias_validez" v-model="dias_validez" :min="0" :step="1" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="tiempo_entrega">Tiempo de entrega</label>
+                                <InputText id="tiempo_entrega" v-model="tiempo_entrega" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="lugar_entrega">Lugar de entrega</label>
+                                <InputText id="lugar_entrega" v-model="lugar_entrega" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="forma_pago">Forma de pago</label>
+                                <InputText id="forma_pago" v-model="forma_pago" />
+                            </div>
+
+                            <div class="p-field p-col-12">
+                                <label for="nota">Nota</label>
+                                <Textarea id="nota" v-model="nota" autoResize rows="3" />
+                            </div>
+
+                            <div class="p-field p-col-12 p-md-3">
+                                <label for="imprimir">Imprimir</label>
+                                <Dropdown id="imprimir" v-model="imprimir" :options="options_print" optionLabel="label"
+                                    optionValue="value" placeholder="Seleccione" />
+                            </div>
+                        </div>
+
+                        <!-- Table for added items -->
+                        <DataTable :value="arrayDetalle">
+                            <Column header="Opciones">
+                                <template #body="slotProps">
+                                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text"
+                                        @click="eliminarDetalle(slotProps.index)" />
+                                </template>
+                            </Column>
+                            <Column field="codigo" header="Codigo"></Column>
+                            <Column field="nombre_articulo" header="Artículo"></Column>
+                            <Column field="precioseleccionado" header="Precio/U"></Column>
+                            <Column field="unidad_envase" header="Unid/Paq"></Column>
+                            <Column field="cantidad" header="Paquetes"></Column>
+                            <Column field="prectotal" header="Total"></Column>
+                        </DataTable>
+
+                        <div class="p-d-flex p-jc-end">
+                            <Button label="Cerrar" icon="pi pi-times" class="p-button-secondary p-mr-2"
+                                @click="ocultarDetalle" />
+                            <Button v-if="idcotizacionv !== ''" label="Editar Cotización" icon="pi pi-pencil"
+                                @click="editarCotizacion" />
+                            <Button v-else label="Registrar Cotización" icon="pi pi-check"
+                                @click="registrarCotizacion" />
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @click="cerrarModal()">Cerrar</button>
-                        <!-- <button type="button" v-if="tipoAccion == 1" class="btn btn-primary"
-                            @click="registrarPersona()">Guardar</button>
-                        <button type="button" v-if="tipoAccion == 2" class="btn btn-primary"
-                            @click="actualizarPersona()">Actualizar</button> -->
-                    </div>
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-        <!--Fin del modal-->
+                </template>
+            
+        </Panel>
+
+        <!-- Modal for selecting products -->
+        <Dialog :visible="modal" :containerStyle="{ width: '700px' }" :modal="true" :closable="false">
+            <template #header>
+                <h3>{{ tituloModal }}</h3>
+            </template>
+            <DataTable :value="arrayArticulo" :paginator="true" :rows="10">
+                <Column header="Opciones">
+                    <template #body="slotProps">
+                        <Button icon="pi pi-check" class="p-button-rounded p-button-success p-button-text"
+                            @click="agregarDetalleModal(slotProps.data)" />
+                    </template>
+                </Column>
+                <Column field="codigo" header="Código"></Column>
+                <Column field="nombre" header="Nombre"></Column>
+                <Column field="nombre_categoria" header="Categoría"></Column>
+                <Column field="precio_venta" header="Precio Venta"></Column>
+                <Column field="saldo_stock" header="Stock"></Column>
+                <Column field="condicion" header="Estado">
+                    <template #body="slotProps">
+                        <Tag :severity="slotProps.data.condicion ? 'success' : 'danger'"
+                            :value="slotProps.data.condicion ? 'Activo' : 'Desactivado'" />
+                    </template>
+                </Column>
+            </DataTable>
+            <template #footer>
+                <Button label="Cerrar" icon="pi pi-times" @click="cerrarModal" class="p-button-text" />
+            </template>
+        </Dialog>
+
         <detallecotizacionventa v-if="showModalDetalle" @cerrar="cerrarModalDetalles"
             @abrirVenta="abrirFormularioCotizacion" :arrayCotizacionSeleccionado="arrayCotizacionSeleccionado"
-            :arrayCotizacionVentDet="arrayCotizacionVentDet">
-        </detallecotizacionventa>
-        <registrarventa v-if="showRegistrarVenta" :arrayDetalleCotizacion="arrayDetallesAComprar"
-            :arrayCotizacionSeleccionado="arrayCotizacionSeleccionado" @cerrar="cerrarFormularioVenta">
-        </registrarventa>
+            :arrayCotizacionVentDet="arrayCotizacionVentDet" />
 
-        <!-- <div v-if="showRegistrarCompra" class="mx-3">
-            <registrarcompra @editarEstadoPedido="editarPedidoComprado"  @cerrar="cerrarFormularioCompra" 
-                :arrayDetallePedido="arrayDetallesAComprar" :arrayPedidoSeleccionado="arrayPedidoSeleccionado" @listarArticuloProveedor="listarArticuloProveedor" @abrirModalArticulos="abrirModalArticulos" 
-                :arrayArticuloSeleccionado="arrayArticuloSeleccionadoModal">
-            </registrarcompra>
-        </div> -->
-    </main>
+        <registrarventa v-if="showRegistrarVenta" :arrayDetalleCotizacion="arrayDetallesAComprar"
+            :arrayCotizacionSeleccionado="arrayCotizacionSeleccionado" @cerrar="cerrarFormularioVenta" />
+    </div>
 </template>
 
 <script>
 import vSelect from 'vue-select';
+import Card from 'primevue/card';
+import Button from 'primevue/button';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import InputText from 'primevue/inputtext';
+import Dropdown from 'primevue/dropdown';
+import Dialog from 'primevue/dialog';
+import Paginator from 'primevue/paginator';
+import Tag from 'primevue/tag';
+import InputNumber from "primevue/inputnumber";
+import Panel from 'primevue/panel';
+import Toast from 'primevue/toast';
 export default {
+    components: {
+        vSelect,
+        Card,
+        Button,
+        DataTable,
+        Column,
+        InputText,
+        Dropdown,
+        Dialog,
+        Paginator,
+        InputNumber,
+        Tag,
+        Panel,
+        Toast,
+    },
     data() {
         return {
             //-----
+            timeoutId: null,
             showRegistrarVenta: false,
             titulo: 'Cotizacion de Venta',
             telefono: '',
@@ -663,9 +392,7 @@ export default {
             this.calcularPrecioTotal();
         },
     },
-    components: {
-        vSelect
-    },
+
     computed: {
         isActived: function () {
             return this.pagination.current_page;
@@ -705,17 +432,6 @@ export default {
         }
     },
     methods: {
-
-        logout() {
-            axios.post('/logout')
-                .then(response => {
-                    window.location = '/'; // Redirigir al usuario a la página de inicio después del cierre de sesión
-                })
-                .catch(error => {
-                    console.error('Hubo un error al cerrar la sesión', error);
-                });
-        },
-
         calcularPrecioTotal() {
             // Calcula el valor total multiplicando cantidad por precio
             this.prectotal = this.cantidad * this.precioseleccionado;
@@ -784,17 +500,6 @@ export default {
             }).then(function (response) {
                 console.log(me.idcotizacion);
                 me.eliminarCotizacion(me.idcotizacion);
-                // axios.delete('/cotizacionventa/eliminar/' + { id:  me.idcotizacion})
-                //     .then(response => {
-                //         // Manejar la respuesta exitosa aquí, si es necesario
-                //         console.log(response.data);
-                //         console.log("Eliminada");
-                //     })
-                //     .catch(error => {
-                //         // Manejar el error aquí, si es necesario
-                //         console.error(error);
-                //     });
-                //console.log(response.data.id);
                 if (response.data.id > 0) {
                     me.listado = 1;
                     me.listarCotizacion(1, '', '');
@@ -989,50 +694,23 @@ export default {
                 }
             })
         },
-        atajoButton: function (event) {
-            //console.log(event.keyCode);
-            //console.log(event.ctrlKey);
-            if (event.shiftKey && event.keyCode === 81) {
-                event.preventDefault();
-                this.$refs.impuestoRef.focus();
-            }
-            if (event.shiftKey && event.keyCode === 87) {
-                event.preventDefault();
-                this.$refs.serieComprobanteRef.focus();
-            }
-            if (event.shiftKey && event.keyCode === 69) {
-                event.preventDefault();
-                this.$refs.numeroComprobanteRef.focus();
-            }
-            if (event.shiftKey && event.keyCode === 82) {
-                event.preventDefault();
-                this.$refs.articuloRef.focus();
-            }
-            if (event.shiftKey && event.keyCode === 84) {
-                event.preventDefault();
-                this.$refs.precioRef.focus();
-            }
-            if (event.shiftKey && event.keyCode === 89) {
-                event.preventDefault();
-                this.$refs.cantidadRef.focus();
-            }
-            if (event.shiftKey && event.keyCode === 85) {
-                event.preventDefault();
-                this.$refs.descuentoRef.focus();
-            }
-        },
-        listarCotizacion(page, buscar, criterio) {
+        listarCotizacion(page, buscar) {
             let me = this;
-            var url = '/cotizacionventa?page=' + page + '&buscar=' + buscar + '&criterio=' + criterio;
+            var url = '/cotizacionventa?page=' + page + '&buscar=' + buscar;
             axios.get(url).then(function (response) {
                 var respuesta = response.data;
-
                 me.arrayVenta = respuesta.cotizacion_venta.data;
                 me.pagination = respuesta.pagination;
             })
                 .catch(function (error) {
                     console.log(error);
                 });
+        },
+        debounceSearch() {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = setTimeout(() => {
+                this.listarCotizacion(1, this.buscar);
+            }, 200); // Espera 300ms después de que el usuario deja de escribir
         },
 
         selectCliente(numero) {
@@ -1077,11 +755,6 @@ export default {
                 me.telefono = val1.telefono;
                 console.log("Telefono", val1.telefono);
             }
-            //-----
-            // me.nitcliente=val1.num_documento;
-            // console.log(val1.num_documento);
-            // me.telefono= val1.telefono;
-            // console.log("Telefono",val1.telefono);
         },
 
         buscarArticulo() {
@@ -1166,24 +839,9 @@ export default {
                             descuento: me.descuento,
                             unidad_envase: me.arrayArticuloSeleccionado[0].unidad_envase,
                             prectotal: me.prectotal,
-                            // precio : me.arrayArticuloSeleccionado[0].precio,
-                            // cantidad: me.cantidad,
-                            // total: me.Sumatotal,
 
-                            // idarticulo: me.idarticulo,
-                            // articulo: me.articulo,
-                            // cantidad: me.cantidad,
-                            // precio: me.precio,
-                            // descuento: me.descuento,
-                            // stock: me.stock
                         });
-                        // me.codigo = '';
-                        // me.idarticulo = 0;
-                        // me.articulo = '';
-                        // me.cantidad = 0;
-                        // me.precio = 0;
-                        // me.descuento = 0;
-                        // me.stock = 0
+
                     }
                 }
 
@@ -1209,8 +867,7 @@ export default {
                     saldo_stock: data['saldo_stock'],
                     nombre_articulo: data['nombre'],
                     unidad_envase: data['unidad_envase'],
-                    // precio_costo_paq: data['precio_costo_paq'],
-                    // precio_costo_unid: data['precio_costo_unid'],
+
                     fotografia: data['fotografia'],
                     precio_uno: data['precio_uno'],
                     precio_dos: data['precio_dos'],
@@ -1225,14 +882,7 @@ export default {
                 me.precio_dos = me.arrayArticuloSeleccionado[0]['precio_dos'];
                 me.precio_tres = me.arrayArticuloSeleccionado[0]['precio_tres'];
                 me.precio_cuatro = me.arrayArticuloSeleccionado[0]['precio_cuatro'];
-                // me.arrayDetalle.push({
-                //     idarticulo: data['id'],
-                //     articulo: data['nombre'],
-                //     cantidad: 1,
-                //     precio: data['precio_venta'],
-                //     descuento: 0,
-                //     stock: data['stock']
-                // });
+
             }
         },
         listarArticulo(buscar, criterio) {
@@ -1252,9 +902,6 @@ export default {
         imprimirTicket(id) {
             axios.get('/cotizacionventa/imprimir/' + id, { responseType: 'blob' })
                 .then(function (response) {
-                    //window.location.href = "docs/ticket.pdf";  esto sirve para ver lo que se va a imprimir
-                    //const fileURL = 'docs/ticket.pdf';         pero si esta comentado, no aparece, se imprime automaticamente
-                    //window.open(fileURL, '_blank');            bueno, eso suponemos. Att: los practicantes
                     console.log("Se generó el Ticket correctamente");
                 })
                 .catch(function (error) {
@@ -1263,20 +910,12 @@ export default {
         },
 
         registrarCotizacion() {
-
-
             if (this.validarCotizacion()) {
                 console.log("Rellene todos los campos");
                 return;
             }
 
             let me = this;
-            // var fechaHoy = new Date();
-            // console.log(me.dias_validez);
-            // fechaHoy.setDate(fechaHoy.getDate() + parseInt( me.dias_validez,10));
-            // console.log(fechaHoy);
-            // console.log(fechaHoy);
-
             axios.post('/cotizacionventa/registrar', {
                 'idcliente': this.idcliente,
                 'impuesto': this.impuesto,
@@ -1289,13 +928,12 @@ export default {
                 'nota': this.nota,
                 'idalmacen': this.idalmacen,
                 'data': this.arrayDetalle
-
             }).then(function (response) {
-                console.log("cotizacion_Ventas_Registraado");
+                console.log("cotizacion_Ventas_Registrado");
                 me.imprimirTicket(response.data.id);
-                //console.log(response.data.id);
+
                 if (response.data.id > 0) {
-                    console.log("cotizacionREgistraado" + me.listado);
+                    console.log("cotizacionRegistrado" + me.listado);
 
                     me.listado = 1;
                     me.listarCotizacion(1, '', '');
@@ -1310,33 +948,28 @@ export default {
                     me.codigo = '';
                     me.descuento = 0;
                     me.arrayDetalle = [];
-                    // window.open('/cotizacionventa/pdf/'+ response.data.id);
                 } else {
                     if (response.data.valorMaximo) {
-                        //alert('El valor de descuento no puede exceder el '+ response.data.valorMaximo);
                         swal(
                             'Aviso',
                             'El valor de descuento no puede exceder el ' + response.data.valorMaximo,
                             'warning'
-                        )
+                        );
                         return;
                     } else {
-                        //alert(response.data.caja_validado); 
                         swal(
                             'Aviso',
                             response.data.caja_validado,
                             'warning'
-                        )
+                        );
                         return;
                     }
-                    //console.log(response.data.valorMaximo)
                 }
-
             }).catch(function (error) {
                 console.log(error);
             });
-            this.logout();
         },
+
         validarCotizacion() {
             let me = this;
             me.errorVenta = 0;
@@ -1423,9 +1056,6 @@ export default {
                                     me.forma_pago = data['forma_pago'];
                                     me.nota = data['nota'];
                                     me.prectotal = data['total'];
-
-                                    //me.label = data['nombre_proveedor'];
-                                    //selectProveedor(search, loading);
                                     me.verCotizacionDet(data);
                                     break;
                                 }
@@ -1545,29 +1175,6 @@ export default {
             });
 
         },
-        // mostrarDetalle(titulo,ventaid) {
-        //     let me = this;
-        //     me.listado = 0;
-        //     me.titulocard=titulo;
-
-        //     if (me.titulocard=="REGISTRAR COTIZACIÒN"){
-        //         me.idproveedor = 0;
-        //         me.impuesto = 0.18;
-        //         me.total = 0.0;
-        //         me.idarticulo = 0;
-        //         me.articulo = '';
-        //         me.cantidad = 0;
-        //         me.precio = 0;
-        //         me.arrayDetalle = [];
-        //     }else{
-
-        //         me.actualizarCotizacion(ventaid);
-
-
-        //     }
-
-
-        // },
         ocultarDetalle() {
             this.listado = 1;
             this.num_comprobante = '';
@@ -1575,7 +1182,7 @@ export default {
             this.arrayArticulo = [];
             this.serie_comprobante = '';
             this.idcotizacionv = '';
-            this.logout();
+
         },
         actualizarCotizacion(id) {
             let me = this;
@@ -1621,43 +1228,6 @@ export default {
                     console.log(error);
                 });
         },
-
-
-        // verVenta(id) {
-        //     let me = this;
-        //     me.titulocard="COTIZACION";
-        //     me.listado = 2;
-
-        //     //Obtener datos del ingreso
-        //     var arrayVentaT = [];
-        //     var url = '/cotizacionventa/obtenerCabecera?id=' + id;
-
-        //     axios.get(url).then(function (response) {
-        //         var respuesta = response.data;
-        //         arrayVentaT = respuesta.cotizacion;
-
-        //         me.cliente = arrayVentaT[0]['nombre'];
-        //         me.impuesto = arrayVentaT[0]['impuesto'];
-        //         me.total = arrayVentaT[0]['total'];
-        //     })
-        //         .catch(function (error) {
-        //             console.log(error);
-        //         });
-
-        //     //obtener datos de los detalles
-        //     var url = '/cotizacionventa/obtenerDetalles?id=' + id;
-
-        //     axios.get(url).then(function (response) {
-        //         //console.log(response);
-        //         var respuesta = response.data;
-        //         me.arrayDetalle = respuesta.detalles;
-
-        //     })
-        //         .catch(function (error) {
-        //             console.log(error);
-        //         });
-        // },
-
         cerrarModal() {
             this.modal = 0;
             this.tituloModal = '';
@@ -1723,50 +1293,24 @@ export default {
     }
 }
 </script>
-<style>
-.fit-content {
-    width: 1%;
-    white-space: nowrap;
+<style scoped>
+>>> .p-panel-header {
+    padding: 0.75rem;
 }
-
-.modal-content {
-    width: 100% !important;
-    position: absolute !important;
-}
-
-.mostrar {
-    display: list-item !important;
-    opacity: 1 !important;
-    position: absolute !important;
-    background-color: #3c29297a !important;
-}
-
-.div-error {
+.panel-header {
     display: flex;
-    justify-content: center;
+    align-items: center;
 }
 
-.text-error {
-    color: red !important;
-    font-weight: bold;
+.panel-icon {
+    font-size: 2rem;
+    padding-left: 10px;
 }
 
-.small-text {
-    font-size: 12px;
-    white-space: nowrap;
-    color: darkgrey;
+.panel-icon {
+    font-size: 1.5rem;
+    margin: 0;
 }
 
-@media (min-width: 600px) {
-    .btnagregar {
-        margin-top: 2rem;
-    }
-}
-
-.card-img {
-    width: 120px;
-    height: auto;
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
 </style>
+

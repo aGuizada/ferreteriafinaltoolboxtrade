@@ -1786,7 +1786,7 @@ export default {
             var resivo = [];
             resivo.push({
                 cabecera: {
-                    municipio: "Cochabamba",
+                    municipio: "Cochabamba",        
                     telefono: "77490451",
                     numeroResivo: numeroResivo,
                     codigoSucursal: 0,

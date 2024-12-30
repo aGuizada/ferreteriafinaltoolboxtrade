@@ -24,71 +24,59 @@ class CotizacionVentaController extends Controller
 {
     public function index(Request $request)
     {
-        if (!$request->ajax())
-            return redirect('/');
-
+        if (!$request->ajax()) return redirect('/');
+    
         $buscar = $request->buscar;
-        $criterio = $request->criterio;
-        if ($buscar == '') {
-            $cotizacion_venta = CotizacionVenta::join('personas', 'cotizacion_venta.idcliente', '=', 'personas.id')
-                ->join('users', 'cotizacion_venta.idusuario', '=', 'users.id')
-                ->join('almacens','cotizacion_venta.idalmacen','=','almacens.id')
-                ->select(
-                    'cotizacion_venta.id',
-                    'cotizacion_venta.idcliente',
-                    'cotizacion_venta.idusuario',
-                    'cotizacion_venta.idalmacen',                    
-                    'almacens.nombre_almacen', 
-                    'cotizacion_venta.fecha_hora',
-                    'cotizacion_venta.impuesto',
-                    'cotizacion_venta.total',
-                    'cotizacion_venta.estado',
-                    'cotizacion_venta.plazo_entrega',
-                    'cotizacion_venta.tiempo_entrega',
-                    'cotizacion_venta.lugar_entrega',
-                    'cotizacion_venta.forma_pago',
-                    'cotizacion_venta.nota',
-                    'cotizacion_venta.validez',
-                    'cotizacion_venta.condicion',
-                    
-
-
-                    'personas.nombre',
-                    'personas.num_documento',
-                    'personas.telefono',
-
-                    'users.usuario'
-                )
-                ->orderBy('cotizacion_venta.id', 'desc')->paginate(10);
-        } else {
-            $cotizacion_venta = CotizacionVenta::join('personas', 'cotizacion_venta.idcliente', '=', 'personas.id')
-                ->join('users', 'cotizacion_venta.idusuario', '=', 'users.id')
-                ->select(
-                    'cotizacion_venta.id',
-                    'cotizacion_venta.idcliente',
-                    'cotizacion_venta.fecha_hora',
-                    'cotizacion_venta.impuesto',
-                    'cotizacion_venta.total',
-                    'cotizacion_venta.estado',
-                    'cotizacion_venta.plazo_entrega',
-                    'cotizacion_venta.tiempo_entrega',
-                    'cotizacion_venta.lugar_entrega',
-                    'cotizacion_venta.forma_pago',
-                    'cotizacion_venta.nota',
-                    'cotizacion_venta.validez',
-                    'cotizacion_venta.condicion',
-
-
-                    'personas.nombre',
-                    'personas.num_documento',
-                    'personas.telefono',
-
-                    'users.usuario'
-                )
-                ->where('cotizacion_venta.' . $criterio, 'like', '%' . $buscar . '%')
-                ->orderBy('cotizacion_venta.id', 'desc')->paginate(6);
+    
+        $cotizacion_venta = CotizacionVenta::join('personas', 'cotizacion_venta.idcliente', '=', 'personas.id')
+            ->join('users', 'cotizacion_venta.idusuario', '=', 'users.id')
+            ->join('almacens','cotizacion_venta.idalmacen','=','almacens.id')
+            ->select(
+                'cotizacion_venta.id',
+                'cotizacion_venta.idcliente',
+                'cotizacion_venta.idusuario',
+                'cotizacion_venta.idalmacen',
+                'almacens.nombre_almacen',
+                'cotizacion_venta.fecha_hora',
+                'cotizacion_venta.impuesto',
+                'cotizacion_venta.total',
+                'cotizacion_venta.estado',
+                'cotizacion_venta.plazo_entrega',
+                'cotizacion_venta.tiempo_entrega',
+                'cotizacion_venta.lugar_entrega',
+                'cotizacion_venta.forma_pago',
+                'cotizacion_venta.nota',
+                'cotizacion_venta.validez',
+                'cotizacion_venta.condicion',
+                'personas.nombre',
+                'personas.num_documento',
+                'personas.telefono',
+                'users.usuario'
+            );
+    
+        if ($buscar != '') {
+            $cotizacion_venta->where(function($query) use ($buscar) {
+                $query->where('cotizacion_venta.id', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.fecha_hora', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.total', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.estado', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.plazo_entrega', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.tiempo_entrega', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.lugar_entrega', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.forma_pago', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.nota', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.validez', 'like', '%' . $buscar . '%')
+                    ->orWhere('cotizacion_venta.condicion', 'like', '%' . $buscar . '%')
+                    ->orWhere('personas.nombre', 'like', '%' . $buscar . '%')
+                    ->orWhere('personas.num_documento', 'like', '%' . $buscar . '%')
+                    ->orWhere('personas.telefono', 'like', '%' . $buscar . '%')
+                    ->orWhere('users.usuario', 'like', '%' . $buscar . '%')
+                    ->orWhere('almacens.nombre_almacen', 'like', '%' . $buscar . '%');
+            });
         }
-
+    
+        $cotizacion_venta = $cotizacion_venta->orderBy('cotizacion_venta.id', 'desc')->paginate(10);
+    
         return [
             'pagination' => [
                 'total' => $cotizacion_venta->total(),
@@ -420,97 +408,6 @@ class CotizacionVentaController extends Controller
         }
     }
 
-    public function imprimirTicket($id)
-    {
-        $venta = CotizacionVenta::join('personas', 'cotizacion_venta.idcliente', '=', 'personas.id')
-            ->select(
-                'cotizacion_venta.id',
-                'cotizacion_venta.nota',
-                'cotizacion_venta.total',
-                'cotizacion_venta.created_at',
-                'personas.nombre',
-                'personas.num_documento',
-
-            )
-            ->where('cotizacion_venta.id', '=', $id)
-            ->take(1)
-            ->first();
-                    
-        $pdf = new FPDF();
-
-        
-        $numticket = $venta->id;
-        $montoTotal = $venta->total;
-        $cliente = $venta->nombre;
-        $nit = $venta->num_documento;
-        $glosa = $venta->nota;
-        $fecha = $venta->created_at;
-
-        $pdf->AddPage('P', array(70, 75));
-        $pdf->SetMargins(0, 0); 
-        $pdf->SetAutoPageBreak(false);
-
-        $pdf->SetFont('Arial', '', 12);
-        $pdf->Cell(0, 10, "CODENSA CBBA", 0, 1, 'L');        
-
-        $pdf->Cell(0, 5, "TICKET", 0, 1, 'C');
-        $pdf->Cell(0, 5, "-------------------------------------------------", 0, 1, 'C');
-
-
-        $pdf->SetFont('Arial', 'B', 10);
-
-        $pdf->Cell(0, 5, "Num Ticket: ", 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(-91, 5, $numticket, 0, 1, 'C');
-
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(0, 5, "Fecha: ", 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(-77, 5, $fecha, 0, 1, 'C');
-
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(0, 5, "Nit: ", 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(-110, 5, $nit, 0, 1, 'C');
-
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(0, 5, "Cliente: ", 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(-74, 5, $cliente, 0, 1, 'C');
-
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->MultiCell(0, 5, "Glosa: ", 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->MultiCell(0, 5, $glosa, 0, 'L');
-
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(0, 8, "Monto Bs: ", 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(-92, 8, $montoTotal, 0, 1, 'C');
-        
-
-        $pdfPath = public_path('docs/ticket.pdf');
-        $printerName = "POS-80";
-        $pdf->Output($pdfPath, 'F');
-    
-        $cutCommand = "\x1B" . "m";
-        file_put_contents($pdfPath, $cutCommand, FILE_APPEND);
-
-        // Imprimir el PDF con Adobe Reader
-        $escapedPdfPath = escapeshellarg($pdfPath);
-        $escapedPrinterName = escapeshellarg($printerName);
-        $acrobatPath = '"C:\\Program Files\\Adobe\\Acrobat Reader DC\\Reader\\AcroRd32.exe"';
-        $command = "$acrobatPath /t $escapedPdfPath $escapedPrinterName";
-        $output = shell_exec($command);
-
-        // Verificar la salida o manejar errores si es necesario
-        if ($output === null) {
-            return response()->json(['error' => 'Error al imprimir el archivo PDF.']);
-        } else {
-            return response()->json(['message' => 'Archivo PDF enviado a la impresora.']);
-        }
-
-        return response()->download($pdfPath);
-    }
+   
 
 }
