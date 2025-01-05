@@ -167,7 +167,7 @@ class CotizacionVentaController extends Controller
             )
             ->where('cotizacion_venta.id', '=', $id)
             ->orderBy('cotizacion_venta.id', 'desc')->take(1)->get();
-
+    
         $detalles = DetalleCotizacionVenta::join('articulos', 'detalle_cotizacion.idarticulo', '=', 'articulos.id')
             ->select(
                 'detalle_cotizacion.cantidad',
@@ -177,13 +177,19 @@ class CotizacionVentaController extends Controller
             )
             ->where('detalle_cotizacion.idcotizacion', '=', $id)
             ->orderBy('detalle_cotizacion.id', 'desc')->get();
-
-        // $numventa = Venta::select('num_comprobante')->where('id', $id)->get();
-
-        $pdf = \PDF::loadView('pdf.cotizacionpdf', ['venta' => $venta, 'detalles' => $detalles]);
+    
+        $fechaVenta = $venta[0]->created_at->format('d/m/Y');
+        $horaVenta = $venta[0]->created_at->format('H:i');
+    
+        $pdf = \PDF::loadView('pdf.cotizacionpdf', [
+            'venta' => $venta,
+            'detalles' => $detalles,
+            'fechaVenta' => $fechaVenta,
+            'horaVenta' => $horaVenta
+        ]);
         return $pdf->download('cotizacion' . '.pdf');
-
     }
+    
     public function store(Request $request)
     {
         if (!$request->ajax())
