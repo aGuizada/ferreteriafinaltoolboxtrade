@@ -36,9 +36,9 @@ class ClienteController extends Controller
         });
         $usuarios = $usuarios->whereNull('direccion')->where('usuario', '>', 0);
         
-        if (!empty($usuarioid)) {
+        /*if (!empty($usuarioid)) {
             $usuarios = $usuarios->where('personas.usuario', '=', $usuarioid);
-        }
+        }*/
 
         // Aplicar filtros de búsqueda si están presentes
         if (!empty($buscar)) {

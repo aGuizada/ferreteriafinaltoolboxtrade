@@ -57,6 +57,8 @@
                         <Button icon="pi pi-lock" class="p-button-danger p-button-sm"
                             @click="cerrarCaja(slotProps.data.id)"
                             v-if="slotProps.data.estado && arqueoRealizado"></Button>
+                        <Button icon="pi pi-download" class="p-button-success p-button-sm" 
+                            @click="descargarCajasPDF(slotProps.data.id)" v-if="!slotProps.data.estado"></Button>
                     </template>
                 </Column>
             </DataTable>
@@ -570,7 +572,7 @@ export default {
         }
     },
     methods: {
-        generarPDF() {
+    generarPDF() {
   axios({
     url: `/caja/resumen-pdf/${this.resumenCaja.id}`,
     method: 'GET',
@@ -584,6 +586,8 @@ export default {
     link.click();
   });
 },
+
+
         abrirModalResumen() {
             this.modalResumen = true;
         },

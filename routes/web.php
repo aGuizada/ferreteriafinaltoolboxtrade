@@ -435,7 +435,9 @@ Route::group(["middleware" => ["auth"]], function () {
             "/ingreso/generar-pdf-boleta/{idIngreso}",
             "IngresoController@generarPdfBoleta"
         );
-
+        
+        
+        
         //------sucursales
         //Lisar sucursal
         Route::get("/sucursal", "SucursalController@index");

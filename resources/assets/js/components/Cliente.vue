@@ -11,21 +11,21 @@
                 </template>
             <template>
                 <div class="p-grid p-mb-3">
-                    <div class="p-col-12 p-md-6">
-                        <div class="p-inputgroup">
-                            <Dropdown v-model="criterio" :options="criterioOptions" optionLabel="label"
-                                optionValue="value" placeholder="Seleccionar criterio" class="p-mr-2" />
-                            <InputText v-model="buscar" placeholder="Texto a buscar"
-                                @input="listarPersona(1, buscar, criterio)" />
+                    <div class="p-col-12">
+                        <div v-if="rolUsuario == 1 || rolUsuario == 2" class="p-col-12 p-md-6">
+                            <label class="p-mb-2"><strong>Buscar Cliente por Usuario</strong></label>
+                            <AutoComplete 
+                                v-model="usuarioSeleccionadodos" 
+                                :suggestions="arrayUsuarioFiltro" 
+                                @complete="selectUsuarioFiltro" 
+                                field="nombre" 
+                                @item-select="getDatosUsuarioFiltro" 
+                                placeholder="Buscar Usuario..." />
                         </div>
                     </div>
-                    <div v-if="rolUsuario == 1" class="p-col-12 p-md-6">
-                        <label class="p-mb-2"><strong>Buscar Cliente por Usuario</strong></label>
-                        <AutoComplete v-model="usuarioSeleccionadodos" :suggestions="arrayUsuarioFiltro"
-                            @complete="selectUsuarioFiltro" field="nombre" @item-select="getDatosUsuarioFiltro"
-                            placeholder="Buscar Usuario..." />
-                    </div>
                 </div>
+
+
                 <DataTable :value="arrayPersona" class="p-datatable-gridlines p-datatable-sm" :paginator="true"
                     :rows="pagination.per_page" :totalRecords="pagination.total" :lazy="true"
                     :rowsPerPageOptions="[5, 10, 20]" @page="onPageChange"

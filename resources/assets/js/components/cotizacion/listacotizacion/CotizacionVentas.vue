@@ -22,18 +22,12 @@
                         <div class="form-group row">
                             <div class="col-md-6">
                                 <div class="input-group">
-                                    <select class="form-control col-md-3" v-model="criterio">
-                                        <option value="tipo_comprobante">Tipo Comprobante</option>
-                                        <option value="num_comprobante">Número Comprobante</option>
-                                        <option value="fecha_hora">Fecha-Hora</option>
-                                    </select>
-                                    <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar, criterio)"
-                                        class="form-control" placeholder="Texto a buscar">
-                                    <!--button type="submit" @click="listarCotizacion(1, buscar, criterio)" class="btn btn-primary"><i
-                                            class="fa fa-search"></i> Buscar</button-->
+                                    <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar)"
+                                        class="form-control" placeholder="Buscar por número, nombre o fecha-hora">
                                 </div>
                             </div>
                         </div>
+
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped table-sm">
                                 <thead>
@@ -673,6 +667,25 @@ export default {
         }
     },
     methods: {
+
+        listarCotizacion(pagina, buscar) {
+            let criterio = '';
+            
+            // Determinar el criterio según el contenido de la búsqueda
+            if (/^\d+$/.test(buscar)) {
+                // Si la búsqueda es un número (por ejemplo, número de comprobante)
+                criterio = 'num_comprobante';
+            } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(buscar)) {
+                // Si la búsqueda es una fecha y hora en formato 'YYYY-MM-DD HH:mm:ss'
+                criterio = 'fecha_hora';
+            } else {
+                // Si es cualquier otra cosa, se asume que es un nombre o tipo de comprobante
+                criterio = 'tipo_comprobante';
+            }
+        
+            // Ahora puedes realizar la búsqueda según el 'criterio' y el valor de 'buscar'
+            // Realiza la búsqueda según el 'criterio' y el valor de 'buscar'
+        },
 
         logout() {
             axios.post('/logout')
