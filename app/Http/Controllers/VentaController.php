@@ -994,7 +994,7 @@ public function imprimirResivoRollo($id) {
             $pdf->Cell(0, 5, utf8_decode(strtoupper('TELÉFONO: ' . $empresa->telefono)), 0, 1, 'C');
             $pdf->Cell(0, 5, utf8_decode(strtoupper('EMAIL: ' . $empresa->email)), 0, 1, 'C');
             $pdf->Cell(0, 5, utf8_decode(strtoupper('NIT: ' . $empresa->nit)), 0, 1, 'C');
-            $pdf->Cell(0, 5, utf8_decode(strtoupper('LICENCIA: ' . $empresa->licencia)), 0, 1, 'C');
+           
 
             $pdf->Ln(5);
 
@@ -1073,7 +1073,9 @@ public function imprimirResivoRollo($id) {
 
 
 
-public function imprimirResivoCarta($id) {
+
+public function imprimirResivoCarta($id)
+{
     try {
         $venta = Venta::with('detalles.producto')->find($id);
         if (!$venta) {
@@ -1096,22 +1098,20 @@ public function imprimirResivoCarta($id) {
             $pdf->SetAutoPageBreak(true, 20);
             $pdf->AddPage();
 
-            // Logos a los costados
-            $logoPathLeft = storage_path('app/public/logos/' . $empresa->logo);
-            $logoPathRight = storage_path('app/public/logos/' . $empresa->logo); // Puedes definir un logo diferente si lo necesitas
-            $logoWidth = 40; // Ancho del logo en mm
-
-        
-
-            // Logo derecho
-            if (file_exists($logoPathRight)) {
-                $pdf->Image($logoPathRight, 160, 10, $logoWidth); // Logo a la derecha
+            // Logo
+            if ($empresa->logo) {
+                $logoPath = storage_path('app/public/logos/' . $empresa->logo);
+                if (file_exists($logoPath)) {
+                    $logoWidth = 40; // Ancho del logo en mm
+                    $pdf->Image($logoPath, 160, 10, $logoWidth);
+                }
             }
 
-            // Título RECIBO DE PAGO
+            // Título RECIBO DE VENTA
             $pdf->SetFont('Courier', 'B', 14);
-            $pdf->Cell(0, 10, 'RECIBO DE PAGO', 0, 1, 'C');
+            $pdf->Cell(0, 10, 'RECIBO DE VENTA', 0, 1, 'C');
             $pdf->SetFont('Courier', '', 10);
+            $pdf->Cell(0, 5, utf8_decode('No. ' . $id), 0, 1, 'C');
 
             // Información de la empresa
             $pdf->SetFont('Courier', 'B', 8);
@@ -1121,13 +1121,13 @@ public function imprimirResivoCarta($id) {
             $pdf->Cell(0, 5, utf8_decode(strtoupper('TELÉFONO: ' . $empresa->telefono)), 0, 1, 'C');
             $pdf->Cell(0, 5, utf8_decode(strtoupper('EMAIL: ' . $empresa->email)), 0, 1, 'C');
             $pdf->Cell(0, 5, utf8_decode(strtoupper('NIT: ' . $empresa->nit)), 0, 1, 'C');
+           
             $pdf->Ln(5);
 
             $fecha = date('d/m/Y', strtotime($venta->created_at));
             $hora = date('H:i:s', strtotime($venta->created_at));
             $pdf->Cell(50, 6, utf8_decode('FECHA: ' . strtoupper($fecha)), 0, 0, 'L');
-            $pdf->Cell(50, 6, utf8_decode('HORA: ' . strtoupper($hora)), 0, 0, 'L');
-            $pdf->Cell(50, 6, utf8_decode('NUM RECIBO: ' . strtoupper($id)), 0, 1, 'L');
+            $pdf->Cell(50, 6, utf8_decode('HORA: ' . strtoupper($hora)), 0, 1, 'L');
 
             $clienteInfo = utf8_decode('CLIENTE: ' . strtoupper($persona->nombre) . '                 DOCUMENTO: ' . strtoupper($persona->num_documento));
             $pdf->Cell(0, 6, $clienteInfo, 0, 1, 'L');
@@ -1143,12 +1143,16 @@ public function imprimirResivoCarta($id) {
             $pdf->SetFont('Courier', '', 9);
             $total = 0;
             foreach ($venta->detalles as $detalle) {
+                $producto = $detalle->producto;
                 $subtotal = $detalle->cantidad * $detalle->precio;
                 $total += $subtotal;
-                $pdf->Cell(90, 6, utf8_decode(strtoupper($detalle->producto->nombre)), 1, 0);
+                
+                $pdf->Cell(90, 6, utf8_decode(strtoupper(substr($producto->nombre, 0, 30))), 1, 0);
                 $pdf->Cell(25, 6, utf8_decode(strtoupper($detalle->cantidad)), 1, 0, 'C');
                 $pdf->Cell(35, 6, utf8_decode(strtoupper(number_format($detalle->precio, 2))), 1, 0, 'R');
                 $pdf->Cell(35, 6, utf8_decode(strtoupper(number_format($subtotal, 2))), 1, 1, 'R');
+                
+              
             }
 
             $pdf->SetFont('Courier', 'B', 10);
@@ -1158,8 +1162,23 @@ public function imprimirResivoCarta($id) {
             $formatter = new NumberFormatter("es", NumberFormatter::SPELLOUT);
             $totalTexto = strtoupper($formatter->format($total)) . ' BOLIVIANOS';
             $pdf->SetFont('Courier', 'B', 8);
-            $pdf->Cell(0, 5, 'SON: ' . $totalTexto, 0, 1);
             
+            // Dividir el texto en dos líneas si es muy largo
+            if (strlen($totalTexto) > 90) {
+                $primeraParte = substr($totalTexto, 0, 90);
+                $ultimoEspacio = strrpos($primeraParte, ' ');
+                if ($ultimoEspacio !== false) {
+                    $primeraParte = substr($totalTexto, 0, $ultimoEspacio);
+                    $segundaParte = substr($totalTexto, $ultimoEspacio + 1);
+                    $pdf->Cell(0, 5, 'SON:', 0, 1);
+                    $pdf->MultiCell(0, 5, $primeraParte . "\n" . $segundaParte, 0, 'L');
+                } else {
+                    $pdf->MultiCell(0, 5, 'SON: ' . $totalTexto, 0, 'L');
+                }
+            } else {
+                $pdf->Cell(0, 5, 'SON: ' . $totalTexto, 0, 1);
+            }
+
             $pdf->Ln(5);
             $pdf->SetFont('Courier', 'B', 8);
             $pdf->Cell(0, 5, utf8_decode('FORMA DE PAGO:'), 0, 1);
@@ -1199,6 +1218,7 @@ public function imprimirResivoCarta($id) {
         return response()->json(['error' => 'OCURRIÓ UN ERROR AL IMPRIMIR EL RECIBO EN CARTA'], 500);
     }
 }
+
 
 
     public function selectRoles(Request $request)

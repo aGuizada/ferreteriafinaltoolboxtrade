@@ -409,94 +409,74 @@
                             </div>
                         </template> -->
                         <template>
-                            <!-- <div v-if="tipoVenta === 'contado'" class="payment-options"> -->
-                            <TabView class="custom-tabview">
-                                <TabPanel header="Efectivo">
-                                    <div class="p-grid p-fluid">
-                                        <div class="p-col-12 p-md-7">
-                                            <Card>
-                                                <template #content>
-                                                    <div class="p-fluid">
-                                                        <div class="p-field">
-                                                            <label for="montoEfectivo"><i
-                                                                    class="pi pi-money-bill p-mr-2" /> Monto
-                                                                Recibido:</label>
-                                                            <div class="p-inputgroup">
-                                                                <span class="p-inputgroup-addon">{{ monedaVenta[1]
-                                                                    }}</span>
-                                                                <InputNumber id="montoEfectivo" v-model="recibido"
-                                                                    placeholder="Ingrese el monto recibido" />
-                                                            </div>
-                                                        </div>
-                                                        <div class="p-field">
-                                                            <label for="cambioRecibir"><i class="pi pi-sync p-mr-2" />
-                                                                Cambio a Entregar:</label>
-                                                            <InputText id="cambioRecibir"
-                                                                :value="(recibido - calcularTotal * parseFloat(monedaVenta[0])).toFixed(2)"
-                                                                readonly />
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </Card>
-                                        </div>
-                                        <div class="p-col-12 p-md-5">
-                                            <Card>
-                                                <template #content>
-                                                    <h5>Detalle de Venta</h5>
-                                                    <div class="p-d-flex p-jc-between p-mb-2">
-                                                        <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
-                                                        <span class="p-text-bold">{{ (calcularTotal *
-                                                            parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1]
-                                                            }}</span>
-                                                    </div>
-                                                    <div class="p-d-flex p-jc-between">
-                                                        <span><i class="pi pi-money-bill p-mr-2" /> Total a
-                                                            Pagar:</span>
-                                                        <span class="p-text-bold p-text-xl">{{ (calcularTotal *
-                                                            parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1]
-                                                            }}</span>
-                                                    </div>
-                                                </template>
-                                            </Card>
-                                            <Button label="Registrar Pago" icon="pi pi-check"
-                                                class="p-button-success p-mt-2 p-button-lg p-button-raised"
-                                                @click="aplicarDescuento" />
-                                        </div>
+    <TabView class="custom-tabview">
+        <TabPanel header="Efectivo">
+            <div class="p-grid p-fluid">
+                <div class="p-col-12 p-md-7">
+                    <Card>
+                        <template #content>
+                            <div class="p-fluid">
+                                <div class="p-field">
+                                    <label for="montoEfectivo">
+                                        <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
+                                    </label>
+                                    <div class="p-inputgroup">
+                                        <span class="p-inputgroup-addon">{{ monedaVenta[1] }}</span>
+                                        <InputNumber 
+                                            id="montoEfectivo" 
+                                            v-model="recibido" 
+                                            placeholder="Ingrese el monto recibido"
+                                            :class="{ 'p-invalid': montoInvalido }"
+                                        />
                                     </div>
-                                </TabPanel>
-
-                                <!-- <TabPanel header="QR">
-        <div class="p-grid p-fluid">
-          <div class="p-col-12 p-md-8 p-lg-6 p-mx-auto">
-            <Card>
-              <template #content>
-                <div class="form-group">
-                  <input v-model="alias" readonly style="display: none" />
-                </div>
-                <div class="form-group">
-                  <label for="montoEfectivo">Monto:</label>
-                  <span class="font-weight-bold">{{ (montoEfectivo = calcularTotal.toFixed(2)) }}</span>
-                </div>
-                <Button label="Generar QR" icon="pi pi-qrcode" class="p-button-primary p-mb-2" @click="generarQr" />
-                <div v-if="qrImage" class="p-mb-2 p-text-center">
-                  <img :src="qrImage" alt="Código QR" class="p-mx-auto" style="max-width: 100%; height: auto;" />
-                </div>
-                <Button label="Verificar Estado de Pago" icon="pi pi-check-circle" class="p-button-secondary p-mb-2" @click="verificarEstado" v-if="qrImage" />
-                <div v-if="estadoTransaccion" class="p-card p-2">
-                  <div class="font-weight-bold">Estado Actual:</div>
-                  <div>
-                    <span :class="'p-tag p-tag-' + badgeSeverity">{{ estadoTransaccion.objeto.estadoActual }}</span>
-                  </div>
-                </div>
-              </template>
-            </Card>
-            <Button @click="registrarVenta(7)" label="Registrar Pago" icon="pi pi-check" class="p-button-success p-mt-2 p-button-lg p-button-raised" />
-          </div>
-        </div>
-      </TabPanel> -->
-                            </TabView>
-                            <!-- </div> -->
+                                    <small class="p-error" v-if="montoInvalido">
+                                        El monto recibido debe ser mayor o igual al total a pagar
+                                    </small>
+                                </div>
+                                <div class="p-field">
+                                    <label for="cambioRecibir">
+                                        <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
+                                    </label>
+                                    <InputText 
+                                        id="cambioRecibir"
+                                        :value="calcularCambio"
+                                        readonly 
+                                    />
+                                </div>
+                            </div>
                         </template>
+                    </Card>
+                </div>
+                <div class="p-col-12 p-md-5">
+                    <Card>
+                        <template #content>
+                            <h5>Detalle de Venta</h5>
+                            <div class="p-d-flex p-jc-between p-mb-2">
+                                <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
+                                <span class="p-text-bold">
+                                    {{ totalFormateado }} {{ monedaVenta[1] }}
+                                </span>
+                            </div>
+                            <div class="p-d-flex p-jc-between">
+                                <span><i class="pi pi-money-bill p-mr-2" /> Total a Pagar:</span>
+                                <span class="p-text-bold p-text-xl">
+                                    {{ totalFormateado }} {{ monedaVenta[1] }}
+                                </span>
+                            </div>
+                        </template>
+                    </Card>
+                    <Button 
+                        label="Registrar Pago" 
+                        icon="pi pi-check"
+                        class="p-button-success p-mt-2 p-button-lg p-button-raised"
+                        @click="validarYRegistrarPago"
+                        :disabled="!montoValido"
+                    />
+                </div>
+            </div>
+        </TabPanel>
+    </TabView>
+</template>
 
                         <div v-if="tipoVenta === 'credito'">
                             <div class="p-grid">
@@ -910,10 +890,15 @@ export default {
                 TARJETA: 2,
                 QR: 3,
             },
+            recibido: null,
+            montoInvalido: false,
         };
     },
 
     watch: {
+        recibido(newValue) {
+            this.montoInvalido = newValue !== null && !this.montoValido;
+        },
         codigo(newValue) {
             if (newValue) {
                 this.buscarArticulo();
@@ -931,6 +916,17 @@ export default {
         },
     },
     computed: {
+        totalFormateado() {
+            return (this.calcularTotal * parseFloat(this.monedaVenta[0])).toFixed(2)
+        },
+        calcularCambio() {
+            if (!this.recibido) return '0.00'
+            return (this.recibido - this.calcularTotal * parseFloat(this.monedaVenta[0])).toFixed(2)
+        },
+        montoValido() {
+            if (!this.recibido) return false
+            return this.recibido >= (this.calcularTotal * parseFloat(this.monedaVenta[0]))
+        },
         calcularStockDisponible() {
             if (!this.arraySeleccionado) return 0;
 
@@ -1948,31 +1944,58 @@ export default {
             }
         },
 
+        validarYRegistrarPago() {
+            if (!this.recibido) {
+                this.montoInvalido = true
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Debe ingresar el monto recibido',
+                    life: 3000
+                });
+                return;
+            }
+
+            if (!this.montoValido) {
+                this.montoInvalido = true
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'El monto recibido debe ser mayor o igual al total a pagar',
+                    life: 3000
+                });
+                return;
+            }
+
+            this.montoInvalido = false;
+            this.registrarVenta(1); // 1 para pago en efectivo
+        },
         async registrarVenta(idtipo_pago) {
-            if (this.validarVenta()) {
-                this.prepararDatosCliente();
-                await this.buscarOCrearCliente();
+            if (!this.validarVenta()) return;
+            
+            this.prepararDatosCliente();
+            await this.buscarOCrearCliente();
 
-                const ventaData = this.prepararDatosVenta(idtipo_pago);
+            const ventaData = this.prepararDatosVenta(idtipo_pago);
+            ventaData.monto_recibido = this.recibido;
+            ventaData.cambio = parseFloat(this.calcularCambio);
 
-                try {
-                    this.mostrarSpinner = true;
-                    const response = await axios.post("/venta/registrar", ventaData);
+            try {
+                this.mostrarSpinner = true;
+                const response = await axios.post("/venta/registrar", ventaData);
 
-                    if (response.data.id > 0) {
-                        this.manejarVentaExitosa(response.data.id);
-                    } else {
-                        this.manejarErrorVenta(response.data);
-                    }
-                } catch (error) {
-                    console.error("Error al registrar venta:", error);
-                    this.ejecutarFlujoCompleto();
-                } finally {
-                    this.mostrarSpinner = false;
+                if (response.data.id > 0) {
+                    this.manejarVentaExitosa(response.data.id);
+                } else {
+                    this.manejarErrorVenta(response.data);
                 }
+            } catch (error) {
+                console.error("Error al registrar venta:", error);
+                this.ejecutarFlujoCompleto();
+            } finally {
+                this.mostrarSpinner = false;
             }
         },
-
         cambiarProducto(index, nuevoProducto) {
             if (index >= 0 && index < this.arrayDetalle.length) {
                 this.arrayDetalle[index] = {
