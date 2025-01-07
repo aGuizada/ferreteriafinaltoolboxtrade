@@ -13,20 +13,18 @@
                     </button>
                 </div>
 
-                <!-- <div class="card-header" v-if="listado!=1 ">
-                    <i class="icon-basket"></i><label v-text="titulocard"></label>
-                </div> -->
-                <!--################ Listado al inicio ###########################-->
+            
                 <template v-if="listado == 1">
                     <div class="card-body">
                         <div class="form-group row">
                             <div class="col-md-6">
                                 <div class="input-group">
                                     <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar)"
-                                        class="form-control" placeholder="Buscar por número, nombre o fecha-hora">
+                                        class="form-control" placeholder="Buscar por nombre, fecha o hora">
                                 </div>
                             </div>
                         </div>
+
 
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped table-sm">
@@ -40,7 +38,7 @@
                                         <th>CLIENTE</th>
                                         <th>NIT/CI</th>
 
-                                        <th>IMPUESTO</th>
+                                        
                                         <th>TOTAL</th>
                                         <th>USUARIO</th>
                                         <th>EXPIRA EN</th>
@@ -62,7 +60,7 @@
             }) }}</td>
                                         <td v-text="venta.nombre"></td>
                                         <td v-text="venta.num_documento"></td>
-                                        <td v-text="venta.impuesto"></td>
+                                        
 
                                         <td v-text="venta.total"></td>
                                         <td v-text="venta.usuario"></td>
@@ -70,9 +68,7 @@
                                         <td>{{ Math.floor((new Date(venta.validez) - new Date()) / (1000 * 60 * 60 *
                 24)) + 1 }} dias</td>
 
-                                        <!-- <td>{{ new Date(venta.validez).toLocaleString() }} {{ new Date(venta.fecha_hora).toLocaleString() }} </td> -->
-
-
+                                       
                                         <td v-text="venta.nota"></td>
                                         <td>
                                             <div class="d-flex justify-content-start align-items-center">
@@ -90,15 +86,8 @@
 
                                                 </button>
 
-                                                <button type="button" @click="abrirVenta(venta.id)"
-                                                    class="btn btn-sm rounded">
-                                                    <i class="icon-basket fa-lg" style="color: green;"></i>
-
-                                                </button>
-                                                <!-- <button type="button" @click="mostrarDetalle('EDITAR COTIZACIÒN',venta.id)" class="btn btn-sm rounded">
-                                                    <i class="icon-pencil fa-lg" style="color: orange;"></i>
-
-                                                </button> -->
+                                             
+                                           
                                                 <button type="button" @click="mostrarDetalle('venta', 'editar', venta)"
                                                     class="btn btn-outline-warning btn-sm rounded">
                                                     <i class="fa fa-pencil fa-sm"></i>
@@ -157,15 +146,7 @@
                                     </v-select>
                                 </div>
                             </div>
-                            <!-- <div class="col-md-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <label for="" class="font-weight-bold">Cliente <span class="text-danger">*</span></label>
-                                    <div class="col-8">
-                                        <v-select :on-search="selectCliente" label="nombre" :options="arrayCliente" placeholder="Buscar Clientes..." :onChange="getDatosCliente">
-                                        </v-select>
-                                    </div>
-                                </div>
-                            </div> -->
+                       
                             <div class="col-md-2">
                                 <label for="">NIT/CI</label>
                                 <input type="text" class="form-control" v-model="nitcliente" readonly>
@@ -191,17 +172,7 @@
                         </div>
                         <div class="form-group row border">
 
-                            <!-- <div class="col-md-4">
-                                <div class="form-group">
-                                    <label><b>ARTICULO</b> <span style="color: red;" v-show="idarticulo == 0">*</span></label>
-                                    <div class="form-inline">
-                                        <input type="text" class="form-control" v-model="codigo" ref="articuloRef" @keyup="buscarArticulo()" placeholder="Codigo del artículo">
-                                        <button @click="abrirModal()" class="btn btn-primary">...</button>
-                                        <input type="text" readonly class="form-control" v-model="articulo">
-                                        <label for="" class="small-text">Shift + R</label>
-                                    </div>
-                                </div>
-                            </div> -->
+                   
 
                             <div class="col-md-3">
                                 <div class="form-group">
@@ -291,14 +262,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <!-- <div class="col-md-2">
-                                <div class="form-group">
-                                    <button @click="agregarDetalle()" class="btn btn-outline-success btn-block ">
-                                        <i class="fa fa-plus"></i>Añadir item
-                                    </button>
-                                    
-                                </div>
-                            </div> -->
+                    
                         </div>
                         <!--######################################-LISTADO CUANDO yA SE AGREGO CON LA "CANTIDAD" ##################-->
                         <div class="form-group row border">
@@ -315,9 +279,7 @@
                                             <th>Unid/Paq</th>
                                             <th>Paquetes</th>
                                             <th>Total</th>
-                                            <!-- <th>Cantidad</th>
-                                            <th>Descuento</th>
-                                            <th>Subtotal</th> -->
+                                        
                                         </tr>
                                     </thead>
                                     <tbody v-if="arrayDetalle.length">
@@ -334,32 +296,9 @@
                                             <td v-text="detalle.unidad_envase"></td>
                                             <td v-text="detalle.cantidad"></td>
                                             <td v-text="detalle.prectotal"></td>
-                                            <!-- <td>
-                                                <input disabled v-model="detalle.precio" type="number" class="form-control">
-                                            </td>
-                                            <td>
-                                                <span style="color:red;" v-show="detalle.cantidad > detalle.stock">Stock: {{ detalle.stock }}</span>
-                                                <input v-model="detalle.cantidad" type="number" class="form-control">
-                                            </td>
-                                            <td>
-                                                <span style="color:red;" v-show="detalle.descuento > (detalle.precio * detalle.cantidad)">Descuento superior</span>
-                                                <input v-model="detalle.descuento" type="number" class="form-control">
-                                            </td>
-                                            <td>{{ detalle.precio * detalle.cantidad - detalle.descuento }}</td> -->
+                                           
                                         </tr>
-                                        <!-- <tr style="background-color: #CEECF5;">
-                                            
-                                            <td colspan="5" align="right"><strong>Total Parcial:</strong></td>
-                                            <td>$ {{ totalParcial=(total - totalImpuesto).toFixed(2) }}</td>
-                                        </tr>
-                                        <tr style="background-color: #CEECF5;">
-                                            <td colspan="5" align="right"><strong>Total Impuesto:</strong></td>
-                                            <td>$ {{ totalImpuesto=((total * impuesto) / (1 + impuesto)).toFixed(2) }}</td>
-                                        </tr>
-                                        <tr style="background-color: #CEECF5;">
-                                            <td colspan="5" align="right"><strong>Total Neto:</strong></td>
-                                            <td>$ {{ total=calcularTotal }}</td>
-                                        </tr> -->
+                                      
                                     </tbody>
                                     <tbody v-else>
                                         <tr>
@@ -390,7 +329,8 @@
                                 <button v-if="idcotizacionv != ''" type="button" class="btn btn-primary"
                                     @click="editarCotizacion()">Editar Cotización</button>
                                 <button v-else type="button" class="btn btn-primary"
-                                    @click="registrarCotizacion()">Registrar Cotización</button>
+                                @click.prevent="registrarCotizacion()"
+                                >Registrar Cotización</button>
 
                             </div>
                         </div>
@@ -487,10 +427,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="cerrarModal()">Cerrar</button>
-                        <!-- <button type="button" v-if="tipoAccion == 1" class="btn btn-primary"
-                            @click="registrarPersona()">Guardar</button>
-                        <button type="button" v-if="tipoAccion == 2" class="btn btn-primary"
-                            @click="actualizarPersona()">Actualizar</button> -->
+                       
                     </div>
                 </div>
                 <!-- /.modal-content -->
@@ -506,12 +443,7 @@
             :arrayCotizacionSeleccionado="arrayCotizacionSeleccionado" @cerrar="cerrarFormularioVenta">
         </registrarventa>
 
-        <!-- <div v-if="showRegistrarCompra" class="mx-3">
-            <registrarcompra @editarEstadoPedido="editarPedidoComprado"  @cerrar="cerrarFormularioCompra" 
-                :arrayDetallePedido="arrayDetallesAComprar" :arrayPedidoSeleccionado="arrayPedidoSeleccionado" @listarArticuloProveedor="listarArticuloProveedor" @abrirModalArticulos="abrirModalArticulos" 
-                :arrayArticuloSeleccionado="arrayArticuloSeleccionadoModal">
-            </registrarcompra>
-        </div> -->
+ 
     </main>
 </template>
 
@@ -1557,7 +1489,7 @@ reiniciarFormulario() {
             this.arrayArticulo = [];
             this.serie_comprobante = '';
             this.idcotizacionv = '';
-            this.logout();
+            
         },
         actualizarCotizacion(id) {
             let me = this;

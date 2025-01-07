@@ -11,16 +11,20 @@
                 </template>
             <template>
                 <div class="p-grid p-mb-3">
+
                     <div class="p-col-12">
-                        <div v-if="rolUsuario == 1 || rolUsuario == 2" class="p-col-12 p-md-6">
-                            <label class="p-mb-2"><strong>Buscar Cliente por Usuario</strong></label>
-                            <AutoComplete 
-                                v-model="usuarioSeleccionadodos" 
-                                :suggestions="arrayUsuarioFiltro" 
-                                @complete="selectUsuarioFiltro" 
-                                field="nombre" 
-                                @item-select="getDatosUsuarioFiltro" 
-                                placeholder="Buscar Usuario..." />
+                        <div class="form-group row">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <Button label="Registrar Persona" icon="pi pi-user-plus" class="p-button-secondary"
+                                    @click="abrirModal('persona', 'registrar')" />
+                                    <input type="text" 
+                                        v-model="buscar" 
+                                        @keyup="listarPersona(1, buscar, 'nombre')" 
+                                        class="form-control" 
+                                        placeholder="Buscar cliente..." />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -206,18 +210,26 @@ export default {
         }
     },
     methods: {
-        listarPersona(page, buscar, criterio) {
-            const url = `/cliente?page=${page}&buscar=${buscar}&criterio=${criterio}&usuarioid=${this.usuariodos_id}`;
-            axios.get(url)
-                .then(response => {
-                    this.arrayPersona = response.data.usuarios.data;
-                    this.pagination = response.data.pagination;
-                })
-                .catch(error => {
-                    console.error('Error fetching clients:', error);
-                });
-        },
+       // Método para realizar la búsqueda y obtener los resultados
+    listarPersona(page, buscar, criterio) {
+        if (/^\d+$/.test(buscar)) {
+            criterio = 'ci'; // Si es un número, lo tratamos como CI
+        }
 
+        const url = `/cliente?page=${page}&buscar=${buscar}&criterio=${criterio}&usuarioid=${this.usuariodos_id}`;
+
+        axios.get(url)
+            .then(response => {
+                this.arrayPersona = response.data.usuarios.data;
+                this.pagination = response.data.pagination;
+            })
+            .catch(error => {
+                console.error('Error fetching clients:', error);
+            });
+
+    },
+
+        
         confirmarEliminarCliente(cliente) {
     Swal.fire({
         title: '¿Está seguro?',

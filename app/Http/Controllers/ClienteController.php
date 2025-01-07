@@ -24,32 +24,23 @@ class ClienteController extends Controller
             'buscar' => $request->buscar,
             'criterio' => $request->criterio,
         ]);
-
+    
         $buscar = $request->buscar;
-        $criterio = $request->criterio;
-        $usuarioid = $request->usuarioid;
+        $criterio = $request->criterio ?? 'nombre'; // Por defecto busca por nombre
         $perPage = $request->input('per_page', 10); // Default to 10 if not specified
-
-        // Consulta para obtener personas que no son usuarios
+    
         $usuarios = Persona::whereNotIn('id', function ($query) {
             $query->select('id')->from('users');
-        });
-        $usuarios = $usuarios->whereNull('direccion')->where('usuario', '>', 0);
-        
-        /*if (!empty($usuarioid)) {
-            $usuarios = $usuarios->where('personas.usuario', '=', $usuarioid);
-        }*/
-
-        // Aplicar filtros de búsqueda si están presentes
+        })->whereNull('direccion')->where('usuario', '>', 0);
+    
         if (!empty($buscar)) {
             $usuarios->where(function ($query) use ($criterio, $buscar) {
                 $query->where($criterio, 'like', '%' . $buscar . '%');
             });
         }
-
-        // Ordenar y paginar los resultados
+    
         $usuarios = $usuarios->orderBy('id', 'desc')->paginate($perPage);
-
+    
         return [
             'pagination' => [
                 'total' => $usuarios->total(),
@@ -63,6 +54,7 @@ class ClienteController extends Controller
         ];
     }
 
+    
     public function selectCliente(Request $request)
     {
         if (!$request->ajax())

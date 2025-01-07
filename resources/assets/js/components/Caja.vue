@@ -58,7 +58,7 @@
                             @click="cerrarCaja(slotProps.data.id)"
                             v-if="slotProps.data.estado && arqueoRealizado"></Button>
                         <Button icon="pi pi-download" class="p-button-success p-button-sm" 
-                            @click="descargarCajasPDF(slotProps.data.id)" v-if="!slotProps.data.estado"></Button>
+                            @click="generarPDF(slotProps.data.id)" v-if="!slotProps.data.estado"></Button>
                     </template>
                 </Column>
             </DataTable>
