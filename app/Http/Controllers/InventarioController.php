@@ -16,122 +16,70 @@ use Exception;
 
 class InventarioController extends Controller
 {
-    //listar almacen 
-    // public function index(Request $request)
-    // {
-    //     if (!$request->ajax())
-    //         return redirect('/');
-
-    //     $buscar = $request->buscar;
-    //     $criterio = $request->criterio;
-
-    //     if ($buscar == '') {
-    //         $inventarios = Inventario::join('almacens', 'inventarios.idalmacen', '=', 'almacens.id')
-    //             ->join('articulos', 'inventarios.idarticulo', '=', 'articulos.id')
-    //             ->select(
-    //                 'inventarios.id',
-    //                 'inventarios.fecha_vencimiento',
-    //                 'inventarios.saldo_stock',
-
-    //                 'almacens.nombre_almacen',
-    //                 'almacens.ubicacion',
-
-    //                 'articulos.nombre as nombre_producto',
-    //                 'articulos.unidad_envase',
-
-    //             )
-    //             ->orderBy('inventarios.id', 'desc')->paginate(6);
-    //     } else {
-    //         $inventarios = Inventario::join('almacens', 'inventarios.idalmacen', '=', 'almacens.id')
-    //             ->join('articulos', 'inventarios.idarticulo', '=', 'articulos.id')
-    //             ->select(
-
-    //                 'inventarios.id',
-    //                 'inventarios.fecha_vencimiento',
-    //                 'inventarios.saldo_stock',
-
-    //                 'almacens.nombre_almacen',
-    //                 'almacens.ubicacion',
-
-    //                 'articulos.nombre as nombre_producto',
-    //                 'articulos.precio_costo_unid',
-    //             )
-    //             ->where('inventarios.' . $criterio, 'like', '%' . $buscar . '%')
-    //             ->orderBy('inventarios.id', 'desc')->paginate(6);
-    //     }
-
-
-    //     return [
-    //         'pagination' => [
-    //             'total' => $inventarios->total(),
-    //             'current_page' => $inventarios->currentPage(),
-    //             'per_page' => $inventarios->perPage(),
-    //             'last_page' => $inventarios->lastPage(),
-    //             'from' => $inventarios->firstItem(),
-    //             'to' => $inventarios->lastItem(),
-    //         ],
-    //         'inventarios' => $inventarios
-    //     ];
-    // }
-
-public function registrarInventario(Request $request)
-{
-    if (!$request->has('inventarios')) {
-        return response()->json(['error' => 'No se enviaron inventarios'], 400);
-    }
-
-    DB::beginTransaction();
-    try {
-        $inventarios = $request->input('inventarios');
-        
-        foreach ($inventarios as $inventario) {
-            $articulo = Articulo::find($inventario['idarticulo']);
-            
-            if (!$articulo) {
-                Log::warning("Artículo no encontrado: " . $inventario['idarticulo']);
-                continue;
-            }
-
-            $fechaVencimiento = isset($inventario['fecha_vencimiento']) 
-                ? date('Y-m-d', strtotime($inventario['fecha_vencimiento'])) 
-                : '2099-01-01';
-
-            $cantidad = $inventario['cantidad'] ?? 0;
-
-            $inventarioExistente = Inventario::where('idarticulo', $inventario['idarticulo'])
-                ->where('idalmacen', $inventario['idalmacen'])
-                ->whereDate('fecha_vencimiento', $fechaVencimiento)
-                ->first();
-
-            if ($inventarioExistente) {
-                $inventarioExistente->saldo_stock += $cantidad;
-                $inventarioExistente->cantidad += $cantidad;
-                $inventarioExistente->save();
-            } else {
-                Inventario::create([
-                    'idalmacen' => $inventario['idalmacen'],
-                    'idarticulo' => $inventario['idarticulo'],
-                    'fecha_vencimiento' => $fechaVencimiento,
-                    'saldo_stock' => $cantidad,
-                    'cantidad' => $cantidad
-                ]);
-            }
+    public function registrarInventario(Request $request)
+    {
+        if (!$request->has('inventarios')) {
+            return response()->json(['error' => 'No se enviaron inventarios'], 400);
         }
-
-        DB::commit();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Inventarios guardados exitosamente'
-        ], 200);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Error al guardar inventarios'
-        ], 500);
+    
+        DB::beginTransaction();
+        try {
+            $inventarios = $request->input('inventarios');
+    
+            foreach ($inventarios as $inventario) {
+                // Verificar si el artículo existe
+                $articulo = Articulo::find($inventario['idarticulo']);
+                if (!$articulo) {
+                    Log::warning("Artículo no encontrado: " . $inventario['idarticulo']);
+                    continue;
+                }
+    
+                // Asignar fecha de vencimiento, usando un valor por defecto si no está presente
+                $fechaVencimiento = isset($inventario['fecha_vencimiento']) 
+                    ? date('Y-m-d', strtotime($inventario['fecha_vencimiento'])) 
+                    : '2099-01-01';
+    
+                // Verificar si ya existe un registro de inventario con el mismo artículo, almacén y fecha de vencimiento
+                $inventarioExistente = Inventario::where('idarticulo', $inventario['idarticulo'])
+                    ->where('idalmacen', $inventario['idalmacen'])
+                    ->whereDate('fecha_vencimiento', $fechaVencimiento)
+                    ->first();
+    
+                if ($inventarioExistente) {
+                    // Si existe, actualizar los valores de saldo_stock y cantidad
+                    $cantidad = $inventario['cantidad'] ?? 0;
+                    $inventarioExistente->saldo_stock += $cantidad;
+                    $inventarioExistente->cantidad += $cantidad;
+                    $inventarioExistente->save();
+                } else {
+                    // Si no existe, crear un nuevo registro
+                    $cantidad = $inventario['cantidad'] ?? 0;
+                    Inventario::create([
+                        'idalmacen' => $inventario['idalmacen'],
+                        'idarticulo' => $inventario['idarticulo'],
+                        'fecha_vencimiento' => $fechaVencimiento,
+                        'saldo_stock' => $cantidad,
+                        'cantidad' => $cantidad
+                    ]);
+                }
+            }
+    
+            DB::commit();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Inventarios guardados exitosamente'
+            ], 200);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error al registrar inventarios: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al guardar inventarios'
+            ], 500);
+        }
     }
-}
+    
 
     
     public function store(Request $request)
@@ -418,64 +366,7 @@ public function registrarInventario(Request $request)
         return Excel::download(new ProductosBajoStockExport, 'articulosBajoStock.xlsx');
     }
     //-------------------aumente el listado mejorado------
-    public function indextraspaso(Request $request)
-    {
-        if (!$request->ajax())
-            return redirect('/');
 
-        Log::info('Data', [
-            'idAlmacen' => $request->idAlmacen,
-            'buscar' => $request->buscar,
-            'criterio' => $request->criterio,
-        ]);
-
-        $buscar = $request->buscar;
-        $criterio = $request->criterio;
-        $idAlmacen = $request->idAlmacen;
-
-        $inventarios = Inventario::join('almacens', 'inventarios.idalmacen', '=', 'almacens.id')
-            ->join('articulos', 'inventarios.idarticulo', '=', 'articulos.id')
-            ->join('proveedores', 'articulos.idproveedor', '=', 'proveedores.id') // Agregar esta línea para unir la tabla de proveedores
-            ->join('personas', 'proveedores.id', '=', 'personas.id')
-            ->select(
-                'inventarios.id',
-                'inventarios.idarticulo',
-
-                'articulos.nombre as nombre_producto',
-                'articulos.codigo',
-                'articulos.precio_costo_unid',
-                'articulos.precio_costo_paq',
-                'articulos.unidad_envase',
-
-                'inventarios.saldo_stock',
-                'inventarios.fecha_vencimiento',
-                'articulos.precio_venta',
-
-                'almacens.ubicacion',
-                'personas.nombre as nombre_proveedor',
-                'articulos.fotografia',
-            )
-            ->where('inventarios.idalmacen', '=', $idAlmacen);
-        //->orderBy('inventarios.id', 'desc')->paginate(5);
-
-        if (!empty($buscar)) {
-            $inventarios = $inventarios->where(function ($query) use ($criterio, $buscar) {
-                $query->where('articulos.' . $criterio, 'like', '%' . $buscar . '%');
-            });
-        }
-        $inventarios = $inventarios->orderBy('inventarios.id', 'desc')->paginate(4);
-        return [
-            'pagination' => [
-                'total' => $inventarios->total(),
-                'current_page' => $inventarios->currentPage(),
-                'per_page' => $inventarios->perPage(),
-                'last_page' => $inventarios->lastPage(),
-                'from' => $inventarios->firstItem(),
-                'to' => $inventarios->lastItem(),
-            ],
-            'inventarios' => $inventarios
-        ];
-    }
     ////////////////--Lista or item y lotes-/////////////////
     public function indexItemLote(Request $request, $tipo)
     {
