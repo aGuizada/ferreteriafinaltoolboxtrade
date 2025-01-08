@@ -725,45 +725,78 @@ export default {
         },
 
         depositar() {
-            let me = this;
+        let me = this;
 
-            axios.put('/caja/depositar', {
-                'depositos': this.depositos,
-                'id': this.id,
-                'transaccion': this.Desdepositos + '  (movimiento de ingreso )',
+        // Validar que el importe no sea negativo o nulo
+        if (!this.depositos || parseFloat(this.depositos) <= 0) {
+            swal(
+                'Error!',
+                'El importe del depósito debe ser mayor a 0.',
+                'error'
+            );
+            return;
+        }
 
-            }).then(function (response) {
-                me.cerrarModal2();
-                me.listarCaja(1, '', 'id');
-                swal(
-                    'Información!',
-                    'Transacción de caja registrada satisfactoriamente!',
-                    'success'
-                )
-            }).catch(function (error) {
-                console.log(error);
-            });
-        },
+        axios.put('/caja/depositar', {
+            'depositos': parseFloat(this.depositos),
+            'id': this.id,
+            'transaccion': `${this.Desdepositos} (movimiento de ingreso)`,
+        }).then(function (response) {
+            me.cerrarModal2();
 
-        retirar() {
-            let me = this;
+            // Actualizar saldo en el frontend
+            me.listarCaja(1, '', 'id');
+            swal(
+                'Información!',
+                'Depósito realizado con éxito.',
+                'success'
+            );
+        }).catch(function (error) {
+            console.error('Error en el depósito:', error);
+            swal(
+                'Error!',
+                'No se pudo realizar el depósito.',
+                'error'
+            );
+        });
+    },
 
-            axios.put('/caja/retirar', {
-                'salidas': this.salidas,
-                'transaccion': this.Dessalidas + ' (movimiento de egreso  )',
-                'id': this.id
-            }).then(function (response) {
-                me.cerrarModal3();
-                me.listarCaja(1, '', 'id');
-                swal(
-                    'Información!',
-                    'Transacción de caja registrada satisfactoriamente!',
-                    'success'
-                )
-            }).catch(function (error) {
-                console.log(error);
-            });
-        },
+    retirar() {
+        let me = this;
+
+        // Validar que el importe no sea negativo o nulo
+        if (!this.salidas || parseFloat(this.salidas) <= 0) {
+            swal(
+                'Error!',
+                'El importe del retiro debe ser mayor a 0.',
+                'error'
+            );
+            return;
+        }
+
+        axios.put('/caja/retirar', {
+            'salidas': parseFloat(this.salidas),
+            'id': this.id,
+            'transaccion': `${this.Dessalidas} (movimiento de egreso)`,
+        }).then(function (response) {
+            me.cerrarModal3();
+
+            // Actualizar saldo en el frontend
+            me.listarCaja(1, '', 'id');
+            swal(
+                'Información!',
+                'Retiro realizado con éxito.',
+                'success'
+            );
+        }).catch(function (error) {
+            console.error('Error en el retiro:', error);
+            swal(
+                'Error!',
+                'No se pudo realizar el retiro.',
+                'error'
+            );
+        });
+    },
         calcularTotalBilletes() {
             const billete200 = parseFloat(this.billete200) || 0;
             const billete100 = parseFloat(this.billete100) || 0;
@@ -1003,6 +1036,7 @@ export default {
         this.listarCaja(1, this.buscar, this.criterio);
 
 
+        
     }
 }
 </script>

@@ -571,7 +571,7 @@ Route::group(["middleware" => ["auth"]], function () {
             "/factura/verificarNit/{numeroDocumento}",
             "VentaController@verificarNit"
         );
-
+        
         //--INDUSTRIA--
         //registrar
         Route::post("/industria/registrar", "IndustriaController@store");

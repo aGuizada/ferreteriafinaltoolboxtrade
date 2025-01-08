@@ -86,6 +86,7 @@ class CajaController extends Controller
         if (!$request->ajax()) return redirect('/');
         $caja = Caja::findOrFail($request->id);
         $caja->depositos = ($request->depositos)+($caja->depositos);
+        $caja->saldoCaja = $caja->saldoCaja + $request->depositos;
         $caja->save();
 
         $transacciones = new TransaccionesCaja();
@@ -101,7 +102,12 @@ class CajaController extends Controller
     {
         if (!$request->ajax()) return redirect('/');
         $caja = Caja::findOrFail($request->id);
+        if ($request->salidas > $caja->saldoCaja) {
+            return response()->json(['error' => 'Saldo insuficiente para realizar el retiro.'], 400);
+        }
+
         $caja->salidas = ($request->salidas)+($caja->salidas);
+        $caja->saldoCaja = $caja->saldoCaja - $request->salidas;
         $caja->save();
 
         $transacciones = new TransaccionesCaja();
