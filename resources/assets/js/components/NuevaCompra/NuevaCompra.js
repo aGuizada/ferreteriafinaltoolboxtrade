@@ -193,7 +193,7 @@ export default {
         },
 
         verificarFechaVencimiento(data) {
-            return ((data.vencimiento == 0) || (data.vencimiento == null)) && !(data.fecha_vencimiento);
+            return false; 
         },
 
         calcularSaldoTotalCompra() {
