@@ -66,36 +66,31 @@
                    @page="onPageChange" />
         </Panel>
         <!-- MODAL REGISTRAR PRODUCTO -->
-        <Dialog :visible.sync="dialogVisible" :modal="true" header="Registrar Artículo" :closable="true" @hide="closeDialog" :containerStyle="{width: '800px'}" >
-            <form>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <div>
-                            <label class="font-weight-bold" for="nombreProducto">Nombre del Producto <span class="text-danger">*</span></label>
-                            <InputText id="nombreProducto" v-model="datosFormulario.nombre" placeholder="Ej. Ibuprofeno 400 mg (20 comprimidos)" class="form-control p-inputtext-sm" :class="{'p-invalid' : errores.nombre}" @input="validarCampo('nombre')"/>
-                            <small class="p-error" v-if="errores.nombre"><strong>{{ errores.nombre }}</strong></small>
-
-                        </div>
-                        <div>
-                            <label class="font-weight-bold" for="nombreGenerico">Nombre Genérico <span class="text-danger">*</span></label>
-                            <InputText id="nombreGenerico" v-model="datosFormulario.nombre_generico" placeholder="Ej. Ibuprofeno" class="form-control p-inputtext-sm" :class="{'p-invalid' : errores.nombre}" @input="validarCampo('nombre_generico')" />
-                            <small class="p-error" v-if="errores.nombre_generico"><strong>{{ errores.nombre_generico }}</strong></small>
-
-                        </div>
+        <template>
+    <Dialog :visible.sync="dialogVisible" :modal="true" header="Registrar Artículo" :closable="true" @hide="closeDialog" :containerStyle="{width: '800px'}">
+        <form>
+            <!-- Primera fila: Nombre y Foto -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <div>
+                        <label class="font-weight-bold" for="nombreProducto">Nombre del Producto <span class="text-danger">*</span></label>
+                        <InputText id="nombreProducto" v-model="datosFormulario.nombre" placeholder="Ej nombre producto" class="form-control p-inputtext-sm" :class="{'p-invalid' : errores.nombre}" @input="validarCampo('nombre')"/>
+                        <small class="p-error" v-if="errores.nombre"><strong>{{ errores.nombre }}</strong></small>
                     </div>
-                    <div class="col-md-6">
-                        <div>
-                            <label class="font-weight-bold" for="foto">Foto del Producto</label>
-                            <div class="container">
-                                <div class="row">
-                                    <div class="d-flex justify-content-center">
-                                        <div v-if="!imagen" class="bg-light p-5 rounded">
-                                            <i class="fa fa-camera fa-2x" style="color:#6e6e6e" aria-hidden="true"></i>
-                                        </div>
-                                        <figure v-else>
-                                            <ImagePreview :src="imagen" alt="Image" width="140" height="140" />
-                                        </figure>
+                </div>
+             
+                <div class="col-md-6">
+                    <div>
+                        <label class="font-weight-bold" for="foto">Foto del Producto</label>
+                        <div class="container">
+                            <div class="row">
+                                <div class="d-flex justify-content-center">
+                                    <div v-if="!imagen" class="bg-light p-5 rounded">
+                                        <i class="fa fa-camera fa-2x" style="color:#6e6e6e" aria-hidden="true"></i>
                                     </div>
+                                    <figure v-else>
+                                        <ImagePreview :src="imagen" alt="Image" width="140" height="140" />
+                                    </figure>
                                 </div>
                             </div>
                             <div class="input-group mt-2">
@@ -104,247 +99,307 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <div>
-                            <label class="font-weight-bold" for="descripcion">Descripción del Producto <span class="text-danger">*</span></label>
-                            <Textarea id="descripcion" v-model="datosFormulario.descripcion" placeholder="Ej. Alivio rápido para el dolor de cabeza y fiebre" rows="3" class="form-control p-inputtext-sm" 
-                                        :class="{'p-invalid' : errores.descripcion}" @input="validarCampo('descripcion')"/>
-                            <small class="p-error" v-if="errores.descripcion"><strong>{{ errores.descripcion }}</strong></small>
-
-                        </div>
-                        <div>
-                            <label class="font-weight-bold" for="codigoAlfanumerico">Código Alfanumérico</label>
-                            <InputText id="codigoAlfanumerico" v-model="datosFormulario.codigo_alfanumerico" placeholder="Ej. ABC123" class="form-control p-inputtext-sm"
-                                        :class="{'p-invalid' : errores.codigo_alfanumerico}" @input="validarCampo('codigo_alfanumerico')" />
-                            <small class="p-error" v-if="errores.codigo_alfanumerico"><strong>{{ errores.codigo_alfanumerico }}</strong></small>
-
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="codigo">Código del Producto <span class="text-danger">*</span> </label>
-                        <InputText id="codigo" v-model="datosFormulario.codigo" placeholder="Ej. SKU123" class="form-control p-inputtext-sm"
-                                    :class="{'p-invalid' : errores.codigo}" @input="validarCampo('codigo')" />
-                        <small class="p-error" v-if="errores.codigo"><strong>{{ errores.codigo }}</strong></small>
-                        
-                        <div class="d-flex mt-4 justify-content-center" style="width:250px;overflow-x: auto;">
-                            <barcode :value="datosFormulario.codigo" :options="{ format: 'EAN-13' }"></barcode>
-                        </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="descripcion">Descripción <span class="text-danger">*</span></label>
+                    <InputText id="descripcion" v-model="datosFormulario.descripcion" placeholder="Ingrese una descripción" class="form-control p-inputtext-sm" :class="{'p-invalid' : errores.descripcion}" @input="validarCampo('descripcion')"/>
+                    <small class="p-error" v-if="errores.descripcion"><strong>{{ errores.descripcion }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="codigo">Código del Producto <span class="text-danger">*</span></label>
+                    <InputText id="codigo" v-model="datosFormulario.codigo" placeholder="Ej. SKU123" class="form-control p-inputtext-sm" :class="{'p-invalid' : errores.codigo}" @input="validarCampo('codigo')"/>
+                    <small class="p-error" v-if="errores.codigo"><strong>{{ errores.codigo }}</strong></small>
+                    <div class="d-flex mt-4 justify-content-center" style="width:250px;overflow-x: auto;">
+                        <barcode :value="datosFormulario.codigo" :options="{ format: 'EAN-13' }"></barcode>
                     </div>
                 </div>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="descripcionFabricacion">Descripción de Fabricación</label>
-                        <Textarea id="descripcionFabricacion" v-model="datosFormulario.descripcion_fabrica" placeholder="Ej. Producto fabricado por Laboratorios XYZ" rows="3" class="form-control p-inputtext-sm" 
-                                    :class="{'p-invalid' : errores.descripcion_fabrica}" @input="validarCampo('descripcion_fabrica')" />
-                        <small class="p-error" v-if="errores.descripcion_fabrica"><strong>{{ errores.descripcion_fabrica }}</strong></small>
-                        
-                    </div>
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="proveedor">Proveedor <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup ">
-                            <InputText id="proveedor" v-model="proveedorSeleccionado.nombre"  placeholder="Seleccione un proveedor" class="form-control p-inputtext-sm bold-input" disabled 
-                                        :class="{'p-invalid' : errores.idproveedor}"  @input="validarCampo('codigo')"     />
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Proveedores')" />
-                        </div>
-                        <small class="p-error" v-if="errores.idproveedor"><strong>{{ errores.idproveedor }}</strong></small>
-
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="linea">Línea <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputText id="linea"  v-model="lineaSeleccionado.nombre" placeholder="Seleccione una línea" class="form-control p-inputtext-sm bold-input" disabled
-                                        :class="{'p-invalid' : errores.idcategoria}" />
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Lineas')" />
-                        </div>
-                        <small class="p-error" v-if="errores.idcategoria"><strong>{{ errores.idcategoria }}</strong></small>
-
-                    </div>
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="marca">Marca <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputText id="marca"  v-model="marcaSeleccionado.nombre" placeholder="Seleccione una marca" class="form-control p-inputtext-sm bold-input" disabled 
-                                        :class="{'p-invalid' : errores.idmarca}"  />
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Marcas')" />
-                        </div>
-                        <small class="p-error" v-if="errores.idmarca"><strong>{{ errores.idmarca }}</strong></small>
-
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="industria">Industria <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputText id="industria" v-model="industriaSeleccionado.nombre"  placeholder="Seleccione una industria" class="form-control p-inputtext-sm bold-input" disabled 
-                                         :class="{'p-invalid' : errores.idindustria}"/>
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Industrias')" />
-                        </div>
-                        <small class="p-error" v-if="errores.idindustria"><strong>{{ errores.idindustria }}</strong></small>
-
-                    </div>
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="grupoFamilia">Grupo/Familia <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputText id="grupoFamilia"  v-model="grupoSeleccionado.nombre_grupo" placeholder="Seleccione un grupo" class="form-control p-inputtext-sm bold-input" disabled 
-                                            :class="{'p-invalid' : errores.idgrupo}"/>
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Grupos')" />
-                        </div>
-                        <small class="p-error" v-if="errores.idgrupo"><strong>{{ errores.idgrupo }}</strong></small>
-
-                    </div>
-                </div>
-                <!-- Agregar campos adicionales -->
-                <div class="form-group row">
-                    <div class="col-md-4">
-                        <label class="font-weight-bold" for="stockMinimo">Stock Mínimo <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="stockMinimo" v-model="datosFormulario.stock" placeholder="Ej: 10" class="p-inputtext-sm" 
-                                            :class="{'p-invalid' : errores.stock}"    @input="validarCampo('stock')"/>
-                            <Dropdown label="..." v-model="tipo_stock" :options="tipoEnvase" optionLabel="etiqueta" optionValue="valor" class="p-dropdown-sm p-inputtext-sm" />
-                        </div>
-                        <small class="p-error" v-if="errores.stock"><strong>{{ errores.stock }}</strong></small>
-
-                    </div>
-                    <div class="col-md-4">
-                        <label  class="font-weight-bold" for="unidadEnvase">Unidades por Paquete <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="unidadEnvase" v-model="datosFormulario.unidad_envase" placeholder="Ej: 24" class="p-inputtext-sm" 
-                                            :class="{'p-invalid' : errores.unidad_envase}" @input="validarCampo('unidad_envase')"/>
-                        </div>
-                        <small class="p-error" v-if="errores.unidad_envase"><strong>{{ errores.unidad_envase }}</strong></small>
-
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <label class="font-weight-bold" for="medida">Medidas <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputText id="medida" v-model="medidaSeleccionado.descripcion_medida"  placeholder="Seleccione una medida" class="form-control p-inputtext-sm bold-input" disabled 
-                                    :class="{'p-invalid' : errores.idmedida}"/>
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Medidas')" />
-                        </div>
-                        <small class="p-error" v-if="errores.idmedida"><strong>{{ errores.idmedida }}</strong></small>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="preciounitario">Precio Unitario <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="preciounitario"  v-model="datosFormulario.precio_costo_unid" placeholder="Sin decimales" class=" p-inputtext-sm bold-input"  mode="decimal" :minFractionDigits="2" 
-                                        :class="{'p-invalid' : errores.precio_costo_unid}" @input="validarCampo('precio_costo_unid')" />
-                            <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoUnid" />
-                        </div>
-                        <small class="p-error" v-if="errores.precio_costo_unid"><strong>{{ errores.precio_costo_unid }}</strong></small>
-
-                    </div>
-                    <div class="col-md-6">
-                        <label class="font-weight-bold"  for="preciopaquete">Precio Paquete <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="preciopaquete"  v-model="datosFormulario.precio_costo_paq" placeholder="Sin decimales" class=" p-inputtext-sm bold-input"  mode="decimal" :minFractionDigits="2" 
-                                            :class="{'p-invalid' : errores.precio_costo_paq}" @input="validarCampo('precio_costo_paq')"/>
-                            <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoPaq" />
-                        </div>
-                        <small class="p-error" v-if="errores.precio_costo_paq"><strong>{{ errores.precio_costo_paq }}</strong></small>
-
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-6">
-                        <label class="font-weight-bold" for="costocompra">Costo compra <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="costocompra"  v-model="datosFormulario.costo_compra" placeholder="Sin decimales" class=" p-inputtext-sm bold-input"  mode="decimal" :minFractionDigits="2" 
-                                    :class="{'p-invalid' : errores.costo_compra}" @input="validarCampo('costo_compra')"/>                            
-                        </div>
-                        <small class="p-error" v-if="errores.costo_compra"><strong>{{ errores.costo_compra }}</strong></small>
-
-                    </div>
-                    <div class="col-md-6">
-                        <label class="font-weight-bold"  for="precioventa">Precio Venta <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="precioventa"  v-model="datosFormulario.precio_venta" placeholder="Sin decimales" class=" p-inputtext-sm bold-input"  mode="decimal" :minFractionDigits="2" 
-                                        :class="{'p-invalid' : errores.precio_venta}" @input="validarCampo('precio_venta')" :maxFracionDigits="2"  />                        
-                        </div>
-                        <small class="p-error" v-if="errores.precio_venta"><strong>{{ errores.precio_venta }}</strong></small>   
-
-                    </div>
-
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-6 switch-container">
-                        <label class="font-weight-bold" for="switchvencimiento">Fecha vencimiento <span class="text-danger">*</span></label>
-                        <InputSwitch id="switchvencimiento" v-model="fechaVencimientoSeleccion"  class="p-inputtext-sm" />
-                    </div>
-                    <div v-show="tipoAccion == 1" class="col-md-6 switch-container">
-                        <label class="font-weight-bold" for="switchstock">Agregar a Stock <span class="text-danger">*</span></label>
-                        <InputSwitch id="switchstock" v-model="agregarStock"  class="p-inputtext-sm" />
-                    </div>
-                </div>
-                <div v-if="agregarStock && tipoAccion == 1" class="form-group row">
-                    <div class="col-md-4">
-                        <label class="font-weight-bold" for="cantidadStock">Cantidad Stock <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputNumber id="cantidadStock" v-model="unidadStock" placeholder="Ej: 10" class="p-inputtext-sm"  mode="decimal"
-                                        :class="{'p-invalid' : erroresinventario.unidadStock}" @input="validarCampoInventario('unidadStock')"/>
-                        </div>
-                        <small class="p-error" v-if="erroresinventario.unidadStock"><strong>{{ erroresinventario.unidadStock }}</strong></small>   
-
-                    </div>
-                    <div class="col-md-4">
-                        <label  class="font-weight-bold" for="fechavencimiento">Fecha de Vencimiento <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <Calendar v-if="fechaVencimientoSeleccion == false" id="fechavencimiento" v-model="fechaPorDefecto" placeholder="dd/mm/yy" class="p-inputtext-sm" :touchUI="true" :hideOnDateTimeSelect="false" dateFormat="yy-mm-dd" disabled/>
-                            <Calendar v-if="fechaVencimientoSeleccion == true" id="fechavencimiento" v-model="fechaVencimientoAlmacen" placeholder="dd/mm/yy" :touchUI="true" :minDate="minDate" @date-select="handleDateChange" class="p-inputtext-sm" dateFormat="dd/mm/yy" />
-
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <label class="font-weight-bold" for="almacen">Almacen <span class="text-danger">*</span></label>
-                        <div class="p-inputgroup">
-                            <InputText id="almacen" v-model="almacenSeleccionado.nombre_almacen" placeholder="Seleccione un almacen" class="form-control p-inputtext-sm bold-input" disabled
-                                :class="{'p-invalid' : erroresinventario.AlmacenSeleccionado}" />
-                            <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Almacen')" />
-                        </div>
-                        <small class="p-error" v-if="erroresinventario.AlmacenSeleccionado"><strong>{{ erroresinventario.AlmacenSeleccionado }}</strong></small>
-
-                    </div>
-                </div>
-                <div v-for="(precio, index) in precios" :key="precio.id" class="p-grid p-ai-center p-mb-2 mobile-responsive">
-        <!-- Primera columna -->
-        <div class="p-col-12 custom-precios">
-            <label class="p-mr-2 p-text-bold" style="width: 100%;">{{ precio.nombre_precio }}:</label>
-        </div>
-
-        <!-- Segunda fila para inputs en vista móvil -->
-        <div class="p-col-12 p-md-6 custom-precios">
-            <div class="p-inputgroup p-mr-2" style="width: 100%;">
-                <InputNumber v-if="index === 0" placeholder="Precio" v-model="precio_uno" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm" />
-                <InputNumber v-if="index === 1" placeholder="Precio" v-model="precio_dos" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm" />
-                <InputNumber v-if="index === 2" placeholder="Precio" v-model="precio_tres" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm" />
-                <InputNumber v-if="index === 3" placeholder="Precio" v-model="precio_cuatro" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm" />
-                <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
             </div>
-        </div>
 
-        <!-- Tercera fila para porcentaje y botón en vista móvil -->
-        <div class="p-col-12 p-md-6 custom-precios">
-            <div class="p-inputgroup p-mr-2" style="width: 100%;">
-                <InputNumber placeholder="Porcentaje" v-model="precio.porcentage" mode="decimal" :minFractionDigits="2" class="p-inputtext-sm" />
-                <span class="p-inputgroup-addon">%</span>
+            <!-- Segunda fila: Código de Producto y Código de Barras -->
+           
+
+            <!-- Tercera fila: Proveedor -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="proveedor">Proveedor <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText id="proveedor" v-model="proveedorSeleccionado.nombre" placeholder="Seleccione un proveedor" class="form-control p-inputtext-sm bold-input" disabled :class="{'p-invalid' : errores.idproveedor}"/>
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Proveedores')" />
+                    </div>
+                    <small class="p-error" v-if="errores.idproveedor"><strong>{{ errores.idproveedor }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="medida">Medidas <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText id="medida" v-model="medidaSeleccionado.descripcion_medida" placeholder="Seleccione una medida" class="form-control p-inputtext-sm bold-input" disabled :class="{'p-invalid' : errores.idmedida}"/>
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Medidas')" />
+                    </div>
+                    <small class="p-error" v-if="errores.idmedida"><strong>{{ errores.idmedida }}</strong></small>
+                </div>
             </div>
-            <div >
-                <Button label="Calcular" class="p-button-primary p-button-sm"@click="calcularPrecio(precio, index)" />
+
+            <!-- Cuarta fila: Categoría y Marca -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="Categoria">Categoria <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText id="linea" v-model="lineaSeleccionado.nombre" placeholder="Seleccione una línea" class="form-control p-inputtext-sm bold-input" disabled :class="{'p-invalid' : errores.idcategoria}"/>
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Lineas')" />
+                    </div>
+                    <small class="p-error" v-if="errores.idcategoria"><strong>{{ errores.idcategoria }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="marca">Marca <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText id="marca" v-model="marcaSeleccionado.nombre" placeholder="Seleccione una marca" class="form-control p-inputtext-sm bold-input" disabled :class="{'p-invalid' : errores.idmarca}"/>
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Marcas')" />
+                    </div>
+                    <small class="p-error" v-if="errores.idmarca"><strong>{{ errores.idmarca }}</strong></small>
+                </div>
             </div>
-        </div>
-    </div>
-            </form>
-            <template #footer>
-                <Button label="Cerrar" icon="pi pi-times" class="p-button-danger p-button-sm" @click="cerrarModal" />
-                <Button v-if="tipoAccion == 1" class="p-button-success p-button-sm" label="Guardar" icon="pi pi-check" @click="enviarFormulario()" />
-                <Button v-if="tipoAccion == 2" class="p-button-warning p-button-sm" label="Actualizar" icon="pi pi-check" @click="enviarFormulario()" />
-            </template>
-        </Dialog>
+
+            <!-- Quinta fila: Industria y Grupo/Familia -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="industria">Industria <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText id="industria" v-model="industriaSeleccionado.nombre" placeholder="Seleccione una industria" class="form-control p-inputtext-sm bold-input" disabled :class="{'p-invalid' : errores.idindustria}"/>
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Industrias')" />
+                    </div>
+                    <small class="p-error" v-if="errores.idindustria"><strong>{{ errores.idindustria }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="grupoFamilia">Grupo/Familia <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText id="grupoFamilia" v-model="grupoSeleccionado.nombre_grupo" placeholder="Seleccione un grupo" class="form-control p-inputtext-sm bold-input" disabled :class="{'p-invalid' : errores.idgrupo}"/>
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Grupos')" />
+                    </div>
+                    <small class="p-error" v-if="errores.idgrupo"><strong>{{ errores.idgrupo }}</strong></small>
+                </div>
+            </div>
+
+            <!-- Sexta fila: Stock y Medidas -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="stockMinimo">Stock Mínimo <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber id="stockMinimo" v-model="datosFormulario.stock" placeholder="Ej: 10" class="p-inputtext-sm" :class="{'p-invalid' : errores.stock}" @input="validarCampo('stock')"/>
+                        <Dropdown v-model="tipo_stock" :options="tipoEnvase" optionLabel="etiqueta" optionValue="valor" class="p-dropdown-sm p-inputtext-sm" />
+                    </div>
+                    <small class="p-error" v-if="errores.stock"><strong>{{ errores.stock }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="unidadEnvase">Unidades por Paquete <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber id="unidadEnvase" v-model="datosFormulario.unidad_envase" placeholder="Ej: 24" class="p-inputtext-sm" :class="{'p-invalid' : errores.unidad_envase}" @input="validarCampo('unidad_envase')"/>
+                    </div>
+                    <small class="p-error" v-if="errores.unidad_envase"><strong>{{ errores.unidad_envase }}</strong></small>
+                </div>
+                
+            </div>
+
+            <!-- Séptima fila: Precios -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="preciounitario">Precio Unitario <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber id="preciounitario" v-model="datosFormulario.precio_costo_unid" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_costo_unid}" @input="validarCampo('precio_costo_unid')"/>
+                        <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoUnid" />
+                    </div>
+                    <small class="p-error" v-if="errores.precio_costo_unid"><strong>{{ errores.precio_costo_unid }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="preciopaquete">Precio Paquete <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber id="preciopaquete" v-model="datosFormulario.precio_costo_paq" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_costo_paq}" @input="validarCampo('precio_costo_paq')"/>
+                        <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoPaq" />
+                    </div>
+                    <small class="p-error" v-if="errores.precio_costo_paq"><strong>{{ errores.precio_costo_paq }}</strong></small>
+                </div>
+            </div>
+
+            <!-- Octava fila: Costos -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="costocompra">Costo compra <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber id="costocompra" v-model="datosFormulario.costo_compra" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.costo_compra}" @input="validarCampo('costo_compra')"/>
+                    </div>
+                    <small class="p-error" v-if="errores.costo_compra"><strong>{{ errores.costo_compra }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold" for="precioventa">Precio Venta <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber id="precioventa" v-model="datosFormulario.precio_venta" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_venta}" @input="validarCampo('precio_venta')"/>
+                    </div><small class="p-error" v-if="errores.precio_venta"><strong>{{ errores.precio_venta }}</strong></small>
+                </div>
+            </div>
+
+            <!-- Novena fila: Switches de control -->
+            <div class="form-group row mb-4">
+                <div class="col-md-6 switch-container">
+                    <label class="font-weight-bold" for="switchvencimiento">Fecha vencimiento <span class="text-danger">*</span></label>
+                    <InputSwitch id="switchvencimiento" v-model="fechaVencimientoSeleccion" class="p-inputtext-sm" />
+                </div>
+                <div v-show="tipoAccion == 1" class="col-md-6 switch-container">
+                    <label class="font-weight-bold" for="switchstock">Agregar a Stock <span class="text-danger">*</span></label>
+                    <InputSwitch id="switchstock" v-model="agregarStock" class="p-inputtext-sm" />
+                </div>
+            </div>
+
+            <!-- Décima fila: Campos de Stock (condicional) -->
+            <div v-if="agregarStock && tipoAccion == 1" class="form-group row mb-4">
+                <div class="col-md-4">
+                    <label class="font-weight-bold" for="cantidadStock">Cantidad Stock <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputNumber 
+                            id="cantidadStock" 
+                            v-model="unidadStock" 
+                            placeholder="Ej: 10" 
+                            class="p-inputtext-sm" 
+                            mode="decimal"
+                            :class="{'p-invalid' : erroresinventario.unidadStock}" 
+                            @input="validarCampoInventario('unidadStock')"
+                        />
+                    </div>
+                    <small class="p-error" v-if="erroresinventario.unidadStock"><strong>{{ erroresinventario.unidadStock }}</strong></small>
+                </div>
+                <div class="col-md-4">
+                    <label class="font-weight-bold" for="fechavencimiento">Fecha de Vencimiento <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <Calendar 
+                            v-if="fechaVencimientoSeleccion == false" 
+                            id="fechavencimiento" 
+                            v-model="fechaPorDefecto" 
+                            placeholder="dd/mm/yy" 
+                            class="p-inputtext-sm" 
+                            :touchUI="true" 
+                            :hideOnDateTimeSelect="false" 
+                            dateFormat="yy-mm-dd" 
+                            disabled
+                        />
+                        <Calendar 
+                            v-if="fechaVencimientoSeleccion == true" 
+                            id="fechavencimiento" 
+                            v-model="fechaVencimientoAlmacen" 
+                            placeholder="dd/mm/yy" 
+                            :touchUI="true" 
+                            :minDate="minDate" 
+                            @date-select="handleDateChange" 
+                            class="p-inputtext-sm" 
+                            dateFormat="dd/mm/yy" 
+                        />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="font-weight-bold" for="almacen">Almacen <span class="text-danger">*</span></label>
+                    <div class="p-inputgroup">
+                        <InputText 
+                            id="almacen" 
+                            v-model="almacenSeleccionado.nombre_almacen" 
+                            placeholder="Seleccione un almacen" 
+                            class="form-control p-inputtext-sm bold-input" 
+                            disabled
+                            :class="{'p-invalid' : erroresinventario.AlmacenSeleccionado}" 
+                        />
+                        <Button label="..." class="p-button-primary p-button-sm" @click="abrirDialogos('Almacen')" />
+                    </div>
+                    <small class="p-error" v-if="erroresinventario.AlmacenSeleccionado"><strong>{{ erroresinventario.AlmacenSeleccionado }}</strong></small>
+                </div>
+            </div>
+
+            <!-- Lista de precios -->
+            <div v-for="(precio, index) in precios" :key="precio.id" class="form-group row mb-4">
+                <div class="col-12">
+                    <label class="font-weight-bold">{{ precio.nombre_precio }}:</label>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-inputgroup">
+                        <InputNumber 
+                            v-if="index === 0" 
+                            v-model="precio_uno" 
+                            placeholder="Precio" 
+                            mode="decimal" 
+                            :minFractionDigits="2" 
+                            :maxFractionDigits="2" 
+                            class="p-inputtext-sm w-full"
+                        />
+                        <InputNumber 
+                            v-if="index === 1" 
+                            v-model="precio_dos" 
+                            placeholder="Precio" 
+                            mode="decimal" 
+                            :minFractionDigits="2" 
+                            :maxFractionDigits="2" 
+                            class="p-inputtext-sm w-full"
+                        />
+                        <InputNumber 
+                            v-if="index === 2" 
+                            v-model="precio_tres" 
+                            placeholder="Precio" 
+                            mode="decimal" 
+                            :minFractionDigits="2" 
+                            :maxFractionDigits="2" 
+                            class="p-inputtext-sm w-full"
+                        />
+                        <InputNumber 
+                            v-if="index === 3" 
+                            v-model="precio_cuatro" 
+                            placeholder="Precio" 
+                            mode="decimal" 
+                            :minFractionDigits="2" 
+                            :maxFractionDigits="2" 
+                            class="p-inputtext-sm w-full"
+                        />
+                        <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-inputgroup">
+                        <InputNumber 
+                            placeholder="Porcentaje" 
+                            v-model="precio.porcentage" 
+                            mode="decimal" 
+                            :minFractionDigits="2" 
+                            class="p-inputtext-sm"
+                        />
+                        <span class="p-inputgroup-addon">%</span>
+                        <Button 
+                            label="Calcular" 
+                            class="p-button-primary p-button-sm"
+                            @click="calcularPrecio(precio, index)" 
+                        />
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Footer con botones de acción -->
+        <template #footer>
+            <div class="flex justify-content-end gap-2">
+                <Button 
+                    label="Cerrar" 
+                    icon="pi pi-times" 
+                    class="p-button-danger p-button-sm" 
+                    @click="cerrarModal" 
+                />
+                <Button 
+                    v-if="tipoAccion == 1" 
+                    class="p-button-success p-button-sm" 
+                    label="Guardar" 
+                    icon="pi pi-check" 
+                    @click="enviarFormulario()" 
+                />
+                <Button 
+                    v-if="tipoAccion == 2" 
+                    class="p-button-warning p-button-sm" 
+                    label="Actualizar" 
+                    icon="pi pi-check" 
+                    @click="enviarFormulario()" 
+                />
+            </div>
+        </template>
+    </Dialog>
+</template>
 
         <!-- MODALES DINÁMICOS -->
         <DialogProveedores v-if="mostrarDialogoProveedores" :visible.sync="mostrarDialogoProveedores" @close="cerrarDialogos('Proveedores')" @proveedor-seleccionado="manejarProveedorSeleccionado" />
