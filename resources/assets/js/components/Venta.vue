@@ -232,18 +232,25 @@
                                                         : 'img/productoSinImagen.png'
                                                         " :alt="arraySeleccionado.nombre" class="product-image" />
                                                 </div>
+                                                <div :class="{
+                                                    'alert': true,
+                                                    'alert-success': (arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad) > arraySeleccionado.stock / (unidadPaquete || 1),
+                                                    'alert-warning': (arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad) <= arraySeleccionado.stock / (unidadPaquete || 1),
+                                                    'alert-danger': (arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad) <= 0
+                                                }" role="alert">
+                                                    <p style="margin:0px">Stock disponible</p>
+                                                    <b>
+                                                        {{
+                                                            arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad
+                                                        }} {{
+                                                        unidadPaquete == 1 ? "Unidades" : "Paquetes"
+                                                        }}
+                                                    </b>
+                                                </div>
+
                                             </div>
                                             <div class="p-col-12 p-md-6 p-lg-6">
-                                                <div class="stock-info p-mb-3">
-                                                    <i :class="stockMostrado > 0 ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'"
-                                                        :style="{ color: stockMostrado > 0 ? 'var(--green-500)' : 'var(--yellow-500)' }"></i>
-                                                    <span>{{ stockMostrado > 0 ? "En stock" : "Bajo stock" }}</span>
-                                                    <strong>
-                                                        {{ stockMostrado }}
-                                                        {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
-                                                        disponibles
-                                                    </strong>
-                                                </div>
+
                                                 <div class="product-price-section">
                                                     <h4 class="price-title">PRECIOS:</h4>
                                                     <div class="product-price p-mb-4">
@@ -409,74 +416,67 @@
                             </div>
                         </template> -->
                         <template>
-    <TabView class="custom-tabview">
-        <TabPanel header="Efectivo">
-            <div class="p-grid p-fluid">
-                <div class="p-col-12 p-md-7">
-                    <Card>
-                        <template #content>
-                            <div class="p-fluid">
-                                <div class="p-field">
-                                    <label for="montoEfectivo">
-                                        <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
-                                    </label>
-                                    <div class="p-inputgroup">
-                                        <span class="p-inputgroup-addon">{{ monedaVenta[1] }}</span>
-                                        <InputNumber 
-                                            id="montoEfectivo" 
-                                            v-model="recibido" 
-                                            placeholder="Ingrese el monto recibido"
-                                            :class="{ 'p-invalid': montoInvalido }"
-                                        />
+                            <TabView class="custom-tabview">
+                                <TabPanel header="Efectivo">
+                                    <div class="p-grid p-fluid">
+                                        <div class="p-col-12 p-md-7">
+                                            <Card>
+                                                <template #content>
+                                                    <div class="p-fluid">
+                                                        <div class="p-field">
+                                                            <label for="montoEfectivo">
+                                                                <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
+                                                            </label>
+                                                            <div class="p-inputgroup">
+                                                                <span class="p-inputgroup-addon">{{ monedaVenta[1]
+                                                                    }}</span>
+                                                                <InputNumber id="montoEfectivo" v-model="recibido"
+                                                                    placeholder="Ingrese el monto recibido"
+                                                                    :class="{ 'p-invalid': montoInvalido }" />
+                                                            </div>
+                                                            <small class="p-error" v-if="montoInvalido">
+                                                                El monto recibido debe ser mayor o igual al total a
+                                                                pagar
+                                                            </small>
+                                                        </div>
+                                                        <div class="p-field">
+                                                            <label for="cambioRecibir">
+                                                                <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
+                                                            </label>
+                                                            <InputText id="cambioRecibir" :value="calcularCambio"
+                                                                readonly />
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </Card>
+                                        </div>
+                                        <div class="p-col-12 p-md-5">
+                                            <Card>
+                                                <template #content>
+                                                    <h5>Detalle de Venta</h5>
+                                                    <div class="p-d-flex p-jc-between p-mb-2">
+                                                        <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
+                                                        <span class="p-text-bold">
+                                                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="p-d-flex p-jc-between">
+                                                        <span><i class="pi pi-money-bill p-mr-2" /> Total a
+                                                            Pagar:</span>
+                                                        <span class="p-text-bold p-text-xl">
+                                                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                                                        </span>
+                                                    </div>
+                                                </template>
+                                            </Card>
+                                            <Button label="Registrar Pago" icon="pi pi-check"
+                                                class="p-button-success p-mt-2 p-button-lg p-button-raised"
+                                                @click="validarYRegistrarPago" :disabled="!montoValido" />
+                                        </div>
                                     </div>
-                                    <small class="p-error" v-if="montoInvalido">
-                                        El monto recibido debe ser mayor o igual al total a pagar
-                                    </small>
-                                </div>
-                                <div class="p-field">
-                                    <label for="cambioRecibir">
-                                        <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
-                                    </label>
-                                    <InputText 
-                                        id="cambioRecibir"
-                                        :value="calcularCambio"
-                                        readonly 
-                                    />
-                                </div>
-                            </div>
+                                </TabPanel>
+                            </TabView>
                         </template>
-                    </Card>
-                </div>
-                <div class="p-col-12 p-md-5">
-                    <Card>
-                        <template #content>
-                            <h5>Detalle de Venta</h5>
-                            <div class="p-d-flex p-jc-between p-mb-2">
-                                <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
-                                <span class="p-text-bold">
-                                    {{ totalFormateado }} {{ monedaVenta[1] }}
-                                </span>
-                            </div>
-                            <div class="p-d-flex p-jc-between">
-                                <span><i class="pi pi-money-bill p-mr-2" /> Total a Pagar:</span>
-                                <span class="p-text-bold p-text-xl">
-                                    {{ totalFormateado }} {{ monedaVenta[1] }}
-                                </span>
-                            </div>
-                        </template>
-                    </Card>
-                    <Button 
-                        label="Registrar Pago" 
-                        icon="pi pi-check"
-                        class="p-button-success p-mt-2 p-button-lg p-button-raised"
-                        @click="validarYRegistrarPago"
-                        :disabled="!montoValido"
-                    />
-                </div>
-            </div>
-        </TabPanel>
-    </TabView>
-</template>
 
                         <div v-if="tipoVenta === 'credito'">
                             <div class="p-grid">
@@ -708,6 +708,7 @@ export default {
     },
     data() {
         return {
+
             tipoVentaSeleccionado: false,
             precioSeleccionado: null,
             searchTerm: '',
@@ -1575,7 +1576,11 @@ export default {
             }
 
             const stockDisponible = this.calcularStockDisponible;
-            const cantidadSolicitada = this.unidadPaquete === 'paquete' ? this.cantidad : this.cantidad / this.arraySeleccionado.unidad_envase;
+            const unidadEnvase = this.arraySeleccionado.unidad_envase || 1; // Fallback para evitar división por undefined
+            const cantidadSolicitada =
+                this.unidadPaquete === "paquete"
+                    ? this.cantidad
+                    : this.cantidad / unidadEnvase;
 
             if (this.saldosNegativos === 0 && stockDisponible < cantidadSolicitada) {
                 swal({
@@ -1596,9 +1601,11 @@ export default {
             }
 
             const precioUnitario = parseFloat(this.precioSeleccionado);
-            const cantidadTotal = this.unidadPaquete === 'paquete'
-                ? this.cantidad * this.arraySeleccionado.unidad_envase
-                : this.cantidad;
+            const cantidadTotal =
+                this.unidadPaquete === "paquete"
+                    ? this.cantidad * unidadEnvase
+                    : this.cantidad;
+
             const descuento = (
                 precioUnitario *
                 cantidadTotal *
@@ -1612,9 +1619,12 @@ export default {
                 idarticulo: this.arraySeleccionado.id,
                 articulo: this.arraySeleccionado.nombre,
                 medida: this.arraySeleccionado.medida,
-                unidad_envase: this.arraySeleccionado.unidad_envase,
+                unidad_envase: unidadEnvase,
                 cantidad: cantidadTotal,
-                cantidad_paquetes: this.unidadPaquete === 'paquete' ? this.cantidad : cantidadTotal / this.arraySeleccionado.unidad_envase,
+                cantidad_paquetes:
+                    this.unidadPaquete === "paquete"
+                        ? this.cantidad
+                        : cantidadTotal / unidadEnvase,
                 precio: precioUnitario,
                 descuento: this.descuentoProducto,
                 stock: this.arraySeleccionado.saldo_stock,
@@ -1624,33 +1634,18 @@ export default {
 
             this.arrayDetalle.push(nuevoDetalle);
 
-            const nuevoProducto = {
-                actividadEconomica: 461021,
-                codigoProductoSin: this.arraySeleccionado.codigoProductoSin,
-                codigoProducto: this.arraySeleccionado.codigo,
-                descripcion: this.arraySeleccionado.nombre,
-                cantidad: cantidadTotal,
-                unidadMedida: this.arraySeleccionado.codigoClasificador,
-                precioUnitario: precioUnitario.toFixed(2),
-                montoDescuento: descuento,
-                subTotal: total,
-                numeroSerie: null,
-                numeroImei: null,
-            };
-
-            this.arrayProductos.push(nuevoProducto);
-
             this.precioBloqueado = true;
             this.arraySeleccionado = [];
             this.cantidad = 1;
-            this.unidadPaquete = '1';  // Reseteamos a 'Por unidad'
+            this.unidadPaquete = "1"; // Reseteamos a 'Por unidad'
             this.codigo = "";
             this.descuentoProducto = 0;
-            this.precioSeleccionado = null;  // Reseteamos el precio seleccionado
+            this.precioSeleccionado = null;
 
             this.calcularTotal();
             this.actualizarVistaStock();
         },
+
 
         agregarDetalleModal(data) {
             this.codigo = data.codigo;
@@ -1768,91 +1763,7 @@ export default {
                 this.emitirFactura();
             }
         },
-        async emitirResivo(idVentaRecienRegistrada) {
-            let me = this;
-
-            let idventa = idVentaRecienRegistrada;
-            let numeroResivo = document.getElementById("num_comprobante").value;
-            let id_cliente = document.getElementById("idcliente").value;
-            let nombreRazonSocial = document.getElementById("nombreCliente").value;
-            let numeroDocumento = document.getElementById("documento").value;
-            let complemento = document.getElementById("complemento_id").value;
-            let tipoDocumentoIdentidad =
-                document.getElementById("tipo_documento").value;
-            let montoTotal = (
-                this.calcularTotal * parseFloat(this.monedaVenta[0])
-            ).toFixed(2);
-            let usuario = document.getElementById("usuarioAutenticado").value;
-
-            try {
-                const response = await axios.get("/resivo/obtenerLeyendaAleatoria");
-                this.leyendaAl = response.data.descripcionLeyenda;
-                console.log("El dato de leyenda llegado es: " + this.leyendaAl);
-            } catch (error) {
-                console.error(error);
-                return '"Ley N° 453: Los servicios deben suministrarse en condiciones de inocuidad, calidad y seguridad."';
-            }
-
-            var resivo = [];
-            resivo.push({
-                cabecera: {
-                    municipio: "Cochabamba",
-                    telefono: "77490451",
-                    numeroResivo: numeroResivo,
-                    codigoSucursal: 0,
-                    direccion: "Av. Ejemplo 123",
-                    codigoPuntoVenta: 0,
-                    fechaEmision: new Date().toISOString().slice(0, -1),
-                    nombreRazonSocial: nombreRazonSocial,
-                    codigoTipoDocumentoIdentidad: tipoDocumentoIdentidad,
-                    numeroDocumento: numeroDocumento,
-                    complemento: complemento,
-                    codigoCliente: numeroDocumento,
-                    montoTotal: montoTotal,
-                    codigoMoneda: 1,
-                    tipoCambio: 1,
-                    montoTotalMoneda: montoTotal,
-                    usuario: usuario,
-                    leyenda: this.leyendaAl,
-                },
-            });
-            me.arrayProductos.forEach(function (prod) {
-                resivo.push({ detalle: prod });
-            });
-
-            var datos = { resivo };
-
-            axios
-                .post("/venta/emitirResivo", {
-                    resivo: datos,
-                    id_cliente: id_cliente,
-                    idventa: idventa,
-                })
-                .then(function (response) {
-                    var data = response.data;
-
-                    if (data === "VALIDADA") {
-                        swal("RESIVO VALIDADO", "Correctamente", "success");
-                        me.arrayProductos = [];
-                        me.cerrarModal2();
-                        me.cerrarModal3();
-                        me.listarVenta(1, "", "id");
-                        me.mostrarSpinner = false;
-                    } else {
-                        me.arrayProductos = [];
-                        me.cerrarModal2();
-                        me.cerrarModal3();
-                        me.listarVenta(1, "", "id");
-                        me.mostrarSpinner = false;
-                        swal("RESIVO VALIDADO", "éxito", "success");
-                    }
-                })
-                .catch(function (error) {
-                    me.arrayProductos = [];
-                    swal("INTENTE DE NUEVO", "Comunicacion fallida", "error");
-                    me.mostrarSpinner = false;
-                });
-        },
+     
 
         imprimirResivo(id) {
             swal({
@@ -1972,7 +1883,7 @@ export default {
         },
         async registrarVenta(idtipo_pago) {
             if (!this.validarVenta()) return;
-            
+
             this.prepararDatosCliente();
             await this.buscarOCrearCliente();
 
