@@ -246,21 +246,23 @@
                                         <DataTable :value="[slotProps.data]" responsiveLayout="scroll">
                                             <Column header="Fecha Vencimiento" :styles="{width:'10%'}">
                                                 <template #body="slotProps">
-                                                    <Calendar
-                                                        class="p-inputtext-sm"
+                                                    <input
+                                                        type="date"
                                                         v-model="slotProps.data.fecha_vencimiento"
-                                                        :touchUI="true"
-                                                        dateFormat="yy.mm.dd"
-                                                        :minDate="minDate"
                                                         :class="{
                                                             'invalido': verificarFechaVencimiento(slotProps.data),
                                                             'espacio-top': verificarFechaVencimiento(slotProps.data)
-                                                            }"
-                                                        :disabled="slotProps.data.vencimiento == 1"
+                                                        }"
+                                                        :disabled="true"  
+                                                        value=""  
+                                                        placeholder="Fecha no disponible"
                                                     />
                                                     <small class="p-error" v-if="verificarFechaVencimiento(slotProps.data)">Fecha requerida</small>
                                                 </template>
                                             </Column>
+
+
+
                                             <Column field="nombre_categoria" header="Categoria" :styles="{width:'15%'}"></Column>
                                             <Column :header="slotProps.data.esPaquetesCantidad ? ' Cantidad en: Paquetes' : 'Cantidad en: Unidades'" :styles="{width:'20%'}" style="padding-top: 40px !important;">
                                                 <template #body="slotProps">

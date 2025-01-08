@@ -707,12 +707,31 @@ export default {
 
                 me.cerrarModal5();
                 me.arqueoRealizado = true;
+                this.limpiarDatosArqueo();
                 me.$toast.add({ severity: 'success', summary: 'Éxito', detail: 'Arqueo de caja registrado correctamente', life: 3000 });
+                this.listarCaja(1, this.buscar, this.criterio);
             } catch (error) {
                 console.error('Error al registrar el arqueo:', error);
                 me.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo registrar el arqueo de caja', life: 3000 });
             }
         },
+        limpiarDatosArqueo() {
+            // Limpia los datos del arqueo para que el modal comience fresco si se vuelve a abrir
+            this.billete200 = 0;
+            this.billete100 = 0;
+            this.billete50 = 0;
+            this.billete20 = 0;
+            this.billete10 = 0;
+            this.moneda5 = 0;
+            this.moneda2 = 0;
+            this.moneda1 = 0;
+            this.moneda050 = 0;
+            this.moneda020 = 0;
+            this.moneda010 = 0;
+            this.totalBilletes = 0;
+            this.totalMonedas = 0;
+        },
+
         obtenerSaldoCaja() {
             return new Promise((resolve, reject) => {
                 axios.get(`/caja/saldo/${this.id}`)
@@ -893,6 +912,7 @@ export default {
 
         cerrarModal5() {
             this.modal5 = false;
+            this.limpiarDatosArqueo();
         },
 
         abrirModal(modelo, accion, data = []) {
@@ -1006,6 +1026,7 @@ export default {
                         switch (accion) {
                             case 'contar':
                                 {
+                                    this.limpiarDatosArqueo();
                                     this.modal5 = true;
                                     this.tituloModal5 = 'Arqueo de Caja';
                                     this.id = id;
@@ -1036,7 +1057,6 @@ export default {
         this.listarCaja(1, this.buscar, this.criterio);
 
 
-        
     }
 }
 </script>
