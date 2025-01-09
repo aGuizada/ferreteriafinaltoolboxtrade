@@ -21,19 +21,6 @@
                 @page="onPage($event)" :first="pagination.from - 1" responsiveLayout="scroll"
                 class="p-datatable-gridlines p-datatable-sm moto-table" :responsive="true">
                 <Column field="id" header="N°"></Column>
-                <Column field="fechaApertura" header="Fecha Apertura"></Column>
-                <Column field="fechaCierre" header="Fecha Cierre"></Column>
-                <Column field="saldoInicial" header="Saldo Inicial"></Column>
-                <Column field="ventas" header="Ventas Totales"></Column>
-                <Column field="ventasContado" header="Ventas al Contado"></Column>
-                <Column field="ventasCredito" header="Ventas a Crédito"></Column>
-                <Column field="pagosEfectivoVentas" header="Pagos en Efectivo Ventas"></Column>
-                <Column field="cuotasventasCredito" header="Pagos de Cuotas"></Column>
-                <Column field="PagoCuotaEfectivo" header="Pagos de Cuotas Efectivo"></Column>
-                <Column field="saldoFaltante" header="Saldo de faltante"></Column>
-                <Column field="depositos" header="Depósitos Extras"></Column>
-                <Column field="salidas" header="Salidas Extras"></Column>
-                <Column field="saldoCaja" header="Saldo Caja"></Column>
                 <Column field="estado" header="Estado">
                     <template #body="slotProps">
                         <Tag :severity="slotProps.data.estado ? 'success' : 'danger'">
@@ -41,6 +28,20 @@
                         </Tag>
                     </template>
                 </Column>
+             
+                <Column field="fechaApertura" header="Fecha Apertura"></Column>
+                <Column field="fechaCierre" header="Fecha Cierre"></Column>
+                <Column field="saldoInicial" header="Saldo Inicial"></Column>
+                <Column field="ventas" header="Ventas Totales"></Column>
+             
+                
+                <Column field="cuotasventasCredito" header="Pagos de Cuotas"></Column>
+                
+                <Column field="saldoFaltante" header="Saldo de faltante"></Column>
+                <Column field="depositos" header="Depósitos Extras"></Column>
+                <Column field="salidas" header="Salidas Extras"></Column>
+                <Column field="saldoCaja" header="Saldo Caja"></Column>
+             
                 <Column header="Acciones">
                     <template #body="slotProps">
                         <Button icon="pi pi-plus" class="p-button-primary p-button-sm"

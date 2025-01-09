@@ -31,12 +31,7 @@
         </div>
       </div>
 
-      <div class="p-field p-grid">
-        <div class="p-col-6">
-          <label class="font-weight-bold">Forma de pago</label>
-          <Dropdown v-model="tipo_pago" :options="opcionesPago" optionLabel="label" optionValue="value" placeholder="Selecciona la forma de pago" />
-        </div>
-      </div>
+     
     </div>
 
     <template #footer>
@@ -91,7 +86,7 @@ export default {
       },
       errores: {},
       ultimaCuota: 0,
-      tipo_pago: 0,
+      tipo_pago: 1,
       opcionesPago: [
         { label: 'Efectivo', value: 1 },
         { label: 'Cheque', value: 2 },

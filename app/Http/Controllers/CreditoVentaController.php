@@ -92,7 +92,6 @@ class CreditoVentaController extends Controller
                 'credito_ventas.total',
                 'credito_ventas.estado',
                 'credito_ventas.proximo_pago',
-
                 'ventas.tipo_comprobante',
                 'ventas.num_comprobante',
                 'ventas.fecha_hora',
@@ -101,49 +100,31 @@ class CreditoVentaController extends Controller
                 'vendedores.nombre as nombre_vendedor'
             );
 
-
         // Aplicar filtro de búsqueda
         if ($buscar && $criterio) {
             if ($criterio === 'nombre_cliente') {
                 $creditosQuery->where('clientes.nombre', 'like', '%' . $buscar . '%');
             } elseif ($criterio === 'nombre_vendedor') {
                 $creditosQuery->where('vendedores.nombre', 'like', '%' . $buscar . '%');
-            } elseif ($criterio === 'proximos_pago') {
-                // Lógica para manejar la búsqueda por pagos cercanos
             }
         }
-        Log::info($filtroAvanzado);
+
         // Aplicar filtro avanzado
         if ($filtroAvanzado) {
-            if ($filtroAvanzado === 'pagos_atrasados') {
-                // Calcular la fecha actual
-                $fechaActual = now();
+            $fechaActual = Carbon::now();
 
-                // Aplicar el filtro para los pagos que ya vencieron
-                $creditosQuery->where('credito_ventas.proximo_pago', '<', $fechaActual)
-                    ->where('credito_ventas.estado', '!=', 'Completado');
-            } elseif ($filtroAvanzado === 'pagos_hoy') {
-                // Calcular la fecha actual
-                $fechaActual = now();
-
-                // Aplicar el filtro para los pagos que deben realizarse hoy
-                $creditosQuery->whereDate('credito_ventas.proximo_pago', $fechaActual)
-                    ->where('credito_ventas.estado', '!=', 'Completado');
-            } elseif ($filtroAvanzado === 'pagos_cercanos') {
-                $fechaActual = now();
-
-                // Definir el rango de días para considerar como "cercanos"
-                $diasCercanos = 7; // Por ejemplo, considerar los pagos de los próximos 7 días como cercanos
-
-                // Calcular la fecha límite para los pagos cercanos
-                $fechaLimite = $fechaActual->copy()->addDays($diasCercanos);
-
-                // Aplicar el filtro para los pagos que están dentro del rango de días cercanos
-                $creditosQuery->where('credito_ventas.proximo_pago', '<=', $fechaLimite)
-                    ->where('credito_ventas.estado', '!=', 'Completado');
-            } elseif ($filtroAvanzado === 'pagos_completados') {
-                // Aplicar el filtro para los pagos que ya están completados
-                $creditosQuery->where('credito_ventas.estado', '=', 'Completado');
+            switch ($filtroAvanzado) {
+                case 'completo':
+                    $creditosQuery->where('credito_ventas.estado', 'Completado');
+                    break;
+                case 'pendientes':
+                    $creditosQuery->where('credito_ventas.estado', '!=', 'Completado')
+                        ->where('credito_ventas.proximo_pago', '>=', $fechaActual);
+                    break;
+                case 'atrasado':
+                    $creditosQuery->where('credito_ventas.estado', '!=', 'Completado')
+                        ->where('credito_ventas.proximo_pago', '<', $fechaActual);
+                    break;
             }
         }
 

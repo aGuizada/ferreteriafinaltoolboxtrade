@@ -174,15 +174,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- <div class="form-group">
-                                        <span class="p-float-label">
-                                            <Dropdown id="tipoComprobante" v-model="tipo_comprobante"
-                                                :options="tipoComprobanteOptions" optionLabel="name" optionValue="code"
-                                                class="w-full" />
-                                            <label for="tipoComprobante">Comprobante <span
-                                                    class="p-error">*</span></label>
-                                        </span>
-                                    </div> -->
+
                                 </div>
                             </div>
                         </template>
@@ -243,7 +235,7 @@
                                                         {{
                                                             arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad
                                                         }} {{
-                                                        unidadPaquete == 1 ? "Unidades" : "Paquetes"
+                                                            unidadPaquete == 1 ? "Unidades" : "Paquetes"
                                                         }}
                                                     </b>
                                                 </div>
@@ -383,7 +375,7 @@
                     </div>
 
                     <div v-show="step === 3" class="step-content">
-                        <!-- <template>
+                        <template>
                             <div class="p-d-flex p-jc-center p-mb-3">
                                 <div v-if="!tipoVentaSeleccionado" class="p-d-flex">
                                     <Button class="p-button-lg p-mr-3"
@@ -414,68 +406,71 @@
                                         }}</span>
                                 </div>
                             </div>
-                        </template> -->
+                        </template>
                         <template>
-                            <TabView class="custom-tabview">
-                                <TabPanel header="Efectivo">
-                                    <div class="p-grid p-fluid">
-                                        <div class="p-col-12 p-md-7">
-                                            <Card>
-                                                <template #content>
-                                                    <div class="p-fluid">
-                                                        <div class="p-field">
-                                                            <label for="montoEfectivo">
-                                                                <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
-                                                            </label>
-                                                            <div class="p-inputgroup">
-                                                                <span class="p-inputgroup-addon">{{ monedaVenta[1]
-                                                                    }}</span>
-                                                                <InputNumber id="montoEfectivo" v-model="recibido"
-                                                                    placeholder="Ingrese el monto recibido"
-                                                                    :class="{ 'p-invalid': montoInvalido }" />
+                            <div v-if="tipoVenta === 'contado'" class="payment-options">
+                                <TabView class="custom-tabview">
+                                    <TabPanel header="Efectivo">
+                                        <div class="p-grid p-fluid">
+                                            <div class="p-col-12 p-md-7">
+                                                <Card>
+                                                    <template #content>
+                                                        <div class="p-fluid">
+                                                            <div class="p-field">
+                                                                <label for="montoEfectivo">
+                                                                    <i class="pi pi-money-bill p-mr-2" /> Monto
+                                                                    Recibido:
+                                                                </label>
+                                                                <div class="p-inputgroup">
+                                                                    <span class="p-inputgroup-addon">{{ monedaVenta[1]
+                                                                        }}</span>
+                                                                    <InputNumber id="montoEfectivo" v-model="recibido"
+                                                                        placeholder="Ingrese el monto recibido"
+                                                                        :class="{ 'p-invalid': montoInvalido }" />
+                                                                </div>
+                                                                <small class="p-error" v-if="montoInvalido">
+                                                                    El monto recibido debe ser mayor o igual al total a
+                                                                    pagar
+                                                                </small>
                                                             </div>
-                                                            <small class="p-error" v-if="montoInvalido">
-                                                                El monto recibido debe ser mayor o igual al total a
-                                                                pagar
-                                                            </small>
+                                                            <div class="p-field">
+                                                                <label for="cambioRecibir">
+                                                                    <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
+                                                                </label>
+                                                                <InputText id="cambioRecibir" :value="calcularCambio"
+                                                                    readonly />
+                                                            </div>
                                                         </div>
-                                                        <div class="p-field">
-                                                            <label for="cambioRecibir">
-                                                                <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
-                                                            </label>
-                                                            <InputText id="cambioRecibir" :value="calcularCambio"
-                                                                readonly />
+                                                    </template>
+                                                </Card>
+                                            </div>
+                                            <div class="p-col-12 p-md-5">
+                                                <Card>
+                                                    <template #content>
+                                                        <h5>Detalle de Venta</h5>
+                                                        <div class="p-d-flex p-jc-between p-mb-2">
+                                                            <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
+                                                            <span class="p-text-bold">
+                                                                {{ totalFormateado }} {{ monedaVenta[1] }}
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                </template>
-                                            </Card>
+                                                        <div class="p-d-flex p-jc-between">
+                                                            <span><i class="pi pi-money-bill p-mr-2" /> Total a
+                                                                Pagar:</span>
+                                                            <span class="p-text-bold p-text-xl">
+                                                                {{ totalFormateado }} {{ monedaVenta[1] }}
+                                                            </span>
+                                                        </div>
+                                                    </template>
+                                                </Card>
+                                                <Button label="Registrar Pago" icon="pi pi-check"
+                                                    class="p-button-success p-mt-2 p-button-lg p-button-raised"
+                                                    @click="validarYRegistrarPago" :disabled="!montoValido" />
+                                            </div>
                                         </div>
-                                        <div class="p-col-12 p-md-5">
-                                            <Card>
-                                                <template #content>
-                                                    <h5>Detalle de Venta</h5>
-                                                    <div class="p-d-flex p-jc-between p-mb-2">
-                                                        <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
-                                                        <span class="p-text-bold">
-                                                            {{ totalFormateado }} {{ monedaVenta[1] }}
-                                                        </span>
-                                                    </div>
-                                                    <div class="p-d-flex p-jc-between">
-                                                        <span><i class="pi pi-money-bill p-mr-2" /> Total a
-                                                            Pagar:</span>
-                                                        <span class="p-text-bold p-text-xl">
-                                                            {{ totalFormateado }} {{ monedaVenta[1] }}
-                                                        </span>
-                                                    </div>
-                                                </template>
-                                            </Card>
-                                            <Button label="Registrar Pago" icon="pi pi-check"
-                                                class="p-button-success p-mt-2 p-button-lg p-button-raised"
-                                                @click="validarYRegistrarPago" :disabled="!montoValido" />
-                                        </div>
-                                    </div>
-                                </TabPanel>
-                            </TabView>
+                                    </TabPanel>
+                                </TabView>
+                            </div>
                         </template>
 
                         <div v-if="tipoVenta === 'credito'">
@@ -509,25 +504,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="p-field-checkbox">
-                                <Checkbox v-model="primera_cuota" :binary="true" id="primera_cuota" />
-                                <label for="primera_cuota">Primera cuota pagada</label>
-                            </div>
-
-                            <div v-if="primera_cuota" class="p-grid">
-                                <div class="p-col-6">
-                                    <label class="font-weight-bold">Monto a pagar</label>
-                                    <InputNumber v-model="primer_precio_cuota" :useGrouping="false" />
-                                </div>
-                                <div class="p-col-6">
-                                    <label class="font-weight-bold" for="tipo_pago">Tipo de Pago</label>
-                                    <Dropdown id="tipo_pago" v-model="tipo_pago" :options="tiposPagoOptions"
-                                        optionLabel="label" optionValue="value"
-                                        @change="seleccionarTipoPago($event.value)" />
-                                </div>
-                            </div>
-
                             <DataTable :value="cuotas" class="p-mt-4" :paginator="true" :rows="10"
                                 responsiveLayout="scroll">
                                 <Column field="index" header="#">
@@ -1018,7 +994,8 @@ export default {
     methods: {
         seleccionarTipoVenta(tipo) {
             this.tipoVenta = tipo;
-            this.tipoVentaSeleccionado = true;
+            this.idtipo_venta = tipo === "contado" ? 1 : 2;
+            this.opcionPago = ""; // Reinicia la opción de pago al cambiar el tipo de venta
         },
         actualizarVistaStock() {
             // Forzar la actualización de la vista
@@ -1763,7 +1740,7 @@ export default {
                 this.emitirFactura();
             }
         },
-     
+
 
         imprimirResivo(id) {
             swal({

@@ -56,10 +56,10 @@
                         <a class="nav-link" href="#"><i class="icon-list" style="font-size: 11px;"></i> REGISTRO
                             VENTAS</a>
                     </li> -->
-                    <!-- <li @click="menu=53" class="nav-item">
+                    <li @click="menu=53" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-credit-card" style="font-size: 16px;"></i> VENTAS A
                             CREDITO</a>
-                    </li> -->
+                    </li> 
                     <li @click="menu=6" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-users" style="font-size: 16px;"></i> CLIENTES</a>
                     </li>
