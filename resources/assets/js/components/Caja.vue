@@ -189,6 +189,8 @@
                 <Dialog :visible.sync="modal5" :modal="true" :header="tituloModal5" @hide="cerrarModal5"
                     containerStyle="width: 800px">
                     <form @submit.prevent="registrarArqueo" enctype="multipart/form-data" class="p-fluid">
+                       
+                        
                         <div class="p-grid">
                             <div class="p-col-12 p-md-6">
                                 <h4>Billetes</h4>
@@ -329,21 +331,26 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="p-col-12">
-                                <div class="p-field p-grid">
-                                    <label class="p-col-12 p-md-4">Total Efectivo Bs.</label>
-                                    <div class="p-col-12 p-md-8">
-                                        <strong>{{ totalEfectivo }}</strong>
-                                    </div>
-                                </div>
-                            </div>
+                            
                         </div>
                     </form>
                     <template #footer>
-                        <Button label="Cancelar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal5" />
-                        <Button v-if="tipoAccion == 5" label="Guardar" icon="pi pi-check" class="p-button-success"
-                            @click.prevent="registrarArqueo" />
-                    </template>
+            <div class="p-field p-grid">
+                <label class="font-bold">Saldo en Sistema:</label>
+                <div class="p-col-2 ml-2">
+                    <strong>Bs. {{ saldoSistema }}</strong>
+                </div>
+            </div>
+            <div class="p-field p-grid">
+                <label class="font-bold">Total Efectivo:</label>
+                <div class="p-col-2 ml-2">
+                    <strong>Bs. {{ totalEfectivo }}</strong>
+                </div>
+            </div>
+            <Button label="Cancelar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal5" />
+            <Button v-if="tipoAccion == 5" label="Guardar" icon="pi pi-check" class="p-button-success"
+                @click.prevent="registrarArqueo" />
+        </template>
                 </Dialog>
 
             </template>
@@ -439,6 +446,7 @@ export default {
     },
     data() {
         return {
+            saldoSistema: 0,
             estaRegistrando: false,
             resumenCaja: null,
             modalResumen: false,
@@ -1020,22 +1028,34 @@ export default {
             }
         },
 
-        abrirModal5(modelo, accion, id) {
+        async abrirModal5(modelo, accion, id) {
             switch (modelo) {
-                case "arqueoCaja":
-                    {
-                        switch (accion) {
-                            case 'contar':
-                                {
-                                    this.limpiarDatosArqueo();
-                                    this.modal5 = true;
-                                    this.tituloModal5 = 'Arqueo de Caja';
-                                    this.id = id;
-                                    this.tipoAccion = 5;
-                                    break;
-                                }
+                case "arqueoCaja": {
+                    switch (accion) {
+                        case 'contar': {
+                            this.limpiarDatosArqueo();
+                            this.modal5 = true;
+                            this.tituloModal5 = 'Arqueo de Caja';
+                            this.id = id;
+                            this.tipoAccion = 5;
+                            
+                            // Obtener el saldo del sistema
+                            try {
+                                const response = await axios.get(`/caja/saldo/${id}`);
+                                this.saldoSistema = parseFloat(response.data.saldo).toFixed(2);
+                            } catch (error) {
+                                console.error('Error al obtener el saldo:', error);
+                                this.$toast.add({
+                                    severity: 'error',
+                                    summary: 'Error',
+                                    detail: 'No se pudo obtener el saldo de caja',
+                                    life: 3000
+                                });
+                            }
+                            break;
                         }
                     }
+                }
             }
         }
     },
