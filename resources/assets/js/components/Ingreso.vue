@@ -2,28 +2,22 @@
     <main class="main">
         <!-- Ejemplo de tabla Listado -->
         <div class="card" v-if="listado != 0">
-            <div class="card-header">
-                <i class="fa fa-align-justify"></i> Ingresos
-                <button type="button" @click="mostrarDetalle()" v-if="listado != 0" class="btn btn-secondary">
-                    <i class="icon-plus"></i>&nbsp;Nuevo
-                </button>
-            </div>
+            
             <!-- Listado-->
             <template v-if="listado == 1">
 
                 <div class="form-group row">
                     <div class="col-md-6">
-                        <div class="input-group">
-                            <select class="form-control col-md-3" v-model="criterio">
-                                <option value="tipo_comprobante">Tipo Comprobante</option>
-                                <option value="num_comprobante">Número Comprobante</option>
-                                <option value="fecha_hora">Fecha-Hora</option>
-                            </select>
-                            <input type="text" v-model="buscar" @keyup="listarIngreso(1, buscar, criterio)"
-                                class="form-control" placeholder="Texto a buscar">
-                            <!--button type="submit" @click="listarIngreso(1,buscar,criterio)" class="btn btn-primary"><i class="fa fa-search"></i> Buscar</button-->
-                        </div>
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            v-model="buscar" 
+                            @keyup="listarIngreso(1, buscar, criterio,FechaHora)"
+                            class="form-control" 
+                            placeholder="Buscar..."
+                        >
                     </div>
+                </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm">
@@ -37,21 +31,32 @@
                                 <th class="d-none d-md-table-cell">Número Comprobante</th>
                                 <th>Fecha Hora</th>
                                 <th>Total</th>
-
                                 <th class="d-none d-md-table-cell">Estado</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="ingreso in arrayIngreso" :key="ingreso.id">
                                 <td>
-                                    <button type="button" @click="verIngreso(ingreso.id)"
-                                        class="btn btn-success btn-sm">
-                                        <i class="icon-eye"></i>
-                                    </button> &nbsp;
-
-                                    <button type="button" @click="imprimirDocumento(ingreso.id)"
-                                        class="btn btn-info btn-sm mr-1">
-                                        <i class="icon-printer"></i>
+                                      <!-- Botón para ver ingreso -->
+                                    <button
+                                      type="button"
+                                      @click="verIngreso(ingreso.id)"
+                                      class="btn btn-sm p-button p-component p-button-icon-only"
+                                      style="background-color: green; border-color: green; color: white;"
+                                    >
+                                      <span class="pi pi-eye p-button-icon"></span>
+                                      <span class="p-button-label">&nbsp;</span>
+                                    </button>
+                                
+                                    <!-- Botón para imprimir documento -->
+                                    <button
+                                      type="button"
+                                      @click="imprimirDocumento(ingreso.id)"
+                                      class="btn btn-sm p-button p-component p-button-icon-only"
+                                      style="background-color: blue; border-color: blue; color: white; margin-left: 5px;"
+                                    >
+                                      <span class="pi pi-print p-button-icon"></span>
+                                      <span class="p-button-label">&nbsp;</span>
                                     </button>
 
                                     <template v-if="ingreso.estado == 'Registrado'">
@@ -247,6 +252,7 @@ export default {
             offset: 3,
             criterio: 'num_comprobante',
             buscar: '',
+            FechaHora:'',
             criterioA: 'nombre',
             buscarA: '',
             arrayArticulo: [],

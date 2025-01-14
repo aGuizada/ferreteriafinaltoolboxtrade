@@ -1179,11 +1179,11 @@ public function imprimirResivoCarta($id)
                 $pdf->Cell(0, 5, 'SON: ' . $totalTexto, 0, 1);
             }
 
-            $pdf->Ln(5);
-            $pdf->SetFont('Courier', 'B', 8);
-            $pdf->Cell(0, 5, utf8_decode('FORMA DE PAGO:'), 0, 1);
+            // Tipo de pago
+            $tipoPago = $venta->tipoPago;
+            $nombreTipoPago = $tipoPago ? $tipoPago->nombre_tipo_pago : 'N/A';
             $pdf->SetFont('Courier', '', 8);
-            $pdf->Cell(0, 5, utf8_decode(strtoupper($venta->tipoPago ? $venta->tipoPago->nombre_tipo_pago : 'N/A')), 0, 1, '', true);
+            $pdf->Cell(0, 5, utf8_decode(strtoupper('TIPO DE PAGO: ' . $nombreTipoPago)), 0, 1);
 
             // Firma
             $pdf->SetFont('Courier', '', 10);
@@ -1214,7 +1214,7 @@ public function imprimirResivoCarta($id)
             return response()->json(['error' => 'NO HAY DETALLES PARA ESTA VENTA'], 500);
         }
     } catch (\Exception $e) {
-        \Log::error('Error al imprimir el recibo en carta: ' . $e->getMessage());
+        Log::error('Error al imprimir el recibo en carta: ' . $e->getMessage());
         return response()->json(['error' => 'OCURRIÓ UN ERROR AL IMPRIMIR EL RECIBO EN CARTA'], 500);
     }
 }

@@ -5,25 +5,20 @@
             <!-- Ejemplo de tabla Listado -->
             <div class="card" v-if="!showRegistrarVenta">
                 <!-- <div class="card-header" v-if="listado==1" > -->
-                <div class="card-header">
-                    <i class="fa fa-align-justify"></i> {{ titulo }}
-                    <button v-if="listado == 1" type="button" @click="mostrarDetalle('venta', 'cotizacion')"
-                        class="btn btn-secondary">
-                        <i class="icon-plus"></i>&nbsp;Nuevo
-                    </button>
-                </div>
+                
+                
 
             
                 <template v-if="listado == 1">
                     <div class="card-body">
                         <div class="form-group row">
-                            <div class="col-md-6">
-                                <div class="input-group">
-                                    <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar)"
-                                        class="form-control" placeholder="Buscar por nombre, fecha o hora">
-                                </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar)"
+                                    class="form-control" placeholder="Buscar por nombre, fecha o hora">
                             </div>
                         </div>
+                    </div>
 
 
                         <div class="table-responsive">
@@ -71,41 +66,65 @@
                                        
                                         <td v-text="venta.nota"></td>
                                         <td>
-                                            <div class="d-flex justify-content-start align-items-center">
-                                                <!-- <button type="button" @click="verVenta(venta.id)" class="btn btn-sm rounded">
-                                                    <i class="icon-eye fa-lg" style="color: blue;"></i>
-
-                                                </button> -->
-                                                <button type="button" @click="abrirModalDetalles(venta)"
-                                                    class="btn btn-outline-success btn-sm rounded">
-                                                    <i class="fa fa-eye fa-sm"></i>
-                                                </button>
-                                                <button type="button" @click="pdfVenta(venta.id)"
-                                                    class="btn  btn-sm rounded">
-                                                    <i class="icon-doc fa-lg" style="color: skyblue;"></i>
-
-                                                </button>
-
-                                             
-                                           
-                                                <button type="button" @click="mostrarDetalle('venta', 'editar', venta)"
-                                                    class="btn btn-outline-warning btn-sm rounded">
-                                                    <i class="fa fa-pencil fa-sm"></i>
-                                                </button>
-                                                <template v-if="venta.condicion">
-                                                    <button type="button" class="btn btn-sm rounded"
-                                                        @click="desactivarCotizacion(venta.id)">
-                                                        <i class="icon-trash fa-lg" style="color: red;"></i>
-
-                                                    </button>
-                                                </template>
-                                                <template v-else>
-                                                    <button type="button" class="btn btn-sm rounded"
-                                                        @click="activarCotizacion(venta.id)">
-                                                        <i class="icon-check"></i>
-                                                    </button>
-                                                </template>
+                                            <div class="btn-group" role="group">
+                                              <!-- Botón para abrir detalles -->
+                                              <button
+                                                type="button"
+                                                class="btn btn-sm p-button p-component p-button-icon-only"
+                                                style="background-color: green; border-color: green; color: white;"
+                                                @click="abrirModalDetalles(venta)"
+                                              >
+                                                <span class="pi pi-eye p-button-icon"></span>
+                                                <span class="p-button-label">&nbsp;</span>
+                                              </button>
+                                          
+                                              <!-- Botón para generar PDF -->
+                                              <button
+                                                type="button"
+                                                class="btn btn-sm p-button p-component p-button-icon-only"
+                                                style="background-color: blue; border-color: blue; color: white;"
+                                                @click="pdfVenta(venta.id)"
+                                              >
+                                                <span class="pi pi-file-pdf p-button-icon"></span>
+                                                <span class="p-button-label">&nbsp;</span>
+                                              </button>
+                                          
+                                              <!-- Botón para editar -->
+                                              <button
+                                                type="button"
+                                                class="btn btn-sm p-button p-component p-button-icon-only"
+                                                style="background-color: orange; border-color: orange; color: white;"
+                                                @click="mostrarDetalle('venta', 'editar', venta)"
+                                              >
+                                                <span class="pi pi-pencil p-button-icon"></span>
+                                                <span class="p-button-label">&nbsp;</span>
+                                              </button>
+                                          
+                                              <!-- Botón para desactivar -->
+                                              <button
+                                                v-if="venta.condicion"
+                                                type="button"
+                                                class="btn btn-sm p-button p-component p-button-icon-only"
+                                                style="background-color: red; border-color: red; color: white;"
+                                                @click="desactivarCotizacion(venta.id)"
+                                              >
+                                                <span class="pi pi-trash p-button-icon"></span>
+                                                <span class="p-button-label">&nbsp;</span>
+                                              </button>
+                                          
+                                              <!-- Botón para activar -->
+                                              <button
+                                                v-else
+                                                type="button"
+                                                class="btn btn-sm p-button p-component p-button-icon-only"
+                                                style="background-color: green; border-color: green; color: white;"
+                                                @click="activarCotizacion(venta.id)"
+                                              >
+                                                <span class="pi pi-check p-button-icon"></span>
+                                                <span class="p-button-label">&nbsp;</span>
+                                              </button>
                                             </div>
+
                                         </td>
 
                                     </tr>
