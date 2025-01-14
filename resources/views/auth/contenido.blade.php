@@ -8,12 +8,13 @@
   <meta name="description" content="Sistema Inventarios Laravel Vue Js">
   <meta name="author" content="compartiendocodigos.net">
   <meta name="keyword" content="Sistema Inventarios Laravel Vue Js">
+  
 
-  <title>Sistema Inventarios - 365GROUP</title>
-
+  <title>Inventario Toolbox Trade</title>
+  <link rel="icon" href="img/toolbox trade CC.png" type="image/x-icon">
   <!--link href="css/plantilla.css" rel="stylesheet"-->
   <link rel="stylesheet" href="css/estiloLogin.css">
-
+  
 </head>
 
 <body class="app flex-row align-items-center">
