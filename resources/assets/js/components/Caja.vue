@@ -28,80 +28,65 @@
                         </Tag>
                     </template>
                 </Column>
-             
+
                 <Column field="fechaApertura" header="Fecha Apertura"></Column>
                 <Column field="fechaCierre" header="Fecha Cierre"></Column>
                 <Column field="saldoInicial" header="Saldo Inicial"></Column>
                 <Column field="ventas" header="Ventas Totales"></Column>
-             
-                
+
+
                 <Column field="cuotasventasCredito" header="Pagos de Cuotas"></Column>
-                
+
                 <Column field="saldoFaltante" header="Saldo de faltante"></Column>
                 <Column field="depositos" header="Depósitos Extras"></Column>
                 <Column field="salidas" header="Salidas Extras"></Column>
                 <Column field="saldoCaja" header="Saldo Caja"></Column>
-             
+
                 <Column header="Acciones">
                     <template #body="slotProps">
                         <Button icon="pi pi-plus" class="p-button-primary p-button-sm"
                             @click="abrirModal2('cajaDepositar', 'depositar', slotProps.data)"
-                            v-if="slotProps.data.estado"></Button>
+                            v-if="slotProps.data.estado && !arqueoRealizado" />
                         <Button icon="pi pi-minus" class="p-button-danger p-button-sm"
                             @click="abrirModal3('cajaRetirar', 'retirar', slotProps.data)"
-                            v-if="slotProps.data.estado"></Button>
+                            v-if="slotProps.data.estado && !arqueoRealizado" />
                         <Button icon="pi pi-eye" class="p-button-warning p-button-sm"
-                            @click="abrirModal4('cajaVer', 'ver', slotProps.data.id)"></Button>
+                            @click="abrirModal4('cajaVer', 'ver', slotProps.data.id)" />
                         <Button icon="pi pi-calculator" class="p-button-success p-button-sm"
                             @click="abrirModal5('arqueoCaja', 'contar', slotProps.data.id)"
-                            v-if="slotProps.data.estado"></Button>
+                            v-if="slotProps.data.estado && !arqueoRealizado" />
                         <Button icon="pi pi-lock" class="p-button-danger p-button-sm"
-                            @click="cerrarCaja(slotProps.data.id)"
-                            v-if="slotProps.data.estado && arqueoRealizado"></Button>
-                        <Button icon="pi pi-download" class="p-button-success p-button-sm" 
-                            @click="generarPDF(slotProps.data.id)" v-if="!slotProps.data.estado"></Button>
+                            @click="cerrarCaja(slotProps.data.id)" v-if="slotProps.data.estado && arqueoRealizado" />
+                        <Button icon="pi pi-print" class="p-button-success p-button-sm"
+                            @click="generarPDF(slotProps.data.id)" v-if="!slotProps.data.estado" />
                     </template>
                 </Column>
             </DataTable>
 
             <template>
-  <Dialog 
-    :visible.sync="modal" 
-    :modal="true" 
-    :header="tituloModal" 
-    @hide="cerrarModal"
-    containerStyle="width: 500px;"
-  >
-    <form @submit.prevent="registrarCaja" class="p-fluid">
-      <div class="p-field p-grid">
-        <label for="saldoInicial" class="p-col-12 p-md-3">Saldo Inicial</label>
-        <div class="p-col-12 p-md-9">
-          <InputText 
-            id="saldoInicial" 
-            v-model="saldoInicial" 
-            placeholder="0.00"
-            @keyup.enter="registrarCaja"
-          />
-        </div>
-      </div>
-      <div v-if="errorCaja" class="p-field p-grid div-error">
-        <div class="p-col text-center text-error">
-          <div v-for="error in errorMostrarMsjCaja" :key="error" v-text="error"></div>
-        </div>
-      </div>
-    </form>
-    <template #footer>
-      <Button label="Cerrar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal" />
-      <Button 
-        v-if="tipoAccion == 1" 
-        label="Guardar" 
-        icon="pi pi-check" 
-        class="p-button-success"
-        @click="registrarCaja" 
-      />
-    </template>
-  </Dialog>
-</template>
+                <Dialog :visible.sync="modal" :modal="true" :header="tituloModal" @hide="cerrarModal"
+                    containerStyle="width: 500px;">
+                    <form @submit.prevent="registrarCaja" class="p-fluid">
+                        <div class="p-field p-grid">
+                            <label for="saldoInicial" class="p-col-12 p-md-3">Saldo Inicial</label>
+                            <div class="p-col-12 p-md-9">
+                                <InputText id="saldoInicial" v-model="saldoInicial" placeholder="0.00"
+                                    @keyup.enter="registrarCaja" />
+                            </div>
+                        </div>
+                        <div v-if="errorCaja" class="p-field p-grid div-error">
+                            <div class="p-col text-center text-error">
+                                <div v-for="error in errorMostrarMsjCaja" :key="error" v-text="error"></div>
+                            </div>
+                        </div>
+                    </form>
+                    <template #footer>
+                        <Button label="Cerrar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal" />
+                        <Button v-if="tipoAccion == 1" label="Guardar" icon="pi pi-check" class="p-button-success"
+                            @click="registrarCaja" />
+                    </template>
+                </Dialog>
+            </template>
 
             <template>
                 <Dialog :visible.sync="modal2" :modal="true" :header="tituloModal2" @hide="cerrarModal2"
@@ -189,8 +174,8 @@
                 <Dialog :visible.sync="modal5" :modal="true" :header="tituloModal5" @hide="cerrarModal5"
                     containerStyle="width: 800px">
                     <form @submit.prevent="registrarArqueo" enctype="multipart/form-data" class="p-fluid">
-                       
-                        
+
+
                         <div class="p-grid">
                             <div class="p-col-12 p-md-6">
                                 <h4>Billetes</h4>
@@ -331,78 +316,81 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                         </div>
                     </form>
                     <template #footer>
-            <div class="p-field p-grid">
-                <label class="font-bold">Saldo en Sistema:</label>
-                <div class="p-col-2 ml-2">
-                    <strong>Bs. {{ saldoSistema }}</strong>
-                </div>
-            </div>
-            <div class="p-field p-grid">
-                <label class="font-bold">Total Efectivo:</label>
-                <div class="p-col-2 ml-2">
-                    <strong>Bs. {{ totalEfectivo }}</strong>
-                </div>
-            </div>
-            <Button label="Cancelar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal5" />
-            <Button v-if="tipoAccion == 5" label="Guardar" icon="pi pi-check" class="p-button-success"
-                @click.prevent="registrarArqueo" />
-        </template>
+                        <div class="p-field p-grid">
+                            <label class="font-bold">Saldo en Sistema:</label>
+                            <div class="p-col-2 ml-2">
+                                <strong>Bs. {{ saldoSistema }}</strong>
+                            </div>
+                        </div>
+                        <div class="p-field p-grid">
+                            <label class="font-bold">Total Efectivo:</label>
+                            <div class="p-col-2 ml-2">
+                                <strong>Bs. {{ totalEfectivo }}</strong>
+                            </div>
+                        </div>
+                        <Button label="Cancelar" icon="pi pi-times" class="p-button-danger" @click="cerrarModal5" />
+                        <Button v-if="tipoAccion == 5" label="Guardar" icon="pi pi-check" class="p-button-success"
+                            @click.prevent="registrarArqueo" />
+                    </template>
                 </Dialog>
 
             </template>
             <template>
-  <!-- ... resto de tu template ... -->
+                <!-- ... resto de tu template ... -->
 
-  <div v-if="modalResumen" class="modal fade show" tabindex="-1" role="dialog" style="display: block;">
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Resumen de Caja</h5>
-          <button type="button" class="close" @click="modalResumen = false">
-            <span>&times;</span>
-          </button>
-        </div>
-        <div class="modal-body" v-if="resumenCaja">
-          <h5>Movimientos:</h5>
-          <ul class="list-group mb-3">
-            <li class="list-group-item d-flex justify-content-between align-items-center" 
-                v-for="movimiento in resumenCaja.movimientos" :key="movimiento.concepto">
-              {{ movimiento.concepto }}
-              <span class="badge badge-primary badge-pill">${{ movimiento.monto }}</span>
-            </li>
-          </ul>
-          <h5>Resumen:</h5>
-          <div class="card">
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Total Ingresos
-                <span class="text-success">${{ resumenCaja.totalIngresos.toFixed(2) }}</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Total Egresos
-                <span class="text-danger">${{ resumenCaja.totalEgresos.toFixed(2) }}</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                Saldo en Caja
-                <span class="font-weight-bold">${{ resumenCaja.saldoCaja }}</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="modalResumen = false">Cancelar</button>
-          <button type="button" class="btn btn-primary" @click="realizarCierreCaja">Cerrar Caja</button>
-          <button @click="generarPDF" class="btn btn-success">Generar PDF</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div v-if="modalResumen" class="modal-backdrop fade show"></div>
-</template>
+                <div v-if="modalResumen" class="modal fade show" tabindex="-1" role="dialog" style="display: block;">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Resumen de Caja</h5>
+                                <button type="button" class="close" @click="modalResumen = false">
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" v-if="resumenCaja">
+                                <h5>Movimientos:</h5>
+                                <ul class="list-group mb-3">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                                        v-for="movimiento in resumenCaja.movimientos" :key="movimiento.concepto">
+                                        {{ movimiento.concepto }}
+                                        <span class="badge badge-primary badge-pill">${{ movimiento.monto }}</span>
+                                    </li>
+                                </ul>
+                                <h5>Resumen:</h5>
+                                <div class="card">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Total Ingresos
+                                            <span class="text-success">${{ resumenCaja.totalIngresos.toFixed(2)
+                                                }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Total Egresos
+                                            <span class="text-danger">${{ resumenCaja.totalEgresos.toFixed(2) }}</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Saldo en Caja
+                                            <span class="font-weight-bold">${{ resumenCaja.saldoCaja }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary"
+                                    @click="modalResumen = false">Cancelar</button>
+                                <button type="button" class="btn btn-primary" @click="realizarCierreCaja">Cerrar
+                                    Caja</button>
+                                <button @click="generarPDF" class="btn btn-success">Generar PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="modalResumen" class="modal-backdrop fade show"></div>
+            </template>
         </Panel>
     </main>
 </template>
@@ -581,20 +569,20 @@ export default {
         }
     },
     methods: {
-    generarPDF() {
-  axios({
-    url: `/caja/resumen-pdf/${this.resumenCaja.id}`,
-    method: 'GET',
-    responseType: 'blob', // Importante para manejar archivos binarios
-  }).then((response) => {
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'resumen_caja.pdf');
-    document.body.appendChild(link);
-    link.click();
-  });
-},
+        generarPDF() {
+            axios({
+                url: `/caja/resumen-pdf/${this.resumenCaja.id}`,
+                method: 'GET',
+                responseType: 'blob', // Importante para manejar archivos binarios
+            }).then((response) => {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'resumen_caja.pdf');
+                document.body.appendChild(link);
+                link.click();
+            });
+        },
 
 
         abrirModalResumen() {
@@ -642,62 +630,65 @@ export default {
             me.listarCaja(page, buscar, criterio);
         },
         registrarCaja() {
-      if (this.estaRegistrando) return; // Previene múltiples registros
-      this.estaRegistrando = true;
+            if (this.estaRegistrando) return;
+            this.estaRegistrando = true;
 
-      if (this.validarCaja()) {
-        this.estaRegistrando = false;
-        return;
-      }
+            if (this.validarCaja()) {
+                this.estaRegistrando = false;
+                return;
+            }
 
-      let me = this;
-      let formData = new FormData();
+            let me = this;
+            let formData = new FormData();
+            formData.append('saldoInicial', this.saldoInicial);
 
-      formData.append('saldoInicial', this.saldoInicial);
-
-      axios.post('/caja/registrar', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }).then(function (response) {
-        me.cerrarModal();
-        me.arqueoRealizado = false; // Reiniciamos arqueoRealizado
-        me.listarCaja(1, '', 'id');
-        swal(
-          'Aperturada!',
-          'Caja aperturada de forma satisfactoria!',
-          'success'
-        )
-      }).catch(function (error) {
-        console.log(error);
-      }).finally(function () {
-        me.estaRegistrando = false;
-      });
-    },
+            axios.post('/caja/registrar', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }).then(function (response) {
+                me.cerrarModal();
+                me.arqueoRealizado = false; // Reset the flag when opening a new register
+                me.listarCaja(1, '', 'id');
+                swal(
+                    'Aperturada!',
+                    'Caja aperturada de forma satisfactoria!',
+                    'success'
+                )
+            }).catch(function (error) {
+                console.log(error);
+            }).finally(function () {
+                me.estaRegistrando = false;
+            });
+        },
         async registrarArqueo() {
             let me = this;
-
-            // Calcular el total del arqueo
             const totalArqueo = parseFloat(this.totalEfectivo.toFixed(2));
 
             try {
-                // Obtener el saldo actual de la caja
                 const saldoCaja = parseFloat((await this.obtenerSaldoCaja()).toFixed(2));
 
-                // Validar que se hayan ingresado datos
                 if (totalArqueo === 0) {
-                    this.$toast.add({ severity: 'error', summary: 'Error', detail: 'Debe ingresar al menos un valor para el arqueo', life: 3000 });
+                    this.$toast.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Debe ingresar al menos un valor para el arqueo',
+                        life: 3000
+                    });
                     return;
                 }
 
-                // Validar que el total del arqueo coincida con el saldo de caja
                 const diferencia = Math.abs(totalArqueo - saldoCaja);
-                if (diferencia > 0.01) { // Permitimos una diferencia de hasta 1 centavo
-                    this.$toast.add({ severity: 'error', summary: 'Error', detail: `El total del arqueo (${totalArqueo.toFixed(2)}) no coincide con el saldo de caja (${saldoCaja.toFixed(2)})`, life: 3000 });
+                if (diferencia > 0.01) {
+                    this.$toast.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: `El total del arqueo (${totalArqueo.toFixed(2)}) no coincide con el saldo de caja (${saldoCaja.toFixed(2)})`,
+                        life: 3000
+                    });
                     return;
                 }
 
-                // Si pasa las validaciones, proceder con el registro del arqueo
                 const response = await axios.post('/caja/arqueoCaja', {
                     'idcaja': this.id,
                     'billete200': this.billete200,
@@ -715,15 +706,26 @@ export default {
                 });
 
                 me.cerrarModal5();
-                me.arqueoRealizado = true;
+                me.arqueoRealizado = true; // Set the flag to true after successful arqueo
                 this.limpiarDatosArqueo();
-                me.$toast.add({ severity: 'success', summary: 'Éxito', detail: 'Arqueo de caja registrado correctamente', life: 3000 });
+                me.$toast.add({
+                    severity: 'success',
+                    summary: 'Éxito',
+                    detail: 'Arqueo de caja registrado correctamente',
+                    life: 3000
+                });
                 this.listarCaja(1, this.buscar, this.criterio);
             } catch (error) {
                 console.error('Error al registrar el arqueo:', error);
-                me.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo registrar el arqueo de caja', life: 3000 });
+                me.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'No se pudo registrar el arqueo de caja',
+                    life: 3000
+                });
             }
         },
+
         limpiarDatosArqueo() {
             // Limpia los datos del arqueo para que el modal comience fresco si se vuelve a abrir
             this.billete200 = 0;
@@ -753,78 +755,78 @@ export default {
         },
 
         depositar() {
-        let me = this;
+            let me = this;
 
-        // Validar que el importe no sea negativo o nulo
-        if (!this.depositos || parseFloat(this.depositos) <= 0) {
-            swal(
-                'Error!',
-                'El importe del depósito debe ser mayor a 0.',
-                'error'
-            );
-            return;
-        }
+            // Validar que el importe no sea negativo o nulo
+            if (!this.depositos || parseFloat(this.depositos) <= 0) {
+                swal(
+                    'Error!',
+                    'El importe del depósito debe ser mayor a 0.',
+                    'error'
+                );
+                return;
+            }
 
-        axios.put('/caja/depositar', {
-            'depositos': parseFloat(this.depositos),
-            'id': this.id,
-            'transaccion': `${this.Desdepositos} (movimiento de ingreso)`,
-        }).then(function (response) {
-            me.cerrarModal2();
+            axios.put('/caja/depositar', {
+                'depositos': parseFloat(this.depositos),
+                'id': this.id,
+                'transaccion': `${this.Desdepositos} (movimiento de ingreso)`,
+            }).then(function (response) {
+                me.cerrarModal2();
 
-            // Actualizar saldo en el frontend
-            me.listarCaja(1, '', 'id');
-            swal(
-                'Información!',
-                'Depósito realizado con éxito.',
-                'success'
-            );
-        }).catch(function (error) {
-            console.error('Error en el depósito:', error);
-            swal(
-                'Error!',
-                'No se pudo realizar el depósito.',
-                'error'
-            );
-        });
-    },
+                // Actualizar saldo en el frontend
+                me.listarCaja(1, '', 'id');
+                swal(
+                    'Información!',
+                    'Depósito realizado con éxito.',
+                    'success'
+                );
+            }).catch(function (error) {
+                console.error('Error en el depósito:', error);
+                swal(
+                    'Error!',
+                    'No se pudo realizar el depósito.',
+                    'error'
+                );
+            });
+        },
 
-    retirar() {
-        let me = this;
+        retirar() {
+            let me = this;
 
-        // Validar que el importe no sea negativo o nulo
-        if (!this.salidas || parseFloat(this.salidas) <= 0) {
-            swal(
-                'Error!',
-                'El importe del retiro debe ser mayor a 0.',
-                'error'
-            );
-            return;
-        }
+            // Validar que el importe no sea negativo o nulo
+            if (!this.salidas || parseFloat(this.salidas) <= 0) {
+                swal(
+                    'Error!',
+                    'El importe del retiro debe ser mayor a 0.',
+                    'error'
+                );
+                return;
+            }
 
-        axios.put('/caja/retirar', {
-            'salidas': parseFloat(this.salidas),
-            'id': this.id,
-            'transaccion': `${this.Dessalidas} (movimiento de egreso)`,
-        }).then(function (response) {
-            me.cerrarModal3();
+            axios.put('/caja/retirar', {
+                'salidas': parseFloat(this.salidas),
+                'id': this.id,
+                'transaccion': `${this.Dessalidas} (movimiento de egreso)`,
+            }).then(function (response) {
+                me.cerrarModal3();
 
-            // Actualizar saldo en el frontend
-            me.listarCaja(1, '', 'id');
-            swal(
-                'Información!',
-                'Retiro realizado con éxito.',
-                'success'
-            );
-        }).catch(function (error) {
-            console.error('Error en el retiro:', error);
-            swal(
-                'Error!',
-                'No se pudo realizar el retiro.',
-                'error'
-            );
-        });
-    },
+                // Actualizar saldo en el frontend
+                me.listarCaja(1, '', 'id');
+                swal(
+                    'Información!',
+                    'Retiro realizado con éxito.',
+                    'success'
+                );
+            }).catch(function (error) {
+                console.error('Error en el retiro:', error);
+                swal(
+                    'Error!',
+                    'No se pudo realizar el retiro.',
+                    'error'
+                );
+            });
+        },
         calcularTotalBilletes() {
             const billete200 = parseFloat(this.billete200) || 0;
             const billete100 = parseFloat(this.billete100) || 0;
@@ -953,45 +955,54 @@ export default {
         },
 
         abrirModal2(modelo, accion, data = []) {
+            if (this.arqueoRealizado) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Advertencia',
+                    detail: 'No se pueden realizar depósitos después del arqueo de caja',
+                    life: 3000
+                });
+                return;
+            }
             switch (modelo) {
-                case "cajaDepositar":
-                    {
-                        switch (accion) {
-                            case 'depositar':
-                                {
-                                    this.modal2 = true;
-                                    this.tituloModal2 = 'Depositar Dinero';
-                                    this.id = data['id'];
-
-                                    this.tipoAccion = 2;
-
-                                    break;
-                                }
+                case "cajaDepositar": {
+                    switch (accion) {
+                        case 'depositar': {
+                            this.modal2 = true;
+                            this.tituloModal2 = 'Depositar Dinero';
+                            this.id = data['id'];
+                            this.tipoAccion = 2;
+                            break;
                         }
                     }
+                }
             }
         },
 
         abrirModal3(modelo, accion, data = []) {
+            if (this.arqueoRealizado) {
+                this.$toast.add({
+                    severity: 'warn',
+                    summary: 'Advertencia',
+                    detail: 'No se pueden realizar retiros después del arqueo de caja',
+                    life: 3000
+                });
+                return;
+            }
             switch (modelo) {
-                case "cajaRetirar":
-                    {
-                        switch (accion) {
-                            case 'retirar':
-                                {
-                                    this.modal3 = true;
-                                    this.tituloModal3 = 'Retirar Dinero';
-                                    this.id = data['id'];
-
-                                    this.tipoAccion = 3;
-
-                                    break;
-                                }
+                case "cajaRetirar": {
+                    switch (accion) {
+                        case 'retirar': {
+                            this.modal3 = true;
+                            this.tituloModal3 = 'Retirar Dinero';
+                            this.id = data['id'];
+                            this.tipoAccion = 3;
+                            break;
                         }
                     }
+                }
             }
         },
-
         abrirModal4(modelo, accion, id) {
             switch (modelo) {
                 case "cajaVer":
@@ -1038,7 +1049,7 @@ export default {
                             this.tituloModal5 = 'Arqueo de Caja';
                             this.id = id;
                             this.tipoAccion = 5;
-                            
+
                             // Obtener el saldo del sistema
                             try {
                                 const response = await axios.get(`/caja/saldo/${id}`);
@@ -1118,40 +1129,41 @@ export default {
 .p-col-5 {
     margin-left: 115px;
 }
+
 .modal-content {
-  border-radius: 6px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+    border-radius: 6px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
 }
 
 .modal-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .modal-title {
-  font-weight: 700;
-  color: #495057;
+    font-weight: 700;
+    color: #495057;
 }
 
 .btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
+    background-color: #007bff;
+    border-color: #007bff;
 }
 
 .btn-primary:hover {
-  background-color: #0069d9;
-  border-color: #0062cc;
+    background-color: #0069d9;
+    border-color: #0062cc;
 }
 
 .badge-primary {
-  background-color: #007bff;
+    background-color: #007bff;
 }
 
 .list-group-item {
-  border: 1px solid #e9ecef;
+    border: 1px solid #e9ecef;
 }
 
 .card {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 </style>

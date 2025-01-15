@@ -10,7 +10,7 @@
     <meta name="keyword" content="Sistema ventas Laravel Vue Js, Sistema compras Laravel Vue Js">
     <link rel="shortcut icon" href="img/toolbox trade CC.png">
     <meta name="userId" content="{{ Auth::check() ? Auth::user()->id : ''}}">
-    <title>Sistema de Inventarios</title>
+    <title>toolbox trade</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
 
@@ -21,17 +21,13 @@
 <body class="app header-fixed sidebar-fixed aside-menu-fixed aside-menu-hidden">
     <div id="app">
         <header class="app-header navbar">
-            <button class="navbar-toggler mobile-sidebar-toggler d-lg-none mr-auto border-0" type="button">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+        
 
             <a class="navbar-brand" href="#"></a>
-            <button class="navbar-toggler sidebar-toggler d-md-down-none border-0" type="button">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+           
 
             <ul class="nav navbar-nav ml-auto mr-3">
-                <notification :notifications="notifications"></notification>
+               
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle nav-link" data-toggle="dropdown" href="#" role="button"
                         aria-haspopup="true" aria-expanded="false">
