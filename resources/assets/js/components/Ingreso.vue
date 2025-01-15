@@ -1,5 +1,12 @@
 <template>
     <main class="main">
+   <Toast :breakpoints="{ '920px': { width: '100%', right: '0', left: '0' } }" style="padding-top: 40px;">
+            </Toast>
+        <template >
+                <div class="panel-header">
+                    <h4 class="panel-icon">Historial De Compras Realizadas </h4>
+                </div>
+            </template>
         <!-- Ejemplo de tabla Listado -->
         <div class="card" v-if="listado != 0">
             
@@ -210,7 +217,28 @@
 </template>
 <script>
 import vSelect from 'vue-select';
+import Toast from 'primevue/toast';
+import Card from 'primevue/card';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Button from 'primevue/button';
+import Dropdown from 'primevue/dropdown';
+import InputText from 'primevue/inputtext';
+import Dialog from 'primevue/dialog';
+import Paginator from 'primevue/paginator';
+import Panel from 'primevue/panel';
 export default {
+    components: {
+        Panel,
+        Card,
+        DataTable,
+        Column,
+        Button,
+        Dropdown,
+        InputText,
+        Dialog,
+        Paginator
+    },
     data() {
         return {
             monedaCompra: [],
@@ -775,7 +803,7 @@ export default {
     }
 }
 </script>
-<style>
+<style scoped>
 .card-img {
     width: 120px;
     height: auto;
@@ -809,5 +837,23 @@ export default {
     .btnagregar {
         margin-top: 2rem;
     }
+}
+>>>.p-panel-header {
+    padding: 0.75rem;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+}
+
+.panel-icon {
+    font-size: 2rem;
+    padding-left: 10px;
+}
+
+.panel-icon {
+    font-size: 1.5rem;
+    margin: 0;
 }
 </style>

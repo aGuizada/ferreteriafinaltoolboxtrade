@@ -1,7 +1,12 @@
 <template>
     <main class="main">
         <!-- <div class="m-2 p-2"></div> -->
-        <div class="container-fluid">
+        
+        <template >
+                <div class="panel-header">
+                    <h4 class="panel-icon">cotizaciones </h4>
+                </div>
+            </template>
             <!-- Ejemplo de tabla Listado -->
             <div class="card" v-if="!showRegistrarVenta">
                 <!-- <div class="card-header" v-if="listado==1" > -->
@@ -13,10 +18,15 @@
                     <div class="card-body">
                         <div class="form-group row">
                         <div class="col-md-6">
+                            <button v-if="listado == 1" type="button" @click="mostrarDetalle('venta', 'cotizacion')"
+                        class="btn btn-secondary">
+                        <i class="icon-plus"></i>&nbsp;Nuevo
+                    </button>
                             <div class="input-group">
                                 <input type="text" v-model="buscar" @keyup="listarCotizacion(1, buscar)"
                                     class="form-control" placeholder="Buscar por nombre, fecha o hora">
                             </div>
+                            
                         </div>
                     </div>
 
@@ -242,6 +252,8 @@
                                             {{ arrayPrecios[2].nombre_precio }}</option>
                                         <option :value="precio_cuatro" v-if="arrayPrecios[3]">
                                             {{ arrayPrecios[3].nombre_precio }}</option>
+                                            <option :value="precio_venta" v-if="precio_venta">{{ precio_venta }}</option>
+    
                                     </select>
                                 </div>
                             </div>
@@ -376,7 +388,7 @@
 
             </div>
             <!-- Fin ejemplo de tabla Listado -->
-        </div>
+        
         <!--################## Inicio del modal LISTAR /PRODUCTO DE INVENTARIO ######################-->
         <div class="modal fade" tabindex="-1" :class="{ 'mostrar': modal }" role="dialog" aria-labelledby="myModalLabel"
             style="display: none;" aria-hidden="true">
@@ -468,7 +480,28 @@
 
 <script>
 import vSelect from 'vue-select';
+import Toast from 'primevue/toast';
+import Card from 'primevue/card';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Button from 'primevue/button';
+import Dropdown from 'primevue/dropdown';
+import InputText from 'primevue/inputtext';
+import Dialog from 'primevue/dialog';
+import Paginator from 'primevue/paginator';
+import Panel from 'primevue/panel';
 export default {
+    components: {
+        Panel,
+        Card,
+        DataTable,
+        Column,
+        Button,
+        Dropdown,
+        InputText,
+        Dialog,
+        Paginator
+    },
     data() {
         return {
             //-----
