@@ -152,7 +152,6 @@ export const esquemaArticulos = yup.object().shape({
     .required("El nombre es obligatorio")
     .max(80, "El nombre no puede tener más de 80 caracteres"),
   descripcion: yup.string().required("La descripción es obligatoria"),
-  nombre_generico: yup.string().required("El nombre generico es obligatorio"),
   unidad_envase: yup
     .number()
     .required("La cantidad de unidades por paquete es obligatoria")

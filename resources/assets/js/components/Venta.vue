@@ -1182,7 +1182,7 @@
                 <dd class="col-sm-7">{{ arraySeleccionado.nombre_medida || "No especificada" }}</dd>
 
                 <template v-if="arraySeleccionado.unidad_envase">
-                  <dt class="col-sm-5">cantidad bpaquete:</dt>
+                  <dt class="col-sm-5">cantidad paquete:</dt>
                   <dd class="col-sm-7">{{ arraySeleccionado.unidad_envase }}</dd>
                 </template>
 

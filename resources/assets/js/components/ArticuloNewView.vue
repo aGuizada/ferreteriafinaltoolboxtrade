@@ -592,7 +592,7 @@ export default {
                 { field: 'acciones', header: 'Acciones', type: 'button' },
                 { field: 'codigo', header: 'CODIGO' },
                 { field: 'nombre', header: 'NOMBRE COMERCIAL' },
-                { field: 'nombre_generico', header: 'NOMBRE GENERICO' },
+          
                 { field: 'unidad_envase', header: 'UNIDADES POR PAQUETE' },
                 { field: 'precio_costo_unid', header: 'COSTO UNITARIO' },
                 { field: 'precio_costo_paq', header: 'COSTO PAQUETE' },
@@ -668,7 +668,313 @@ export default {
         }
     },
     methods: {
+       // Funciones para el manejo de artículos
+       registrarArticulo(data) {
+    let me = this;
+    var formulario = new FormData();
+    for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+            formulario.append(key, data[key]);
+        }
+    }
+
+    return axios.post('/articulo/registrar', formulario, {
+        headers: {
+            'Content-Type': 'multipart/form-data' 
+        }
+    }).then(function (response) {
+        var respuesta = response.data;
+        me.idarticulo = respuesta.idArticulo;
+        console.log("respuesta = ", me.idarticulo);
+        me.cerrarModal();
+        me.listarArticulo(1, '', 'nombre');
+        me.toastSuccess("Artículo registrado correctamente");
         
+        if (me.agregarStock == true) {
+            let arrayArticulos = [
+                {
+                    idarticulo: me.idarticulo,
+                    idalmacen: me.almacenSeleccionado.id,
+                    cantidad: me.unidadStock,
+                    fecha_vencimiento: me.fechaVencimientoAlmacen
+                }
+            ];
+            console.log("registrar inventario", arrayArticulos);
+            return axios.post('/inventarios/registrar', { inventarios: arrayArticulos });
+        }
+    }).then(function (response) {
+        if (response && me.agregarStock) {
+            console.log(response.data);
+            me.toastSuccess("Inventario registrado correctamente");
+        }
+    }).catch(function (error) {
+        console.error(error);
+        me.toastError("Hubo un error al registrar el artículo o inventario");
+    });
+},
+
+actualizarArticulo(data) {
+    var formulario = new FormData();
+    let me = this;
+    for (var key in data) {
+        if (data.hasOwnProperty(key)) {
+            formulario.append(key, data[key]);
+        }
+    }
+
+    // Mantenemos POST ya que el backend espera este método
+    axios.post('/articulo/actualizar', formulario, {
+        headers: {
+            'Content-Type': 'multipart/form-data' 
+        }
+    }).then(function (response) {
+        var respuesta = response.data;
+        console.log("respuesta actualización = ", respuesta);
+        me.cerrarModal();
+        me.listarArticulo(1, '', 'nombre');
+        me.toastSuccess("Articulo actualizado correctamente");
+    }).catch(function (error) {
+        console.error("Error al actualizar:", error);
+        me.toastError("No se pudo actualizar el articulo");
+    });
+},
+
+asignarCampos() {
+    // Datos comunes para creación y actualización
+    this.datosFormulario = {
+        nombre: this.nombre,
+        codigo: this.codigo,
+        idcategoria: this.categoriaSeleccionada ? this.categoriaSeleccionada.id : null,
+        idmarca: this.marcaSeleccionada ? this.marcaSeleccionada.id : null,
+        idindustria: this.industriaSeleccionada ? this.industriaSeleccionada.id : null,
+        idgrupo: this.grupoSeleccionado ? this.grupoSeleccionado.id : null,
+        idproveedor: this.proveedorSeleccionado ? this.proveedorSeleccionado.id : null,
+        idmedida: this.medidaSeleccionada ? this.medidaSeleccionada.id : null,
+        descripcion: this.descripcion,
+        precio_venta: this.precio_venta,
+        stock: this.stock,
+        unidad_envase: this.unidad_envase,
+        fechaVencimientoSeleccion: this.fechaVencimientoSeleccion,
+        codigo_alfanumerico: this.codigo_alfanumerico,
+        descripcion_fabrica: this.descripcion_fabrica,
+
+        precio_costo_unid: this.precio_costo_unid,
+        precio_costo_paq: this.precio_costo_paq,
+        costo_compra: this.costo_compra
+    };
+    
+    // Si estamos en modo edición, asegurarnos de incluir el ID
+    if (this.tipoAccion == 2 && this.articulo && this.articulo.id) {
+        this.datosFormulario.id = this.articulo.id;
+        console.log("Modo edición: ID del artículo incluido =", this.datosFormulario.id);
+    }
+},
+
+asignarCamposPrecios() {
+    // Asignar precios al formulario
+    this.datosFormulario.precio_uno = this.precio_uno;
+    this.datosFormulario.precio_dos = this.precio_dos;
+    this.datosFormulario.precio_tres = this.precio_tres;
+    this.datosFormulario.precio_cuatro = this.precio_cuatro;
+},
+
+asignarCamposInventario() {
+    // Solo para creación con stock
+    this.datosFormularioInventario = {
+        unidadStock: this.unidadStock,
+        almacenSeleccionado: this.almacenSeleccionado ? this.almacenSeleccionado.id : null,
+        fechaVencimientoAlmacen: this.fechaVencimientoAlmacen
+    };
+},
+async enviarFormulario() {
+    try {
+        // 1. Preparar datos
+        this.asignarCampos();
+        this.asignarCamposPrecios();
+        
+        console.log("Datos formulario:", JSON.parse(JSON.stringify(this.datosFormulario)));
+        
+        // 2. Validación artículo
+        let validacionArticuloExitosa = true;
+        try {
+            await esquemaArticulos.validate(this.datosFormulario, { abortEarly: false });
+            this.errores = {};
+        } catch (error) {
+            validacionArticuloExitosa = false;
+            this.mapearErroresValidacion(error, 'errores');
+        }
+
+        // 3. Si hay errores en artículo, detener aquí
+        if (!validacionArticuloExitosa) {
+            this.toastError("Corrija los errores en el formulario");
+            return;
+        }
+
+        // 4. Procesar imagen
+        this.datosFormulario.fotografia = this.fotografia;
+
+        // 5. Registrar o actualizar
+        if (this.tipoAccion == 2) {
+            await this.actualizarArticulo(this.datosFormulario);
+        } else {
+            const response = await this.registrarArticulo(this.datosFormulario);
+            
+            // Solo si se registró correctamente y hay que agregar stock
+            if (this.agregarStock && response && response.data.idArticulo) {
+                await this.registrarInventario(response.data.idArticulo);
+            }
+        }
+    } catch (error) {
+        console.error("Error en enviarFormulario:", error);
+        this.toastError("Error al procesar el artículo");
+    }
+},
+
+// Nuevo método auxiliar para registrar inventario
+async registrarInventario(idArticulo) {
+    try {
+        const inventarioData = {
+            idarticulo: idArticulo,
+            idalmacen: this.almacenSeleccionado.id,
+            cantidad: this.unidadStock || 0,
+            fecha_vencimiento: this.fechaVencimientoAlmacen
+        };
+        
+        await axios.post('/inventarios/registrar', { inventarios: [inventarioData] });
+        this.toastSuccess("Inventario registrado correctamente");
+    } catch (error) {
+        console.error("Error al registrar inventario:", error);
+        this.toastError("Artículo registrado pero falló inventario");
+    }
+},
+
+// Método para mapear errores de validación
+mapearErroresValidacion(error, target) {
+    const errores = {};
+    error.inner.forEach((e) => {
+        errores[e.path] = e.message;
+        console.error(`Error validación ${e.path}: ${e.message}`);
+    });
+    this[target] = errores;
+},
+
+// Método para abrir el modal según el tipo de acción (1=Nuevo, 2=Editar)
+abrirModal(tipoAccion, articulo = null) {
+    this.tipoAccion = tipoAccion;
+    this.tituloModal = tipoAccion === 1 ? 'Nuevo Artículo' : 'Editar Artículo';
+    this.errores = {};
+    this.erroresinventario = {};
+    
+    if (tipoAccion === 1) {
+        // Nuevo artículo - reiniciar valores
+        this.reiniciarValores();
+    } else {
+        // Edición - cargar datos del artículo
+        this.articulo = articulo;
+        this.cargarDatosArticulo(articulo);
+    }
+    
+    this.modal = true;
+},
+
+// Método para cargar datos del artículo en edición
+cargarDatosArticulo(articulo) {
+    this.id = articulo.id;
+    this.nombre = articulo.nombre;
+    this.codigo = articulo.codigo;
+    this.descripcion = articulo.descripcion;
+    this.precio_venta = articulo.precio_venta;
+    this.stock = articulo.stock;
+    this.unidad_envase = articulo.unidad_envase;
+    this.precio_uno = articulo.precio_uno;
+    this.precio_dos = articulo.precio_dos;
+    this.precio_tres = articulo.precio_tres;
+    this.precio_cuatro = articulo.precio_cuatro;
+    this.precio_costo_unid = articulo.precio_costo_unid;
+    this.precio_costo_paq = articulo.precio_costo_paq;
+    this.costo_compra = articulo.costo_compra;
+    this.codigo_alfanumerico = articulo.codigo_alfanumerico;
+    this.descripcion_fabrica = articulo.descripcion_fabrica;
+    
+    this.fechaVencimientoSeleccion = articulo.vencimiento;
+    
+    // Cargar datos de relaciones (categoría, marca, etc.)
+    this.cargarSelecciones(articulo);
+    
+    // Si hay una imagen, cargarla
+    if (articulo.fotografia) {
+        this.imagenPreview = '/img/articulo/' + articulo.fotografia;
+        this.fotografia = null; // Resetear la fotografia para no reemplazarla automáticamente
+    }
+},
+
+// Cargar selecciones de dropdowns para edición
+cargarSelecciones(articulo) {
+    // Buscar y asignar categoría
+    if (articulo.idcategoria) {
+        this.categoriaSeleccionada = this.categorias.find(c => c.id === articulo.idcategoria) || null;
+    }
+    
+    // Buscar y asignar marca
+    if (articulo.idmarca) {
+        this.marcaSeleccionada = this.marcas.find(m => m.id === articulo.idmarca) || null;
+    }
+    
+    // Y así con el resto de selecciones...
+    // Industria
+    if (articulo.idindustria) {
+        this.industriaSeleccionada = this.industrias.find(i => i.id === articulo.idindustria) || null;
+    }
+    
+    // Grupo
+    if (articulo.idgrupo) {
+        this.grupoSeleccionado = this.grupos.find(g => g.id === articulo.idgrupo) || null;
+    }
+    
+    // Proveedor
+    if (articulo.idproveedor) {
+        this.proveedorSeleccionado = this.proveedores.find(p => p.id === articulo.idproveedor) || null;
+    }
+    
+    // Medida
+    if (articulo.idmedida) {
+        this.medidaSeleccionada = this.medidas.find(m => m.id === articulo.idmedida) || null;
+    }
+},
+
+cerrarModal() {
+    this.modal = false;
+    this.reiniciarValores();
+},
+
+reiniciarValores() {
+    // Reinicia todos los campos del formulario
+    this.id = null;
+    this.nombre = '';
+    this.codigo = '';
+    this.descripcion = '';
+    this.precio_venta = 0;
+    this.stock = 0;
+    this.unidad_envase = 1;
+    // ... reiniciar todos los demás campos
+    this.imagenPreview = null;
+    this.fotografia = null;
+    this.errorFotografia = null;
+    
+    // Reiniciar selecciones
+    this.categoriaSeleccionada = null;
+    this.marcaSeleccionada = null;
+    this.industriaSeleccionada = null;
+    this.grupoSeleccionado = null;
+    this.proveedorSeleccionado = null;
+    this.medidaSeleccionada = null;
+    
+    // Reiniciar errores
+    this.errores = {};
+    this.erroresinventario = {};
+},
+
+
         toastSuccess(mensaje) {
             this.$toasted.show(`
     <div style="height: 60px;font-size:16px;">
@@ -888,83 +1194,7 @@ export default {
                 this.erroresinventario[campo] = error.message;
             }
         },
-        async enviarFormulario() {
-            this.asignarCampos();
-            this.asignarCamposPrecios();
-            console.log("UNIDAD STOCK ", this.unidadStock);
-            console.log("ALMACEN ", this.AlmacenSeleccionado);
-            console.log("agregar ", this.agregarStock);
-
-            if (this.agregarStock === true) {
-                console.log("Asignando valores adicionales al formulario");
-                this.asignarCamposInventario();
-            }
-
-            console.log("DATOS FORMULARIO ANTES DE VALIDAR: ", this.datosFormulario);
-            console.log("DATOS FORMULARIO ANTES DE VALIDAR: ", this.datosFormularioInventario);
-
-            let validacionExitosa = true;
-            let validacionInventarioExitosa = true;
-
-            try {
-                await esquemaArticulos.validate(this.datosFormulario, { abortEarly: false });
-                console.log("Validación de esquemaArticulos exitosa");
-            } catch (error) {
-                validacionExitosa = false;
-                    const erroresValidacion = {};
-                    error.inner.forEach((e) => {
-                        erroresValidacion[e.path] = e.message;
-                    });
-                    this.errores = erroresValidacion;
-                console.log("Errores en esquemaArticulos: ", this.errores);
-            }
-
-            if (this.tipoAccion != 2 && this.agregarStock == true) {
-                try {
-                    await esquemaInventario.validate(this.datosFormularioInventario, { abortEarly: false });
-                    console.log("Validación de esquemaInventario exitosa");
-                } catch (error) {
-                    validacionInventarioExitosa = false;
-                    const erroresValidacionInventario = {};
-                    error.inner.forEach((e) => {
-                        erroresValidacionInventario[e.path] = e.message;
-                    });
-
-                    this.erroresinventario = erroresValidacionInventario;
-                    console.log("Errores en esquemaInventario: ", this.erroresinventario);
-                }
-            }
-
-            if (this.tipoAccion == 2 && validacionExitosa) {
-                // Actualización del artículo
-                try {
-                    this.datosFormulario.fotografia = this.fotografia;
-                    if (this.tipo_stock == "paquetes") {
-                        this.datosFormulario.stock = this.datosFormulario.unidad_envase * this.datosFormulario.stock;
-                        console.log("paquetes ",this.datosFormulario.stock)
-                    }
-                    await this.actualizarArticulo(this.datosFormulario);
-                    console.log("Actualización de artículo exitosa");
-                } catch (error) {
-                    console.error("Error al actualizar el artículo: ", error);
-                }
-            } else if (validacionExitosa || validacionInventarioExitosa) {
-                // Registro del artículo
-                console.log("TIPO STOCK ",this.tipo_stock)
-                this.datosFormulario.fotografia = this.fotografia;
-                if (this.tipo_stock == "paquetes") {
-                    this.datosFormulario.stock = this.datosFormulario.unidad_envase * this.datosFormulario.stock;
-                    console.log("paquetes ",this.datosFormulario.stock)
-                }
-
-                try {
-                    await this.registrarArticulo(this.datosFormulario);
-                    console.log("Registro de artículo exitoso",this.datosFormulario);
-                } catch (error) {
-                    console.error("Error al registrar el artículo: ", error);
-                }
-            }
-        },
+    
         obtenerConfiguracionTrabajo() {
             // Utiliza Axios para realizar la solicitud al backend
             axios.get('/configuracion')
@@ -1069,77 +1299,7 @@ export default {
         calcularPrecioValorMoneda(precio) {
             return Number((precio * parseFloat(this.monedaPrincipal)).toFixed(2));
         },
-        registrarArticulo(data) {
-            let me = this;
-            var formulario = new FormData();
-            for (var key in data) {
-                if (data.hasOwnProperty(key)) {
-                    formulario.append(key, data[key]);
-                }
-            }
-
-            axios.post('/articulo/registrar', formulario, {
-                headers: {
-                    'Content-Type': 'multipart/form-data' 
-                }
-            }).then(function (response) {
-                var respuesta = response.data;
-                me.idarticulo = respuesta.idArticulo;
-                console.log("respuesta = ", me.idarticulo)
-                me.cerrarModal();
-                me.listarArticulo(1, '', 'nombre');
-                me.toastSuccess("Articulo registrado correctamente");
-                console.log("stock ???",me.agregarStock);
-                if (me.agregarStock == true) {
-                    let arrayArticulos = [
-                        {
-                            idarticulo: me.idarticulo,
-                            idalmacen: me.almacenSeleccionado.id,
-                            cantidad: me.unidadStock,
-                            fecha_vencimiento: me.fechaVencimientoAlmacen
-                        }
-                    ];
-                    console.log("registrar inventario qefqe",arrayArticulos)
-                    return axios.post('/inventarios/registrar', { inventarios: arrayArticulos });
-                }
-                
-            }).then(function (response) {
-                if (response) {
-                    console.log(response.data);
-                }
-            }).catch(function (error) {
-                console.error(error);
-                me.toastError("Hubo un error al registrar el articulo o inventario");
-            });
-        },
-        actualizarArticulo(data) {
-            var formulario = new FormData();
-            let me = this;
-            for (var key in data) {
-                if (data.hasOwnProperty(key)) {
-                    formulario.append(key, data[key]);
-                }
-            }
-
-
-            axios.post('/articulo/actualizar', formulario, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data' 
-                    }
-                }).then(function (response) {
-                //alert("Datos actualizados con éxito");
-                //console.log("datos actuales",formData);
-                var respuesta = response.data;
-                console.log("respuesta = ",respuesta)
-                console.log("foto ",data)
-                me.cerrarModal();
-                me.listarArticulo(1, '', 'nombre');
-                me.toastSuccess("Articulo actualizado correctamente")
-            }).catch(function (error) {
-                console.log(error);
-                me.toastError("No se puedo actualizar el articulo")
-            });
-        },
+  
         desactivarArticulo(id) {
             swal({
                 title: 'Esta seguro de desactivar este artículo?',
@@ -1282,7 +1442,7 @@ export default {
                                     this.datosFormulario = {
                                         nombre: '',
                                         descripcion: '',
-                                        nombre_generico: '',
+                                      
                                         unidad_envase: null,
                                         precio_costo_unid: null,
                                         precio_costo_paq: null,

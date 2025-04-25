@@ -315,77 +315,6 @@ class ArticuloController extends Controller
         return response()->json([ "articulos" => $productos]);
     }
 
-    public function listarArticulo(Request $request)
-    {
-        if (!$request->ajax())
-            return redirect('/');
-
-        Log::info('Data', [
-            'idProveedorController' => $request->idProveedor,
-        ]);
-
-
-        $buscar = $request->buscar;
-        $criterio = $request->criterio;
-        $idProveedor = $request->idProveedor;
-
-        if ($buscar == '') {
-            $articulos = Articulo::join('categorias', 'articulos.idcategoria', '=', 'categorias.id')
-                ->join('proveedores', 'articulos.idproveedor', '=', 'proveedores.id')
-                ->join('personas', 'proveedores.id', '=', 'personas.id')
-                ->select(
-                    'articulos.id',
-                    'articulos.idcategoria',
-                    'articulos.codigo',
-                    'articulos.nombre',
-                    'categorias.nombre as nombre_categoria',
-                    'articulos.precio_costo_unid',
-                    'articulos.stock',
-                    'personas.nombre as nombre_proveedor',
-                    'articulos.descripcion',
-                    'articulos.condicion',
-                    'articulos.unidad_envase',
-                    'articulos.fotografia',
-                    'articulos.precio_costo_paq',
-                    'articulos.vencimiento',
-                    // agregado el 26.01,2024
-                    'articulos.codigo_alfanumerico',
-                    'articulos.descripcion_fabrica'
-                )
-                ->where('proveedores.id', '=', $idProveedor)
-                ->orderBy('articulos.id', 'desc')->paginate(10);
-        } else {
-            $articulos = Articulo::join('categorias', 'articulos.idcategoria', '=', 'categorias.id')
-                ->join('proveedores', 'articulos.idproveedor', '=', 'proveedores.id')
-                ->join('personas', 'proveedores.id', '=', 'personas.id')
-                ->select(
-                    'articulos.id',
-                    'articulos.idcategoria',
-                    'articulos.codigo',
-                    'articulos.nombre',
-                    'categorias.nombre as nombre_categoria',
-                    'articulos.precio_costo_unid',
-                    'articulos.stock',
-                    'personas.nombre as nombre_proveedor',
-                    'articulos.descripcion',
-                    'articulos.condicion',
-                    'articulos.unidad_envase',
-                    'articulos.fotografia',
-                    'articulos.precio_costo_paq',
-                    'articulos.vencimiento',
-                    // agregado el 26.01,2024
-                    'articulos.codigo_alfanumerico',
-                    'articulos.descripcion_fabrica'
-                )
-                ->where('articulos.' . $criterio, 'like', '%' . $buscar . '%')
-                ->where('proveedores.id', '=', $idProveedor)
-                ->orderBy('articulos.id', 'desc')->paginate(10);
-        }
-
-
-        return ['articulos' => $articulos];
-    }
-
     public function listarArticuloVenta(Request $request)
     {
         if (!$request->ajax()) {
@@ -411,6 +340,7 @@ class ArticuloController extends Controller
             ->join('proveedores', 'articulos.idproveedor', '=', 'proveedores.id')
             ->join('personas', 'proveedores.id', '=', 'personas.id')
             ->join('categorias', 'articulos.idcategoria', '=', 'categorias.id')
+            ->join('marcas', 'articulos.idmarca', '=', 'marcas.id') // Nuevo join con la tabla marcas
             ->select(
                 'articulos.id',
                 'articulos.nombre',
@@ -425,7 +355,8 @@ class ArticuloController extends Controller
                 'articulos.codigo',
                 'articulos.precio_venta',
                 'articulos.condicion',
-                'categorias.nombre as nombre_categoria'
+                'categorias.nombre as nombre_categoria',
+                'marcas.nombre as nombre_marca' // Nuevo campo para la marca
             )
             ->orderBy('articulos.nombre')
             ->orderBy('almacens.nombre_almacen');
@@ -442,6 +373,7 @@ class ArticuloController extends Controller
         return ['articulos' => $articulosConSaldo];
     }
 
+   
 
 
     public function listarPdf()
@@ -463,12 +395,15 @@ class ArticuloController extends Controller
     {
         if (!$request->ajax())
             return redirect('/');
-
+    
         $filtro = $request->filtro;
         $idAlmacen = $request->idalmacen;
         $articulos = Articulo::join('medidas', 'articulos.idmedida', '=', 'medidas.id')
             ->join('categorias', 'articulos.idcategoria', '=', 'categorias.id')
             ->join('inventarios', 'inventarios.idarticulo', '=', 'articulos.id')
+            ->join('marcas', 'articulos.idmarca', '=', 'marcas.id')
+            ->join('industrias', 'articulos.idindustria', '=', 'industrias.id')
+            ->join('grupos', 'articulos.idgrupo', '=', 'grupos.id')
             ->select(
                 'articulos.id',
                 'articulos.nombre',
@@ -487,12 +422,20 @@ class ArticuloController extends Controller
                 'articulos.fotografia',
                 'articulos.condicion',
                 'articulos.descripcion',
-
+                'articulos.idcategoria',
+                'articulos.idproveedor',
+                'articulos.idindustria',
+                'industrias.nombre as nombre_industria',
+                'articulos.idmarca',
+                'marcas.nombre as nombre_marca',
+                
+                'grupos.nombre_grupo as nombre_grupo',
+                
+                'medidas.descripcion_medida as nombre_medida',
                 'categorias.nombre as nombre_categoria',
                 'unidad_envase',
                 'inventarios.fecha_vencimiento',
                 DB::raw('(SELECT SUM(inventarios.saldo_stock) FROM inventarios WHERE inventarios.idarticulo = articulos.id AND inventarios.fecha_vencimiento > NOW() AND inventarios.idalmacen = ?) as saldo_stock')
-
             )
             ->where('articulos.codigo', '=', $filtro)
             ->where('inventarios.idalmacen', '=', $idAlmacen)
@@ -501,10 +444,11 @@ class ArticuloController extends Controller
             ->orderBy('inventarios.fecha_vencimiento', 'asc')
             ->addBinding($idAlmacen, 'select')
             ->orderBy('articulos.nombre', 'asc')->take(1)->get();
+        
         Log::info('ARTICULO:', [
             'DATA' => $articulos,
         ]);
-
+    
         return ['articulos' => $articulos];
     }
     public function store(Request $request)
@@ -584,98 +528,66 @@ class ArticuloController extends Controller
         ]);
         $articulo->save();
         return ['idArticulo' => $articulo->id];
-    }
+    }    
     public function update(Request $request)
     {
         if (!$request->ajax())
             return redirect('/');
-
+    
         try {
             DB::beginTransaction();
-
+    
+            // Primero, busca el artículo existente
             $articulo = Articulo::findOrFail($request->id);
-            $articulo->idcategoria = $request->idcategoria;
-
-            $articulo->idmarca = $request->idmarca;
-            $articulo->idindustria = $request->idindustria;
-            $articulo->idgrupo = $request->idgrupo;
-
-            $articulo->codigo = $request->codigo;
-            $articulo->nombre = $request->nombre;
-
-            $articulo->nombre_generico = $request->nombre_generico; //aumente esto 5 julio
-
-            $articulo->precio_venta = $request->precio_venta;
-            $articulo->precio_costo_paq = $request->precio_costo_paq;
-            $articulo->precio_costo_unid = $request->precio_costo_unid;
-
-            $articulo->precio_uno = $request->precio_uno;
-            $articulo->precio_dos = $request->precio_dos;
-            $articulo->precio_tres = $request->precio_tres;
-            $articulo->precio_cuatro = $request->precio_cuatro;
-
-            $articulo->costo_compra = $request->costo_compra; //new
-            
-            $articulo->stock = $request->stock;
-            $articulo->descripcion = $request->descripcion;
-            $articulo->vencimiento = $request->fechaVencimientoSeleccion; 
-            $articulo->unidad_envase = $request->unidad_envase;
-            $articulo->idproveedor = $request->idproveedor;
-            $articulo->idmedida = $request->idmedida;
-            //$articulo->condicion = '1';
-            $articulo->codigo_alfanumerico = $request->codigo_alfanumerico;
-            $articulo->descripcion_fabrica = $request->descripcion_fabrica;
-
-            $nombreimagen = " ";
+    
+            // Verificar si el código ya existe en otro artículo
+            $existingArticulo = Articulo::where('codigo', $request->codigo)
+                ->where('id', '!=', $articulo->id)
+                ->first();
+    
+            if ($existingArticulo) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'El código ' . $request->codigo . ' ya está en uso por otro artículo.'
+                ], 400);
+            }
+    
+            // Resto del código de actualización
+            $articulo->fill($request->all());
+    
+            // Manejo de la fotografía
             if ($request->hasFile('fotografia')) {
-                // Eliminar imagen anterior si existe
-                if ($articulo->fotografia != '' && Storage::exists('public/img/articulo/' . $articulo->fotografia)) {
-                    Storage::delete('public/img/articulo/' . $articulo->fotografia);
-                }
-
                 $imagen = $request->file("fotografia");
                 $nombreimagen = Str::slug($request->nombre) . "." . $imagen->guessExtension();
-                $imagen->storeAs('public/img/articulo', $nombreimagen);
-
                 $ruta = public_path("img/articulo/");
-
+    
+                // Eliminar imagen anterior si existe
+                if ($articulo->fotografia && File::exists($ruta . $articulo->fotografia)) {
+                    File::delete($ruta . $articulo->fotografia);
+                }
+    
                 // Copiar la imagen al directorio
                 copy($imagen->getRealPath(), $ruta . $nombreimagen);
-
-
                 $articulo->fotografia = $nombreimagen;
             }
-            Log::info('DATOS ACTUALIZADOS DE ARTICULO:', [
-                'idcategoria' => $request->idcategoria,
-                'idmarca' => $request->idmarca,
-                'idindustria' => $request->idindustria,
-                'idgrupo' => $request->idgrupo,
-                'idproveedor' => $request->idproveedor,
-                'codigo' => $request->codigo,
-                'nombre' => $request->nombre,
-                'nombre_generico' => $request->nombre_generico,
-                //'unidad_envase'=>$request->unidad_envase,
-                'precio_venta' => $request->precio_venta,
-                'stock' => $request->stock,
-                'descripcion' => $request->descripcion,
-                'fotografia' => $nombreimagen,
-                'idmedida' => $request->idmedida,
-                'precio_uno' => $request->precio_uno,
-                'precio_dos' => $request->precio_dos,
-                'precio_tres' => $request->precio_tres,
-                'precio_cuatro' => $request->precio_cuatro,
-
-            ]);
-
+    
             $articulo->save();
-
+    
             DB::commit();
+    
+            return response()->json([
+                'error' => false,
+                'message' => 'Artículo actualizado correctamente'
+            ]);
+    
         } catch (Exception $e) {
             DB::rollBack();
+            return response()->json([
+                'error' => true,
+                'message' => 'Error al actualizar el artículo: ' . $e->getMessage()
+            ], 500);
         }
-
     }
-
     public function desactivar(Request $request)
     {
         if (!$request->ajax())
