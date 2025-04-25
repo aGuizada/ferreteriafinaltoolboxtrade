@@ -38,8 +38,8 @@ Route::group(["middleware" => ["auth"]], function () {
 
         Route::get("/articulo", "ArticuloController@index");
         Route::get("/articulonewindex", "ArticuloController@index2");
-        Route::post("/articulo/registrar", "ArticuloController@store");
-        Route::put("/articulo/actualizar", "ArticuloController@update");
+        Route::post('/articulo/registrar', 'ArticuloController@store');
+        Route::put('/articulo/actualizar', 'ArticuloController@update');
         Route::put("/articulo/desactivar", "ArticuloController@desactivar");
         Route::put("/articulo/activar", "ArticuloController@activar");
         Route::get(
@@ -501,6 +501,10 @@ Route::group(["middleware" => ["auth"]], function () {
         Route::get("/caja/transacciones", "CajaController@transacciones");
         Route::post("/caja/arqueoCaja", "CajaController@arqueoCaja");
         Route::put("/caja/cerrar", "CajaController@cerrar");
+        Route::get('/caja/resumen/{id}', 'CajaController@resumen');
+        Route::get('/caja/resumen-pdf/{id}', 'CajaController@generarPDF');
+        Route::get('/caja/saldo/{id}', 'CajaController@obtenerSaldoCaja');
+        Route::get('/caja/historial-pdf/{id}', 'CajaController@descargarHistorial');
 
         //TRANSACCIONES CAJA
         Route::get("/transacciones/{id}", "TransaccionesCajaController@index");
@@ -913,10 +917,20 @@ Route::group(["middleware" => ["auth"]], function () {
         );
         Route::delete('/proveedor/eliminar/{id}', 'ProveedorController@eliminarProveedor');
         Route::delete('/cliente/eliminar/{id}', 'ClienteController@eliminarCliente');
-        Route::get('/caja/saldo/{id}', 'CajaController@obtenerSaldoCaja');
-        route::delete('/almacen/eliminar/{id}', 'AlmacenController@destroy');
-        Route::get('/caja/resumen/{id}', 'CajaController@resumen');
-        Route::get('/caja/resumen-pdf/{id}', 'CajaController@generarPDF');
+             route::delete('/almacen/eliminar/{id}', 'AlmacenController@destroy');
+      Route::post('/venta/registrar', 'VentaController@store')->name('venta.store');
+
+// Ruta para confirmar entregas de ventas adelantadas
+Route::put('/venta/confirmar-entrega', 'VentaController@confirmarEntrega')->name('venta.confirmarEntrega');
+
+// Ruta para obtener datos de venta
+Route::get('/venta', 'VentaController@index')->name('venta.index');
+Route::get('/venta/obtenerCabecera', 'VentaController@obtenerCabecera');
+Route::get('/venta/obtenerDetalles', 'VentaController@obtenerDetalles');
+
+// Rutas para imprimir comprobantes
+Route::get('/resivo/imprimirRollo/{id}', 'VentaController@imprimirResivoRollo');
+Route::get('/resivo/imprimirCarta/{id}', 'VentaController@imprimirResivoCarta');
     });
 
     //RUTA PARA RECUPERAR LA SESSION CON EL ID DE LA PERSONA LOGUEADA

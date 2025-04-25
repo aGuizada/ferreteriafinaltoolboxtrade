@@ -19,3 +19,4 @@ composer.lock
 prod.env
 
 /node_modules
+.qodo

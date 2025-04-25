@@ -29,6 +29,11 @@ class CreateTipoVentasTable extends Migration
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'nombre_tipo_ventas' => 'Adelantada',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 

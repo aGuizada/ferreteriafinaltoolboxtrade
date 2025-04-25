@@ -3,7 +3,7 @@
             <!-- Ejemplo de tabla Listado -->
             <div class="card">
                 <div class="card-header">
-                    <i class="fa fa-align-justify"></i> Artículos
+                    <i class="fa fa-align-justify"></i> Artículos armin
                     <button type="button" @click="abrirModal('articulo', 'registrar'); listarPrecio()"
                         class="btn btn-secondary">
                         <i class="icon-plus"></i>&nbsp;Nuevo
@@ -212,7 +212,7 @@
                             <div class="form-group row">
                                 <div class="col-md-6">
                                     <div>
-                                        <label for="" class="font-weight-bold">Nombre del Producto <span
+                                        <label for="" class="font-weight-bold">Nombre del Productos <span
                                                 class="text-danger">*</span></label>
                                         <input type="text" v-model="datosFormulario.nombre" class="form-control"
                                             placeholder="Ej. Ibuprofeno 400 mg (20 comprimidos)"

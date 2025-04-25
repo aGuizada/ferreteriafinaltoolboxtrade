@@ -119,17 +119,17 @@
   </template>
   
   <script>
-  import Card from 'primevue/card';
   import Button from 'primevue/button';
-  import Dropdown from 'primevue/dropdown';
-  import InputText from 'primevue/inputtext';
-  import DataTable from 'primevue/datatable';
-  import Column from 'primevue/column';
-  import Dialog from 'primevue/dialog';
-  import Password from 'primevue/password';
-  import FileUpload from 'primevue/fileupload';
-  import Panel from 'primevue/panel';
-  import Toast from 'primevue/toast';
+import Card from 'primevue/card';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import Dialog from 'primevue/dialog';
+import Dropdown from 'primevue/dropdown';
+import FileUpload from 'primevue/fileupload';
+import InputText from 'primevue/inputtext';
+import Panel from 'primevue/panel';
+import Password from 'primevue/password';
+import Toast from 'primevue/toast';
   export default {
     components: {
       Card,
@@ -290,67 +290,144 @@
         }
         reader.readAsDataURL(file);
       },
-      registrarPersona() {
-        if (this.validarPersona()) {
-          return;
-        }
-        let me = this;
-        let formData = new FormData();
-        formData.append('nombre', this.nombre);
-        formData.append('tipo_documento', this.tipo_documento);
-        formData.append('num_documento', this.num_documento);
-        formData.append('direccion', this.direccion);
-        formData.append('telefono', this.telefono);
-        formData.append('email', this.email);
-        formData.append('idrol', this.idrol);
-        formData.append('idsucursal', this.idsucursal);
-        formData.append('usuario', this.usuario);
-        formData.append('password', this.password);
-        formData.append('fotografia', this.fotografia);
-  
-        axios.post('/user/registrar', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }).then(function (response) {
-          me.cerrarModal();
-          me.listarPersona(1, '', 'nombre');
-        }).catch(function (error) {
-          console.log(error);
+// Modify your registrarPersona method to handle the duplicate username and email errors
+
+registrarPersona() {
+  if (this.validarPersona()) {
+    return;
+  }
+  let me = this;
+  let formData = new FormData();
+  formData.append('nombre', this.nombre);
+  formData.append('tipo_documento', this.tipo_documento);
+  formData.append('num_documento', this.num_documento);
+  formData.append('direccion', this.direccion);
+  formData.append('telefono', this.telefono);
+  formData.append('email', this.email);
+  formData.append('idrol', this.idrol);
+  formData.append('idsucursal', this.idsucursal);
+  formData.append('usuario', this.usuario);
+  formData.append('password', this.password);
+  formData.append('fotografia', this.fotografia);
+
+  axios.post('/user/registrar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then(function (response) {
+    me.cerrarModal();
+    me.listarPersona(1, '', 'nombre');
+    swal(
+      'Registrado!',
+      'El usuario ha sido registrado con éxito.',
+      'success'
+    )
+  }).catch(function (error) {
+    console.log(error);
+    // Check if the error response contains information about duplicate
+    if (error.response && error.response.data) {
+      if (error.response.data.error === 'duplicate_username') {
+        swal({
+          title: 'Error!',
+          text: 'El usuario ya existe con ese nombre. Intente con otro nombre de usuario.',
+          type: 'error',
+          confirmButtonText: 'Entendido'
         });
-      },
-      actualizarPersona() {
-        if (this.validarPersona()) {
-          return;
-        }
-        console.log(this.fotografia);
-        let me = this;
-        let formData = new FormData();
-        formData.append('nombre', this.nombre);
-        formData.append('tipo_documento', this.tipo_documento);
-        formData.append('num_documento', this.num_documento);
-        formData.append('direccion', this.direccion);
-        formData.append('telefono', this.telefono);
-        formData.append('email', this.email);
-        formData.append('idrol', this.idrol);
-        formData.append('idsucursal', this.idsucursal);
-        formData.append('usuario', this.usuario);
-        formData.append('password', this.password);
-        formData.append('fotografia', this.fotografia);
-        formData.append('id', this.persona_id);
-  
-        axios.post('/user/actualizar', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }).then(function (response) {
-          alert("Datos actualizados con éxito");
-          me.cerrarModal();
-          me.listarPersona(1, '', 'nombre');
-        }).catch(function (error) {
-          console.log(error);
+      } else if (error.response.data.error === 'duplicate_email') {
+        swal({
+          title: 'Error!',
+          text: 'Ya existe un usuario registrado con ese email. Intente con otro email.',
+          type: 'error',
+          confirmButtonText: 'Entendido'
         });
-      },
+      } else {
+        swal({
+          title: 'Error!',
+          text: 'Ocurrió un error al registrar el usuario.',
+          type: 'error',
+          confirmButtonText: 'Entendido'
+        });
+      }
+    } else {
+      swal({
+        title: 'Error!',
+        text: 'Ocurrió un error al registrar el usuario.',
+        type: 'error',
+        confirmButtonText: 'Entendido'
+      });
+    }
+  });
+},
+
+// Similarly, update the actualizarPersona method to handle duplicate username and email errors
+actualizarPersona() {
+  if (this.validarPersona()) {
+    return;
+  }
+  console.log(this.fotografia);
+  let me = this;
+  let formData = new FormData();
+  formData.append('nombre', this.nombre);
+  formData.append('tipo_documento', this.tipo_documento);
+  formData.append('num_documento', this.num_documento);
+  formData.append('direccion', this.direccion);
+  formData.append('telefono', this.telefono);
+  formData.append('email', this.email);
+  formData.append('idrol', this.idrol);
+  formData.append('idsucursal', this.idsucursal);
+  formData.append('usuario', this.usuario);
+  formData.append('password', this.password);
+  formData.append('fotografia', this.fotografia);
+  formData.append('id', this.persona_id);
+
+  axios.post('/user/actualizar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then(function (response) {
+    swal(
+      'Actualizado!',
+      'Datos actualizados con éxito',
+      'success'
+    );
+    me.cerrarModal();
+    me.listarPersona(1, '', 'nombre');
+  }).catch(function (error) {
+    console.log(error);
+    // Check if the error response contains information about duplicates
+    if (error.response && error.response.data) {
+      if (error.response.data.error === 'duplicate_username') {
+        swal({
+          title: 'Error!',
+          text: 'El usuario ya existe con ese nombre. Intente con otro nombre de usuario.',
+          type: 'error',
+          confirmButtonText: 'Entendido'
+        });
+      } else if (error.response.data.error === 'duplicate_email') {
+        swal({
+          title: 'Error!',
+          text: 'Ya existe un usuario registrado con ese email. Intente con otro email.',
+          type: 'error',
+          confirmButtonText: 'Entendido'
+        });
+      } else {
+        swal({
+          title: 'Error!',
+          text: 'Ocurrió un error al actualizar el usuario.',
+          type: 'error',
+          confirmButtonText: 'Entendido'
+        });
+      }
+    } else {
+      swal({
+        title: 'Error!',
+        text: 'Ocurrió un error al actualizar el usuario.',
+        type: 'error',
+        confirmButtonText: 'Entendido'
+      });
+    }
+  });
+},
       validarPersona() {
         this.errorPersona = 0;
         this.errorMostrarMsjPersona = [];

@@ -29,8 +29,7 @@
             </template>
           </Column>
           <Column field="nombre" header="Nombre"></Column>
-          <Column field="codigoProductoSin" header="Código"></Column>
-          <Column field="descripcion" header="Descripción"></Column>
+       
           <Column field="estado" header="Estado">
             <template #body="slotProps">
                 <span :class="['status-badge', slotProps.data.condicion === 1 ? 'active' : 'inactive']">
@@ -51,16 +50,7 @@
               <InputText id="nombre" v-model="nombre" required autofocus :class="{'p-invalid': nombreError}" @input="validarNombreEnTiempoReal" />
               <small class="p-error error-message" v-if="nombreError"><strong>{{ nombreError }}</strong></small>
             </div>
-            <div class="p-field input-container">
-              <label for="descripcion">Descripción</label>
-              <InputText id="descripcion" v-model="descripcion" required :class="{'p-invalid': descripcionError}" @input="validarDescripcionEnTiempoReal" />
-              <small class="p-error error-message" v-if="descripcionError"><strong>{{ descripcionError }}</strong></small>
-            </div>
-            <div class="p-field input-container">
-              <label for="codigo">Código</label>
-              <InputNumber :useGrouping="false" id="codigo" v-model="codigoProductoSin" required :class="{'p-invalid': codigoProductoSinError}" @input="validarCodigoEnTiempoReal" />
-              <small class="p-error error-message" v-if="codigoProductoSinError"><strong>{{ codigoProductoSinError }}</strong></small>
-            </div>
+        
           </div>
         </Dialog>
         

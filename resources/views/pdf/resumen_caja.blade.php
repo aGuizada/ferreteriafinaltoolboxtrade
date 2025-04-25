@@ -3,19 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resumen de Caja</title>
+    <title>Resumen de Caja #{{ $resumenCaja['id'] }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.6;
+            margin: 20px;
+            font-size: 12px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
             color: #333;
+            font-size: 18px;
         }
-        .container {
-            width: 100%;
-            margin: 0 auto;
+        .header h2 {
+            margin: 5px 0;
+            color: #666;
+            font-size: 16px;
         }
-        h1, h2 {
-            color: #2c3e50;
+        .info-caja {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .info-caja p {
+            margin: 5px 0;
         }
         table {
             width: 100%;
@@ -31,49 +49,169 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .movimientos-section {
+            margin: 15px 0;
+        }
+        .movimientos-section h3 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            color: #333;
+        }
+        .highlight-qr {
+            background-color: #e3f2fd; /* Azul claro */
+        }
+        .resumen {
+            margin-top: 20px;
+            border-top: 2px solid #333;
+            padding-top: 10px;
+        }
         .total {
             font-weight: bold;
+            text-align: right;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        .qr-section {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-left: 5px solid #0066cc;
+            border-radius: 3px;
+        }
+        .qr-section h3 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .firma-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .firma {
+            width: 45%;
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Resumen de Caja</h1>
-        <p><strong>Fecha de Apertura:</strong> {{ $resumenCaja['fechaApertura'] }}</p>
-        
-        <h2>Movimientos</h2>
+    <div class="header">
+        <h1>RESUMEN DE CIERRE DE CAJA</h1>
+        <h2>Caja #{{ $resumenCaja['id'] }}</h2>
+    </div>
+
+    <div class="info-caja">
+        <p><strong>Fecha Apertura:</strong> {{ \Carbon\Carbon::parse($resumenCaja['fechaApertura'])->format('d/m/Y H:i:s') }}</p>
+        <p><strong>Fecha Cierre:</strong> {{ $resumenCaja['fechaCierre'] ? \Carbon\Carbon::parse($resumenCaja['fechaCierre'])->format('d/m/Y H:i:s') : 'Caja abierta' }}</p>
+    </div>
+
+    <div class="movimientos-section">
+        <h3>Movimientos de Caja</h3>
         <table>
             <thead>
                 <tr>
                     <th>Concepto</th>
-                    <th>Monto</th>
+                    <th>Monto (Bs.)</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($resumenCaja['movimientos'] as $movimiento)
-                <tr>
+                <tr @if($movimiento['concepto'] == 'Pagos con QR') class="highlight-qr" @endif>
                     <td>{{ $movimiento['concepto'] }}</td>
-                    <td>${{ $movimiento['monto'] }}</td>
+                    <td class="total">{{ number_format($movimiento['monto'], 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+    </div>
 
-        <h2>Resumen</h2>
+    <!-- Sección específica para pagos QR -->
+    <div class="qr-section">
+        <h3>Detalle de Pagos con QR</h3>
+        <p>Total de pagos recibidos mediante QR: <strong>Bs. {{ number_format($resumenCaja['pagosQR'] ?? 0, 2) }}</strong></p>
+        <p>Los pagos mediante QR están incluidos en el saldo de caja y en los totales de movimientos.</p>
+    </div>
+
+    <!-- Resumen de ventas por método de pago -->
+    <div class="movimientos-section">
+        <h3>Ventas por Método de Pago</h3>
         <table>
-            <tr>
-                <th>Total Ingresos</th>
-                <td class="total">${{ number_format($resumenCaja['totalIngresos'], 2) }}</td>
-            </tr>
-            <tr>
-                <th>Total Egresos</th>
-                <td class="total">${{ number_format($resumenCaja['totalEgresos'], 2) }}</td>
-            </tr>
-            <tr>
-                <th>Saldo en Caja</th>
-                <td class="total">${{ $resumenCaja['saldoCaja'] }}</td>
-            </tr>
+            <thead>
+                <tr>
+                    <th>Método de Pago</th>
+                    <th>Cantidad</th>
+                    <th>Total (Bs.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    $ventasPorMetodo = [
+                        1 => ['nombre' => 'Efectivo', 'cantidad' => 0, 'total' => 0],
+                        2 => ['nombre' => 'Transferencia', 'cantidad' => 0, 'total' => 0],
+                        3 => ['nombre' => 'Tarjeta', 'cantidad' => 0, 'total' => 0],
+                        4 => ['nombre' => 'QR', 'cantidad' => 0, 'total' => 0],
+                    ];
+                    
+                    foreach($resumenCaja['ventas'] as $venta) {
+                        $idMetodo = $venta['idtipo_pago'];
+                        if (isset($ventasPorMetodo[$idMetodo])) {
+                            $ventasPorMetodo[$idMetodo]['cantidad']++;
+                            $ventasPorMetodo[$idMetodo]['total'] += $venta['total'];
+                        }
+                    }
+                @endphp
+                
+                @foreach($ventasPorMetodo as $id => $metodo)
+                <tr @if($id == 4) class="highlight-qr" @endif>
+                    <td>{{ $metodo['nombre'] }}</td>
+                    <td>{{ $metodo['cantidad'] }}</td>
+                    <td class="total">{{ number_format($metodo['total'], 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
         </table>
+    </div>
+
+    <div class="resumen">
+        <table>
+            <tbody>
+                <tr>
+                    <td><strong>Total Ingresos:</strong></td>
+                    <td class="total">Bs. {{ number_format($resumenCaja['totalIngresos'], 2) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Egresos:</strong></td>
+                    <td class="total">Bs. {{ number_format($resumenCaja['totalEgresos'], 2) }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Saldo Final en Caja:</strong></td>
+                    <td class="total">Bs. {{ number_format($resumenCaja['saldoCaja'], 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="firma-section">
+        <div class="firma">
+            <p>Cajero</p>
+        </div>
+        <div class="firma">
+            <p>Supervisor</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Documento generado el {{ date('d/m/Y H:i:s') }}</p>
     </div>
 </body>
 </html>

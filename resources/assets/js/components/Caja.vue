@@ -36,7 +36,16 @@
 
 
                 <Column field="cuotasventasCredito" header="Pagos de Cuotas"></Column>
-
+                <Column field="ventasContado" header="Ventas al Contado">
+    <template #body="slotProps">
+        {{ formatCurrency(slotProps.data.ventasContado || 0) }}
+    </template>
+</Column>
+<Column field="pagosQR" header="Pagos QR">
+    <template #body="slotProps">
+        {{ formatCurrency(slotProps.data.pagosQR || 0) }}
+    </template>
+</Column>
                 <Column field="saldoFaltante" header="Saldo de faltante"></Column>
                 <Column field="depositos" header="Depósitos Extras"></Column>
                 <Column field="salidas" header="Salidas Extras"></Column>
@@ -396,23 +405,22 @@
 </template>
 
 <script>
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Dropdown from 'primevue/dropdown';
-import Tag from 'primevue/tag';
-import InputNumber from 'primevue/inputnumber';
-import TabView from 'primevue/tabview';
-import TabPanel from 'primevue/tabpanel';
 import Card from 'primevue/card';
+import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
+import Dialog from 'primevue/dialog';
+import Dropdown from 'primevue/dropdown';
+import InputNumber from 'primevue/inputnumber';
+import InputText from 'primevue/inputtext';
+import Panel from 'primevue/panel';
+import TabPanel from 'primevue/tabpanel';
+import TabView from 'primevue/tabview';
+import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import TransaccionEgreso from "./Tables/TransaccionEgreso.vue";
-import TransaccionIngreso from "./Tables/TransaccionIngreso.vue";
 import TransaccionExtra from "./Tables/TransaccionExtra.vue";
-import Panel from 'primevue/panel';
-import Swal from "sweetalert2";
+import TransaccionIngreso from "./Tables/TransaccionIngreso.vue";
 export default {
     components: {
         DataTable,
@@ -434,6 +442,7 @@ export default {
     },
     data() {
         return {
+            pagosQR: 0,
             saldoSistema: 0,
             estaRegistrando: false,
             resumenCaja: null,
@@ -862,22 +871,75 @@ export default {
         },
 
         async realizarCierreCaja() {
-            try {
-                await axios.put('/caja/cerrar', {
-                    'id': this.resumenCaja.id,
-                    'saldoFaltante': this.totalEfectivo
-                });
+    try {
+        // Verificar si se ha realizado el arqueo
+        if (!this.arqueoRealizado) {
+            this.$toast.add({
+                severity: 'error', 
+                summary: 'Error', 
+                detail: 'Debe realizar el arqueo de caja antes de cerrarla', 
+                life: 3000 
+            });
+            return;
+        }
 
-                this.listarCaja(1, '', 'id');
-                this.arqueoRealizado = false;
-                this.modalResumen = false;
+        // Obtener el saldo total de efectivo (resultado del arqueo)
+        const saldoArqueo = this.totalEfectivo;
 
-                this.$toast.add({ severity: 'success', summary: 'Éxito', detail: 'La caja fue cerrada con éxito', life: 3000 });
-            } catch (error) {
-                console.error('Error al cerrar la caja:', error);
-                this.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cerrar la caja', life: 3000 });
-            }
-        },
+        // Obtener información detallada de la caja
+        const resumenCaja = await axios.get(`/caja/resumen/${this.resumenCaja.id}`);
+        const { 
+            saldoInicial,
+            pagosQR, 
+            ventasContado, 
+            totalIngresos,
+            saldoCaja
+        } = resumenCaja.data;
+
+        // Llamar al endpoint de cierre de caja
+        const response = await axios.put('/caja/cerrar', {
+            'id': this.resumenCaja.id,
+            'saldoFaltante': saldoArqueo
+        });
+
+        // Mostrar un mensaje detallado de cierre de caja
+        this.$toast.add({
+            severity: 'success', 
+            summary: 'Cierre de Caja', 
+            detail: `
+                Saldo Inicial: Bs. ${saldoInicial.toFixed(2)}
+                Ventas al Contado: Bs. ${ventasContado.toFixed(2)}
+                Pagos QR: Bs. ${pagosQR.toFixed(2)}
+                Saldo Total: Bs. ${saldoCaja.toFixed(2)}
+                Total Efectivo (Arqueo): Bs. ${saldoArqueo.toFixed(2)}
+            `, 
+            life: 5000 
+        });
+
+        // Refrescar la lista de cajas
+        await this.listarCaja(1, '', 'id');
+        
+        // Resetear estados
+        this.arqueoRealizado = false;
+        this.modalResumen = false;
+        this.resumenCaja = null;
+
+    } catch (error) {
+        console.error('Error al cerrar la caja:', error);
+        
+        // Manejo de errores específicos
+        const errorMessage = error.response && error.response.data && error.response.data.error 
+            ? error.response.data.error 
+            : 'No se pudo cerrar la caja';
+
+        this.$toast.add({ 
+            severity: 'error', 
+            summary: 'Error', 
+            detail: errorMessage, 
+            life: 3000 
+        });
+    }
+},
         cajaAbierta() {
             for (let i = 0; i < this.arrayCaja.length; i++) {
                 if (this.arrayCaja[i].estado) {
