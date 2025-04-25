@@ -448,53 +448,45 @@
 
         <!-- Step 1: Cliente -->
         <div v-if="step === 1" class="step-content p-fluid">
-          <div class="form-container">
-            <div class="form-row">
-              <div class="form-group">
-                <div class="p-inputgroup">
-                  <span class="p-inputgroup-addon">
-                    <i class="pi pi-id-card"></i>
-                  </span>
-                  <span class="p-float-label">
-                    <InputText
-                      id="documento"
-                      v-model="documento"
-                      @input="checkDocumento"
-                      maxlength="7"
-                      class="w-full"
-                    />
-                    <label for="documento">Numero de Documento</label>
-                  </span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <div class="p-inputgroup">
-                  <span class="p-inputgroup-addon">
-                    <i class="pi pi-user"></i>
-                  </span>
-                  <span class="p-float-label">
-                    <InputText
-                      id="nombreCliente"
-                      v-model="nombreCliente"
-                      :disabled="!nombreClienteEditable"
-                      class="w-full"
-                    />
-                    <label for="nombreCliente">Nombre del cliente</label>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <InputText v-model="idcliente" type="hidden" />
-          <InputText v-model="tipo_documento" type="hidden" />
-          <InputText v-model="complemento_id" type="hidden" />
-          <InputText v-model="usuarioAutenticado" type="hidden" />
-          <InputText v-model="puntoVentaAutenticado" type="hidden" />
-          <InputText v-model="email" type="hidden" />
-          <InputText v-model="num_comprob" type="hidden" disabled />
+  <div class="form-container">
+    <div class="form-row-classic">
+      <div class="form-group">
+        <div class="p-inputgroup">
+          <span class="p-inputgroup-addon">
+            <i class="pi pi-id-card"></i>
+          </span>
+          <span class="p-float-label">
+            <InputText
+              id="documento"
+              v-model="documento"
+              @input="checkDocumento"
+              maxlength="7"
+              class="w-full"
+            />
+            <label for="documento">Número de Documento</label>
+          </span>
         </div>
+      </div>
 
+      <div class="form-group">
+        <div class="p-inputgroup">
+          <span class="p-inputgroup-addon">
+            <i class="pi pi-user"></i>
+          </span>
+          <span class="p-float-label">
+            <InputText
+              id="nombreCliente"
+              v-model="nombreCliente"
+              :disabled="!nombreClienteEditable"
+              class="w-full"
+            />
+            <label for="nombreCliente">Nombre del cliente</label>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
         <!-- Step 2: Selección de productos -->
         <div v-if="step === 2" class="step-content">
           <!-- Header Section -->
@@ -2386,14 +2378,19 @@ export default {
     },
 
     // Registro de venta
-    async registrarVenta(idtipo_pago = 1) {       
+    async registrarVenta(idtipo_pago = 1) {
     try {
         // Mostrar indicador de carga
-        this.mostrarSpinner = true;         
-
+        this.mostrarSpinner = true;
+        
         // Crear o buscar cliente
-        await this.buscarOCrearCliente();         
-
+        await this.buscarOCrearCliente();
+        
+        // Verificar que arrayDetalle sea válido
+        if (!Array.isArray(this.arrayDetalle) || this.arrayDetalle.length === 0) {
+            throw new Error("El detalle de la venta está vacío o no es válido");
+        }
+        
         // Preparar datos comunes para cualquier tipo de venta
         const ventaData = {
             idcliente: this.idcliente,
@@ -2403,23 +2400,30 @@ export default {
             impuesto: this.impuesto || 0.18,
             total: this.calcularTotal,
             idAlmacen: this.idAlmacen,
-            idtipo_pago: idtipo_pago, // Aquí defines si es contado (1) o QR (4)
+            idtipo_pago: idtipo_pago,
             idtipo_venta: this.idtipo_venta,
             data: this.arrayDetalle,
-        };         
-
-        // [resto de tu código de preparación de datos]
-
+        };
+        
+        // Añadir datos específicos para ventas a crédito
+        if (this.tipoVenta === "credito") {
+            ventaData.tipoVenta = "credito";
+            // Asegúrate de que estos campos existan y tengan datos válidos
+            ventaData.plazos = this.plazos || [];
+            ventaData.fecha_primer_pago = this.fecha_primer_pago;
+            ventaData.condiciones_credito = this.condiciones_credito || {};
+        }
+        
         console.log("Datos de venta a enviar:", ventaData);
         const response = await axios.post("/venta/registrar", ventaData);
-
+        
         if (response.data.id) {
             // Venta exitosa
             this.listado = 1;
             this.cerrarModal2();
             this.listarVenta(1, "", "num_comprob");
             this.ejecutarFlujoCompleto();
-
+            
             // Verificar y mostrar información de la caja
             if (response.data.caja) {
                 this.$toast.add({
@@ -2433,8 +2437,8 @@ export default {
                     life: 5000
                 });
             }
-
-            // [resto de tu lógica de mensajes]
+            
+            // Mensajes según tipo de venta
             if (this.tipoVenta === "credito") {
                 Swal.fire(
                     "Venta exitosa",
@@ -2450,7 +2454,7 @@ export default {
             } else {
                 this.imprimirResivo(response.data.id);
             }
-
+            
             this.reiniciarFormulario();
         } else {
             // Error en la venta
@@ -2857,862 +2861,27 @@ export default {
   background-color: #28a745;
   animation: progressLine 0.5s ease-in-out;
 }
-
-@keyframes progressLine {
-  0% {
-    width: 0%;
-    opacity: 0;
-  }
-  100% {
-    width: 100%;
-    opacity: 1;
-  }
-}
-
-/* Estilos para el formulario */
-.form-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.form-row {
+.form-row-classic {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
 }
 
 .form-group {
-  flex: 1 1 100%;
-  min-width: 250px;
+  margin-right: 1.5rem; /* Espacio a la derecha */
+  margin-bottom: 1rem; /* Espacio abajo */
+  flex: 1;
 }
 
-.footer {
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-top: 1px solid #dee2e6;
+.form-group:last-child {
+  margin-right: 0; /* Elimina margen del último elemento */
 }
 
-/* Estilos para el detalle de venta */
-.encabezado-venta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-}
-
-.bg-green-light {
-  background-color: rgba(80, 200, 120, 0.15);
-  border-left: 4px solid #50c878;
-}
-
-.bg-yellow-light {
-  background-color: rgba(255, 193, 7, 0.15);
-  border-left: 4px solid #ffc107;
-}
-
-.bg-blue-light {
-  background-color: rgba(33, 150, 243, 0.15);
-  border-left: 4px solid #2196f3;
-}
-
-.tipo-venta {
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
-.tipo-venta i {
-  font-size: 1.4rem;
-  margin-right: 8px;
-}
-
-.datos-principales,
-.datos-adelantada-grid,
-.datos-contado-grid,
-.plan-pagos-header {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.datos-principales {
-  margin-bottom: 24px;
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-}
-
-.datos-item {
-  margin-bottom: 12px;
-}
-
-.datos-item label {
-  display: block;
-  font-weight: bold;
-  color: #666;
-  margin-bottom: 4px;
-  font-size: 0.9rem;
-}
-
-.datos-item div {
-  font-size: 1rem;
-}
-
-.datos-especificos {
-  margin-bottom: 24px;
-  padding: 16px;
-  border-radius: 5px;
-  border: 1px solid #e0e0e0;
-}
-
-.datos-especificos h4 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 1.1rem;
-  color: #333;
-  display: flex;
-  align-items: center;
-}
-
-.datos-especificos h4 i {
-  margin-right: 8px;
-  font-size: 1.2rem;
-}
-
-.datos-adelantada-grid .full-width {
-  grid-column: 1 / -1;
-}
-
-.plan-pagos-header {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.plan-pagos-table {
-  margin-bottom: 16px;
-}
-
-.productos-titulo {
-  display: flex;
-  align-items: center;
-  margin: 24px 0 16px;
-  font-size: 1.1rem;
-  color: #333;
-}
-
-.productos-titulo i {
-  margin-right: 8px;
-  font-size: 1.2rem;
-}
-
-.productos-tabla {
-  margin-bottom: 24px;
-}
-
-.total-section {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 12px 16px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  margin-bottom: 24px;
-}
-
-.total-label {
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-right: 16px;
-}
-
-.total-amount {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #2196f3;
-}
-
-.botones-accion {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.no-data {
-  padding: 16px;
-  text-align: center;
-  color: #666;
-  font-style: italic;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-}
-
-/* Estilos para el modal de detalle del producto */
-.product-image-container {
-  text-align: center;
-  margin-bottom: 1rem;
-  border: 1px solid #eee;
-  padding: 10px;
-  border-radius: 5px;
-  background-color: white;
-}
-
-.product-image {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-}
-
-.product-price-section,
-.product-info {
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  padding: 15px;
-  height: 100%;
-  border: 1px solid #e9ecef;
-}
-
-.price-title,
-.info-title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #495057;
-  border-bottom: 2px solid #e9ecef;
-  padding-bottom: 8px;
-}
-
-.product-price {
-  margin-bottom: 20px;
-}
-
-.precio-opcion {
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-.precio-opcion input {
-  margin-right: 8px;
-}
-
-.precio-opcion label {
-  margin-bottom: 0;
-  cursor: pointer;
-}
-
-.selected-price {
-  color: #2196f3;
-  font-size: 1.5rem;
-  margin: 1rem 0;
-  font-weight: bold;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 8px;
-  background-color: white;
-  border-radius: 4px;
-  border-left: 3px solid #2196f3;
-}
-
-.detail-label {
-  font-weight: bold;
-  color: #495057;
-}
-
-.detail-value {
-  text-align: right;
-  color: #212529;
-}
-
-.purchase-options {
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  margin-top: 1rem;
-  border: 1px solid #e9ecef;
-}
-
-.alert {
-  margin-top: 15px;
-  border-radius: 5px;
-  padding: 10px 15px;
-  font-size: 0.9rem;
-}
-
-.alert-success {
-  background-color: #d4edda;
-  border-color: #c3e6cb;
-  color: #155724;
-}
-
-.alert-warning {
-  background-color: #fff3cd;
-  border-color: #ffeeba;
-  color: #856404;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  border-color: #f5c6cb;
-  color: #721c24;
-}
-
-/* Utilidades */
-.mr-2 {
-  margin-right: 8px;
-}
-
-.mb-3 {
-  margin-bottom: 15px;
-}
-
-/* Media queries */
-@media (min-width: 768px) {
-  .form-row {
-    flex-wrap: nowrap;
-  }
+@media (max-width: 600px) {
   .form-group {
-    flex: 1;
+    width: 100%;
+    margin-right: 0;
   }
 }
 
-@media (max-width: 768px) {
-  .detail-row {
-    flex-direction: column;
-  }
-
-  .detail-value {
-    text-align: left;
-    margin-top: 4px;
-  }
-}
-/* Estilos para el modal de detalle de producto */
-.product-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.product-code {
-  font-size: 0.9rem;
-  color: #666;
-  padding: 4px 10px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-}
-
-.product-details-container {
-  margin: 15px 0;
-}
-
-.product-image-container {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  border: 1px solid #eee;
-  padding: 15px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.product-image {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-}
-
-.stock-indicator {
-  margin-top: 15px;
-  border-radius: 8px;
-  padding: 12px 15px;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.stock-title {
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.stock-value {
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-align: center;
-}
-
-.product-description {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  border: 1px solid #e9ecef;
-  margin-bottom: 1.5rem;
-}
-
-.description-content {
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  min-height: 100px;
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.product-price-section,
-.product-info {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  height: 100%;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.info-section-title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #495057;
-  border-bottom: 2px solid #e9ecef;
-  padding-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-.precio-opcion {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  background-color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.precio-opcion:hover {
-  background-color: #f0f8ff;
-  transform: translateX(3px);
-}
-
-.precio-opcion input {
-  margin-right: 10px;
-}
-
-.precio-opcion label {
-  margin-bottom: 0;
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-}
-
-.price-selected-label {
-  margin-top: 20px;
-  margin-bottom: 8px;
-  color: #495057;
-}
-
-.selected-price {
-  color: #2196f3;
-  font-size: 1.8rem;
-  margin: 0.5rem 0 1.5rem;
-  font-weight: bold;
-  text-align: center;
-  background-color: #e6f4ff;
-  padding: 10px;
-  border-radius: 6px;
-}
-
-.price-not-selected {
-  color: #dc3545;
-  background-color: #fff5f5;
-  font-size: 1.2rem;
-}
-
-.purchase-options {
-  margin-top: 1.5rem;
-  background-color: white;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.purchase-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #495057;
-}
-
-.quantity-control {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  border-left: 3px solid #2196f3;
-  transition: all 0.2s ease;
-}
-
-.detail-row:hover {
-  background-color: #f0f8ff;
-  transform: translateX(3px);
-}
-
-.detail-label {
-  font-weight: bold;
-  color: #495057;
-}
-
-.detail-value {
-  text-align: right;
-  color: #212529;
-  font-weight: 500;
-}
-
-.additional-info {
-  margin-top: 20px;
-}
-
-.additional-info-content {
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  min-height: 80px;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.footer-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-/* Estilos para el contenedor principal */
-.product-details-container {
-  margin: 15px 0;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-/* Estilos para la imagen del producto */
-.product-image-container {
-  text-align: center;
-  margin-bottom: 1rem;
-  border: 1px solid #eee;
-  padding: 15px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.product-image {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-}
-
-/* Estilos para el indicador de stock */
-.stock-indicator {
-  margin: 0.8rem 0;
-  border-radius: 8px;
-  padding: 10px 15px;
-  font-size: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.stock-title {
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.stock-value {
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-align: center;
-}
-
-/* Estilos para la fila de descripción y opciones */
-.product-info-row {
-  display: flex;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-
-/* Estilos para la descripción */
-
-/* Estilos para las opciones de compra */
-.purchase-controls {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  border: 1px solid #e9ecef;
-  height: 100%;
-  min-height: 200px;
-}
-
-.option-content {
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  height: calc(100% - 45px);
-}
-
-.purchase-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  margin-top: 10px;
-  color: #495057;
-}
-
-.quantity-control {
-  margin-top: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Estilos para la sección de precios */
-.product-price-section {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  height: 100%;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.precio-opcion {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  background-color: white;
-  padding: 10px 12px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.precio-opcion:hover {
-  background-color: #f0f8ff;
-  transform: translateX(3px);
-}
-
-.precio-opcion input {
-  margin-right: 10px;
-}
-
-.precio-opcion label {
-  margin-bottom: 0;
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-}
-
-/* Estilos para el precio seleccionado */
-.precio-seleccionado-container {
-  margin-top: 20px;
-}
-
-.price-selected-label {
-  margin-bottom: 8px;
-  color: #495057;
-  font-weight: bold;
-}
-
-.selected-price {
-  color: #2196f3;
-  font-size: 1.8rem;
-  margin: 0.5rem 0;
-  font-weight: bold;
-  text-align: center;
-  background-color: #e6f4ff;
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.price-not-selected {
-  color: #dc3545;
-  background-color: #fff5f5;
-  font-size: 1.2rem;
-}
-
-/* Estilos para la información del producto */
-.product-info {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  height: 100%;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 8px 12px;
-  background-color: white;
-  border-radius: 6px;
-  border-left: 3px solid #2196f3;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.detail-row:hover {
-  background-color: #f0f8ff;
-  transform: translateX(3px);
-}
-
-.detail-label {
-  font-weight: bold;
-  color: #495057;
-}
-
-.detail-value {
-  text-align: right;
-  color: #212529;
-  font-weight: 500;
-}
-
-/* Estilos para los títulos de sección */
-.info-section-title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #495057;
-  border-bottom: 2px solid #e9ecef;
-  padding-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-/* Utilidades */
-.mr-2 {
-  margin-right: 0.5rem;
-}
-/* Estructura general del layout */
-.product-layout {
-  display: flex;
-  flex-direction: column;
-}
-
-.product-details-container {
-  margin: 15px 0;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-/* Estilos para la imagen del producto */
-.product-image-container {
-  text-align: center;
-  margin-bottom: 1rem;
-  padding: 15px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #eee;
-}
-
-.product-image {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-}
-
-/* Estilos para el indicador de stock */
-.stock-indicator {
-  margin: 0.8rem 0;
-  border-radius: 8px;
-  padding: 12px 15px;
-  font-size: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.stock-title {
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.stock-value {
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-align: center;
-}
-
-.single-line-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0.25rem 0.5rem;
-  gap: 0.5rem;
-}
-
-.price-display {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.p-dropdown,
-.p-inputnumber {
-  margin: 0;
-}
-
-.action-buttons {
-  display: flex;
-  align-items: center;
-}
-
-/* Ensure everything is extra compact */
-:deep(.p-dropdown),
-:deep(.p-inputnumber) {
-  height: 2rem;
-}
-
-:deep(.p-dropdown .p-dropdown-label) {
-  padding: 0.25rem 0.5rem;
-}
-
-:deep(.p-inputnumber .p-inputtext) {
-  padding: 0.25rem 0.5rem;
-  width: 3rem;
-}
-
-:deep(.p-button-sm) {
-  padding: 0.25rem 0.5rem;
-}
 
 </style>
