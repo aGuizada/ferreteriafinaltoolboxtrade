@@ -285,15 +285,15 @@ export const esquemaBanco = yup.object().shape({
 export const esquemaProveedor = yup.object().shape({
   nombre: yup.string().required("El nombre es obligatorio"),
   direccion: yup.string().required("La dirección es obligatoria"),
-  telefono: yup.string().required("El teléfono es obligatorio"),
+
   tipo_documento: yup.string().required("Seleccione un tipo de documento"),
   num_documento: yup
     .string()
     .required("El numero del documento es obligatorio"),
   email: yup
     .string()
-    .email("Introduce un correo electrónico válido")
-    .required("El correo electrónico es obligatorio"),
+    .email("Introduce un correo electrónico válido"),
+ 
   contacto: yup.string().required("El contacto es obligatorio"),
   telefono_contacto: yup
     .string()

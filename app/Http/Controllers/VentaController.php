@@ -182,26 +182,33 @@ class VentaController extends Controller
     public function store(Request $request)
     {
         if (!$request->ajax()) return redirect('/');
-
+    
         try {
             DB::beginTransaction();
-
+    
             if (!$this->validarCajaAbierta()) {
                 return ['id' => -1, 'caja_validado' => 'Debe tener una caja abierta'];
             }
-
-            if ($request->tipo_comprobante === "RESIVO") {
-                // Crear venta con RESIVO
+    
+            // Validar que data sea un array y no esté vacío (CORRECCIÓN: Paréntesis cerrado)
+            if (!is_array($request->data)) {  // <-- Se agregó ) para cerrar la condición
+                throw new \Exception("Los datos de los productos no son válidos");
+            }
+    
+            if (empty($request->data)) {
+                throw new \Exception("No se han proporcionado productos para la venta");
+            }
+    
+            if ($request->tipo_comprobante === "RESIVO") { // Nota: Corregí "RESIVO" a "RESIVO" si ese es el valor correcto
                 $venta = $this->crearVentaResivo($request);
             } else {
-                // Crear venta regular (con factura)
                 $venta = $this->crearVenta($request);
             }
-
+    
             $this->actualizarCaja($request);
             $this->registrarDetallesVenta($venta, $request->data, $request->idAlmacen);
             $this->notificarAdministradores();
-
+    
             DB::commit();
             return ['id' => $venta->id];
         } catch (\Exception $e) {

@@ -6,12 +6,10 @@
                 <template #header>
                     <div class="panel-header">
                         <h4 class="panel-icon">Usuarios</h4>
-         
                       </div>
                 </template>
       
         <template>
-          
           <span>
               <Button icon="pi pi-plus" class="p-button-secondary" @click="abrirModal('persona', 'registrar')" label="Nuevo" />
               <Button icon="pi pi-file-excel" class="p-button-info" @click="cargarReporteUsuariosExcel()" label="Reporte" />
@@ -47,9 +45,7 @@
             <Column field="nombre" header="Nombre"></Column>
             <Column field="tipo_documento" header="Tipo Documento"></Column>
             <Column field="num_documento" header="Número"></Column>
-            <Column field="direccion" header="Dirección"></Column>
             <Column field="telefono" header="Teléfono"></Column>
-            <Column field="email" header="Email"></Column>
             <Column field="usuario" header="Usuario"></Column>
             <Column field="rol" header="Rol"></Column>
             <Column field="sucursal" header="Sucursal"></Column>
@@ -65,54 +61,61 @@
         <div class="p-fluid p-formgrid p-grid">
           <div class="p-field p-col-12 p-md-6">
             <label for="nombre">Nombre(*)</label>
-            <InputText class="p-inputtext-sm" id="nombre" v-model="nombre" />
+            <InputText class="p-inputtext-sm" id="nombre" v-model="nombre" :class="{'p-invalid': errors.nombre}" />
+            <small v-if="errors.nombre" class="p-error">{{ errors.nombre }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="tipo_documento">Tipo documento</label>
-            <Dropdown class="p-inputtext-sm" id="tipo_documento" v-model="tipo_documento" :options="tipoDocumentoOptions" optionLabel="label" optionValue="value" placeholder="Selecciona un tipo de documento" />
+            <label for="tipo_documento">Tipo documento(*)</label>
+            <Dropdown class="p-inputtext-sm" id="tipo_documento" v-model="tipo_documento" 
+                      :options="tipoDocumentoOptions" optionLabel="label" optionValue="value" 
+                      placeholder="Selecciona un tipo de documento" 
+                      :class="{'p-invalid': errors.tipo_documento}" />
+            <small v-if="errors.tipo_documento" class="p-error">{{ errors.tipo_documento }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="num_documento">Número documento</label>
-            <InputText class="p-inputtext-sm" id="num_documento" v-model="num_documento" />
+            <label for="num_documento">Número documento(*)</label>
+            <InputText class="p-inputtext-sm" id="num_documento" v-model="num_documento" 
+                      :class="{'p-invalid': errors.num_documento}" />
+            <small v-if="errors.num_documento" class="p-error">{{ errors.num_documento }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="direccion">Dirección</label>
-            <InputText class="p-inputtext-sm" id="direccion" v-model="direccion" />
+            <label for="telefono">Teléfono(*)</label>
+            <InputText class="p-inputtext-sm" id="telefono" v-model="telefono" 
+                      :class="{'p-invalid': errors.telefono}" />
+            <small v-if="errors.telefono" class="p-error">{{ errors.telefono }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="telefono">Teléfono</label>
-            <InputText class="p-inputtext-sm" id="telefono" v-model="telefono" />
+            <label for="idrol">Rol(*)</label>
+            <Dropdown class="p-inputtext-sm" id="idrol" v-model="idrol" 
+                      :options="arrayRol" optionLabel="nombre" optionValue="id" 
+                      placeholder="Seleccione" :class="{'p-invalid': errors.idrol}" />
+            <small v-if="errors.idrol" class="p-error">{{ errors.idrol }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="email">Email</label>
-            <InputText class="p-inputtext-sm"  id="email" v-model="email" />
+            <label for="idsucursal">Sucursal(*)</label>
+            <Dropdown class="p-inputtext-sm" id="idsucursal" v-model="idsucursal" 
+                      :options="arraySucursal" optionLabel="nombre" optionValue="id" 
+                      placeholder="Seleccione" :class="{'p-invalid': errors.idsucursal}" />
+            <small v-if="errors.idsucursal" class="p-error">{{ errors.idsucursal }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="idrol">Rol</label>
-            <Dropdown class="p-inputtext-sm" id="idrol" v-model="idrol" :options="arrayRol" optionLabel="nombre" optionValue="id" placeholder="Seleccione" />
+            <label for="usuario">Usuario(*)</label>
+            <InputText class="p-inputtext-sm" id="usuario" v-model="usuario" 
+                      :class="{'p-invalid': errors.usuario}" />
+            <small v-if="errors.usuario" class="p-error">{{ errors.usuario }}</small>
           </div>
           <div class="p-field p-col-12 p-md-6">
-            <label for="idsucursal">Sucursal</label>
-            <Dropdown class="p-inputtext-sm" id="idsucursal" v-model="idsucursal" :options="arraySucursal" optionLabel="nombre" optionValue="id" placeholder="Seleccione" />
-          </div>
-          <div class="p-field p-col-12 p-md-6">
-            <label for="usuario">Usuario</label>
-            <InputText class="p-inputtext-sm" id="usuario" v-model="usuario" />
-          </div>
-          <div class="p-field p-col-12 p-md-6">
-            <label for="password">Clave</label>
-            <Password class="p-inputtext-sm" id="password" v-model="password" />
-          </div>
-          <div class="p-field p-col-12">
-            <label for="fotografia">Fotografía</label>
-            <FileUpload class="p-inputtext-sm" mode="basic" name="fotografia" url="./upload" accept="image/*" :maxFileSize="1000000" @upload="onUpload" />
+            <label for="password">Clave(*)</label>
+            <Password class="p-inputtext-sm" id="password" v-model="password" 
+                      :class="{'p-invalid': errors.password}" toggleMask :feedback="false" />
+            <small v-if="errors.password" class="p-error">{{ errors.password }}</small>
           </div>
         </div>
   
         <template #footer>
-          <Button label="Cerrar" icon="pi pi-times" @click="cerrarModal" class="p-button-text"/>
-          <Button v-if="tipoAccion == 1" label="Guardar" icon="pi pi-check" @click="registrarPersona" />
-          <Button v-if="tipoAccion == 2" label="Actualizar" icon="pi pi-check" @click="actualizarPersona" />
+          <Button label="Cerrar" icon="pi pi-times" @click="cerrarModal" class="p-button-danger"/>
+          <Button v-if="tipoAccion == 1" label="Guardar" icon="pi pi-check" @click="registrarPersona"  class="p-button-success"/>
+          <Button v-if="tipoAccion == 2" label="Actualizar" icon="pi pi-check" @click="actualizarPersona"  class="p-button-success"/>
         </template>
       </Dialog>
     </div>
@@ -120,16 +123,17 @@
   
   <script>
   import Button from 'primevue/button';
-import Card from 'primevue/card';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
-import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
-import FileUpload from 'primevue/fileupload';
-import InputText from 'primevue/inputtext';
-import Panel from 'primevue/panel';
-import Password from 'primevue/password';
-import Toast from 'primevue/toast';
+  import Card from 'primevue/card';
+  import Column from 'primevue/column';
+  import DataTable from 'primevue/datatable';
+  import Dialog from 'primevue/dialog';
+  import Dropdown from 'primevue/dropdown';
+  import FileUpload from 'primevue/fileupload';
+  import InputText from 'primevue/inputtext';
+  import Panel from 'primevue/panel';
+  import Password from 'primevue/password';
+  import Toast from 'primevue/toast';
+  
   export default {
     components: {
       Card,
@@ -142,21 +146,20 @@ import Toast from 'primevue/toast';
       Password,
       FileUpload,
       Panel,
-        Toast,
+      Toast,
     },
     data() {
       return {
         tipoDocumentoOptions: [
-        {label: 'CI - CEDULA DE IDENTIDAD', value: '1'},
-        {label: 'CEX - CEDULA DE IDENTIDAD DE EXTRANJERO', value: '2'},
-        {label: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA', value: '5'},
-        {label: 'PAS - PASAPORTE', value: '3'},
-        {label: 'OD - OTRO DOCUMENTO DE IDENTIDAD', value: '4'}
-      ],
+          {label: 'CI - CEDULA DE IDENTIDAD', value: '1'},
+          {label: 'CEX - CEDULA DE IDENTIDAD DE EXTRANJERO', value: '2'},
+          {label: 'NIT - NÚMERO DE IDENTIFICACIÓN TRIBUTARIA', value: '5'},
+          {label: 'PAS - PASAPORTE', value: '3'},
+          {label: 'OD - OTRO DOCUMENTO DE IDENTIDAD', value: '4'}
+        ],
         criterioOptions: [
           {label: 'Nombre', value: 'nombre'},
           {label: 'Documento', value: 'num_documento'},
-          {label: 'Email', value: 'email'},
           {label: 'Teléfono', value: 'telefono'},
           {label: 'Sucursal', value: 'nombre'}
         ],
@@ -165,9 +168,7 @@ import Toast from 'primevue/toast';
         nombre: '',
         tipo_documento: '',
         num_documento: '',
-        direccion: '',
         telefono: '',
-        email: '',
         usuario: '',
         password: '',
         fotografia: '',
@@ -180,8 +181,7 @@ import Toast from 'primevue/toast';
         modal: false,
         tituloModal: '',
         tipoAccion: 0,
-        errorPersona: 0,
-        errorMostrarMsjPersona: [],
+        errors: {},
         pagination: {
           'total': 0,
           'current_page': 0,
@@ -195,45 +195,13 @@ import Toast from 'primevue/toast';
         buscar: ''
       }
     },
-    computed: {
-      isActived: function () {
-        return this.pagination.current_page;
-      },
-      pagesNumber: function () {
-        if (!this.pagination.to) {
-          return [];
-        }
-  
-        var from = this.pagination.current_page - this.offset;
-        if (from < 1) {
-          from = 1;
-        }
-  
-        var to = from + (this.offset * 2);
-        if (to >= this.pagination.last_page) {
-          to = this.pagination.last_page;
-        }
-  
-        var pagesArray = [];
-        while (from <= to) {
-          pagesArray.push(from);
-          from++;
-        }
-        return pagesArray;
-      },
-      imagen() {
-        console.log(this.fotoMuestra);
-        return this.fotoMuestra;
-      }
-    },
     methods: {
-        onUpload(event) {
-      // Manejar la carga de archivos
-      this.fotografia = event.files[0];
-    },
-    onPage(event) {
-      this.listarPersona(event.page + 1, this.buscar, this.criterio);
-    },
+      onUpload(event) {
+        this.fotografia = event.files[0];
+      },
+      onPage(event) {
+        this.listarPersona(event.page + 1, this.buscar, this.criterio);
+      },
       listarPersona(page, buscar, criterio) {
         let me = this;
         var url = '/user?page=' + page + '&buscar=' + buscar + '&criterio=' + criterio;
@@ -242,9 +210,9 @@ import Toast from 'primevue/toast';
           me.arrayPersona = respuesta.personas.data;
           me.pagination = respuesta.pagination;
         })
-          .catch(function (error) {
-            console.log(error);
-          });
+        .catch(function (error) {
+          console.log(error);
+        });
       },
       selectRol() {
         let me = this;
@@ -253,9 +221,9 @@ import Toast from 'primevue/toast';
           var respuesta = response.data;
           me.arrayRol = respuesta.roles;
         })
-          .catch(function (error) {
-            console.log(error);
-          });
+        .catch(function (error) {
+          console.log(error);
+        });
       },
       selectSucursal() {
         let me = this;
@@ -264,204 +232,298 @@ import Toast from 'primevue/toast';
           var respuesta = response.data;
           me.arraySucursal = respuesta.sucursales;
         })
-          .catch(function (error) {
-            console.log(error);
-          });
+        .catch(function (error) {
+          console.log(error);
+        });
       },
-      cambiarPagina(page, buscar, criterio) {
-        let me = this;
-        me.pagination.current_page = page;
-        me.listarPersona(page, buscar, criterio);
-      },
-      obtenerFotografia(event) {
-        let file = event.target.files[0];
-        let fileType = file.type;
-        if (fileType !== 'image/png' && fileType !== 'image/jpeg') {
-          alert('Por favor, seleccione una imagen en formato PNG o JPG.');
-          return;
+      
+      validarFormulario() {
+        this.errors = {};
+        
+        // Validación de nombre
+        if (!this.nombre) {
+          this.errors.nombre = 'El nombre es obligatorio';
+        } else if (this.nombre.length < 3) {
+          this.errors.nombre = 'El nombre debe tener al menos 3 caracteres';
         }
-        this.fotografia = file;
-        this.mostrarFoto(file);
-      },
-      mostrarFoto(file) {
-        let reader = new FileReader();
-        reader.onload = (file) => {
-          this.fotoMuestra = file.target.result;
+        
+        // Validación de tipo de documento
+        if (!this.tipo_documento) {
+          this.errors.tipo_documento = 'Seleccione un tipo de documento';
         }
-        reader.readAsDataURL(file);
+        
+        // Validación de número de documento
+        if (!this.num_documento) {
+          this.errors.num_documento = 'El número de documento es obligatorio';
+        } else if (!/^\d+$/.test(this.num_documento)) {
+          this.errors.num_documento = 'Solo se permiten números';
+        } else if (this.num_documento.length < 4) {
+          this.errors.num_documento = 'El documento debe tener al menos 4 dígitos';
+        }
+        
+        // Validación de teléfono
+        if (!this.telefono) {
+          this.errors.telefono = 'El teléfono es obligatorio';
+        } else if (!/^\d+$/.test(this.telefono)) {
+          this.errors.telefono = 'Solo se permiten números';
+        } else if (this.telefono.length < 7) {
+          this.errors.telefono = 'El teléfono debe tener al menos 7 dígitos';
+        }
+        
+        // Validación de rol
+        if (!this.idrol) {
+          this.errors.idrol = 'Seleccione un rol';
+        }
+        
+        // Validación de sucursal
+        if (!this.idsucursal) {
+          this.errors.idsucursal = 'Seleccione una sucursal';
+        }
+        
+        // Validación de usuario
+        if (!this.usuario) {
+          this.errors.usuario = 'El usuario es obligatorio';
+        } else if (this.usuario.length < 4) {
+          this.errors.usuario = 'El usuario debe tener al menos 4 caracteres';
+        } else if (!/^[a-zA-Z0-9_]+$/.test(this.usuario)) {
+          this.errors.usuario = 'Solo se permiten letras, números y guiones bajos';
+        }
+        
+        // Validación de contraseña
+        if (this.tipoAccion === 1 && !this.password) {
+          this.errors.password = 'La contraseña es obligatoria';
+        } else if (this.password && this.password.length < 6) {
+          this.errors.password = 'La contraseña debe tener al menos 6 caracteres';
+        }
+        
+        return Object.keys(this.errors).length === 0;
       },
-// Modify your registrarPersona method to handle the duplicate username and email errors
-
-registrarPersona() {
-  if (this.validarPersona()) {
-    return;
-  }
+      registrarPersona() {
   let me = this;
   let formData = new FormData();
+  
+  // Agregar campos al formData
   formData.append('nombre', this.nombre);
   formData.append('tipo_documento', this.tipo_documento);
   formData.append('num_documento', this.num_documento);
-  formData.append('direccion', this.direccion);
   formData.append('telefono', this.telefono);
-  formData.append('email', this.email);
-  formData.append('idrol', this.idrol);
-  formData.append('idsucursal', this.idsucursal);
   formData.append('usuario', this.usuario);
   formData.append('password', this.password);
-  formData.append('fotografia', this.fotografia);
+  formData.append('idrol', this.idrol);
+  formData.append('idsucursal', this.idsucursal);
+  
+  if (this.fotografia) {
+    formData.append('fotografia', this.fotografia);
+  }
 
   axios.post('/user/registrar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
-  }).then(function (response) {
-    me.cerrarModal();
-    me.listarPersona(1, '', 'nombre');
-    swal(
-      'Registrado!',
-      'El usuario ha sido registrado con éxito.',
-      'success'
-    )
-  }).catch(function (error) {
-    console.log(error);
-    // Check if the error response contains information about duplicate
-    if (error.response && error.response.data) {
-      if (error.response.data.error === 'duplicate_username') {
-        swal({
-          title: 'Error!',
-          text: 'El usuario ya existe con ese nombre. Intente con otro nombre de usuario.',
-          type: 'error',
-          confirmButtonText: 'Entendido'
-        });
-      } else if (error.response.data.error === 'duplicate_email') {
-        swal({
-          title: 'Error!',
-          text: 'Ya existe un usuario registrado con ese email. Intente con otro email.',
-          type: 'error',
-          confirmButtonText: 'Entendido'
-        });
-      } else {
-        swal({
-          title: 'Error!',
-          text: 'Ocurrió un error al registrar el usuario.',
-          type: 'error',
-          confirmButtonText: 'Entendido'
-        });
-      }
-    } else {
+  }).then(response => {
+    if (response.data && response.data.success) {
       swal({
-        title: 'Error!',
-        text: 'Ocurrió un error al registrar el usuario.',
-        type: 'error',
-        confirmButtonText: 'Entendido'
+        title: 'Éxito',
+        text: response.data.message,
+        icon: 'success',
+        button: 'Aceptar'
       });
+      this.cerrarModal();
+      this.listarPersona(1, '', 'nombre');
     }
-  });
-},
-
-// Similarly, update the actualizarPersona method to handle duplicate username and email errors
-actualizarPersona() {
-  if (this.validarPersona()) {
-    return;
-  }
-  console.log(this.fotografia);
-  let me = this;
-  let formData = new FormData();
-  formData.append('nombre', this.nombre);
-  formData.append('tipo_documento', this.tipo_documento);
-  formData.append('num_documento', this.num_documento);
-  formData.append('direccion', this.direccion);
-  formData.append('telefono', this.telefono);
-  formData.append('email', this.email);
-  formData.append('idrol', this.idrol);
-  formData.append('idsucursal', this.idsucursal);
-  formData.append('usuario', this.usuario);
-  formData.append('password', this.password);
-  formData.append('fotografia', this.fotografia);
-  formData.append('id', this.persona_id);
-
-  axios.post('/user/actualizar', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }).then(function (response) {
-    swal(
-      'Actualizado!',
-      'Datos actualizados con éxito',
-      'success'
-    );
-    me.cerrarModal();
-    me.listarPersona(1, '', 'nombre');
-  }).catch(function (error) {
-    console.log(error);
-    // Check if the error response contains information about duplicates
-    if (error.response && error.response.data) {
-      if (error.response.data.error === 'duplicate_username') {
-        swal({
-          title: 'Error!',
-          text: 'El usuario ya existe con ese nombre. Intente con otro nombre de usuario.',
-          type: 'error',
-          confirmButtonText: 'Entendido'
-        });
-      } else if (error.response.data.error === 'duplicate_email') {
-        swal({
-          title: 'Error!',
-          text: 'Ya existe un usuario registrado con ese email. Intente con otro email.',
-          type: 'error',
-          confirmButtonText: 'Entendido'
-        });
-      } else {
-        swal({
-          title: 'Error!',
-          text: 'Ocurrió un error al actualizar el usuario.',
-          type: 'error',
-          confirmButtonText: 'Entendido'
-        });
+  }).catch(error => {
+    let errorTitle = 'Error';
+    let errorHtml = '<div style="text-align:left;">';
+    
+    if (error.response && error.response.status === 422) {
+      const errors = error.response.data.errors;
+      const duplicateErrors = {};
+      
+      // Filtrar solo los errores de duplicados
+      if (errors.nombre && errors.nombre.includes('ya está registrado')) {
+        duplicateErrors.nombre = errors.nombre;
       }
-    } else {
-      swal({
-        title: 'Error!',
-        text: 'Ocurrió un error al actualizar el usuario.',
-        type: 'error',
-        confirmButtonText: 'Entendido'
-      });
-    }
-  });
-},
-      validarPersona() {
-        this.errorPersona = 0;
-        this.errorMostrarMsjPersona = [];
-  
-        if (!this.nombre) this.errorMostrarMsjPersona.push("El nombre de la pesona no puede estar vacío.");
-        if (!this.usuario) this.errorMostrarMsjPersona.push("El nombre de usuario no puede estar vacío.");
-        if (!this.password) this.errorMostrarMsjPersona.push("La password del usuario no puede estar vacía.");
-        if (this.idrol == 0) this.errorMostrarMsjPersona.push("Seleccione una Role.");
-        if (this.errorMostrarMsjPersona.length) this.errorPersona = 1;
-  
-        return this.errorPersona;
-      },
-      cerrarModal() {
-        let fileInput = this.$refs.fotografiaInput;
-        if (fileInput) {
-          fileInput.value = '';
+      if (errors.num_documento && errors.num_documento.includes('ya está registrado')) {
+        duplicateErrors.num_documento = errors.num_documento;
+      }
+      if (errors.usuario && errors.usuario.includes('ya está en uso')) {
+        duplicateErrors.usuario = errors.usuario;
+      }
+      
+      // Mostrar solo si hay errores de duplicados
+      if (Object.keys(duplicateErrors).length > 0) {
+        errorTitle = 'Datos duplicados';
+        errorHtml += '<ul style="margin:0;padding-left:20px;">';
+        
+        for (const key in duplicateErrors) {
+          errorHtml += `<li>${duplicateErrors[key]}</li>`;
         }
-  
+        
+        errorHtml += '</ul>';
+      } else {
+        // Si no hay duplicados pero hay otros errores, mostrar mensaje genérico
+        errorHtml += 'Por favor complete todos los campos requeridos correctamente';
+      }
+    } else {
+      errorHtml += 'Ocurrió un error al registrar el usuario';
+    }
+    
+    errorHtml += '</div>';
+    
+    swal({
+      title: errorTitle,
+      html: errorHtml,
+      icon: 'error',
+      confirmButtonText: 'Entendido'
+    });
+  });
+},
+// Método para traducir nombres de campos
+getFieldName(field) {
+  const fieldNames = {
+    'nombre': 'Nombre',
+    'tipo_documento': 'Tipo de documento',
+    'num_documento': 'Número de documento',
+    'telefono': 'Teléfono',
+    'usuario': 'Usuario',
+    'password': 'Contraseña',
+    'idrol': 'Rol',
+    'idsucursal': 'Sucursal'
+  };
+  return fieldNames[field] || field;
+},
+validarFormulario() {
+  this.errors = {};
+  let isValid = true;
+
+  if (!this.nombre) {
+    this.errors.nombre = 'El nombre es obligatorio';
+    isValid = false;
+  }
+
+  if (!this.tipo_documento) {
+    this.errors.tipo_documento = 'Seleccione un tipo de documento';
+    isValid = false;
+  }
+
+  if (!this.num_documento) {
+    this.errors.num_documento = 'El número de documento es obligatorio';
+    isValid = false;
+  } else if (!/^\d+$/.test(this.num_documento)) {
+    this.errors.num_documento = 'Solo se permiten números';
+    isValid = false;
+  }
+
+  if (!this.telefono) {
+    this.errors.telefono = 'El teléfono es obligatorio';
+    isValid = false;
+  } else if (!/^\d+$/.test(this.telefono)) {
+    this.errors.telefono = 'Solo se permiten números';
+    isValid = false;
+  }
+
+  if (!this.idrol) {
+    this.errors.idrol = 'Seleccione un rol';
+    isValid = false;
+  }
+
+  if (!this.idsucursal) {
+    this.errors.idsucursal = 'Seleccione una sucursal';
+    isValid = false;
+  }
+
+  if (this.tipoAccion === 1 && !this.password) {
+    this.errors.password = 'La contraseña es obligatoria';
+    isValid = false;
+  } else if (this.password && this.password.length < 6) {
+    this.errors.password = 'La contraseña debe tener al menos 6 caracteres';
+    isValid = false;
+  }
+
+  if (!this.usuario) {
+    this.errors.usuario = 'El usuario es obligatorio';
+    isValid = false;
+  } else if (this.usuario.length < 4) {
+    this.errors.usuario = 'El usuario debe tener al menos 4 caracteres';
+    isValid = false;
+  }
+
+  return isValid;
+},
+      
+      actualizarPersona() {
+        if (!this.validarFormulario()) {
+          return;
+        }
+        
+        let me = this;
+        let formData = new FormData();
+        formData.append('nombre', this.nombre);
+        formData.append('tipo_documento', this.tipo_documento);
+        formData.append('num_documento', this.num_documento);
+        formData.append('telefono', this.telefono);
+        formData.append('idrol', this.idrol);
+        formData.append('idsucursal', this.idsucursal);
+        formData.append('usuario', this.usuario);
+        if (this.password) {
+          formData.append('password', this.password);
+        }
+        formData.append('fotografia', this.fotografia);
+        formData.append('id', this.persona_id);
+
+        axios.post('/user/actualizar', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(function (response) {
+          swal(
+            'Actualizado!',
+            'Datos actualizados con éxito',
+            'success'
+          );
+          me.cerrarModal();
+          me.listarPersona(1, '', 'nombre');
+        }).catch(function (error) {
+          if (error.response && error.response.data) {
+            if (error.response.data.error === 'duplicate_username') {
+              me.errors.usuario = 'El nombre de usuario ya existe';
+            } else if (error.response.data.error === 'duplicate_document') {
+              me.errors.num_documento = 'El número de documento ya está registrado';
+            } else {
+              swal({
+                title: 'Error!',
+                text: 'Ocurrió un error al actualizar el usuario.',
+                type: 'error',
+                confirmButtonText: 'Entendido'
+              });
+            }
+          } else {
+            swal({
+              title: 'Error!',
+              text: 'Ocurrió un error al actualizar el usuario.',
+              type: 'error',
+              confirmButtonText: 'Entendido'
+            });
+          }
+        });
+      },
+      
+      cerrarModal() {
         this.modal = false;
         this.tituloModal = '';
         this.nombre = '';
-        this.tipo_documento = 'DNI';
+        this.tipo_documento = '';
         this.num_documento = '';
-        this.direccion = '';
         this.telefono = '';
-        this.email = '';
         this.usuario = '';
         this.password = '';
-        this.fotografia = fileInput ? fileInput : '';
+        this.fotografia = '';
         this.fotoMuestra = 'img/usuarios/defecto.jpg';
-        this.idrol = 0;
-        this.idsucursal = 0;
-        this.errorPersona = 0;
+        this.idrol = '';
+        this.idsucursal = '';
+        this.errors = {};
       },
+      
       abrirModal(modelo, accion, data = []) {
         this.selectRol();
         this.selectSucursal();
@@ -473,17 +535,6 @@ actualizarPersona() {
                   {
                     this.modal = true;
                     this.tituloModal = 'Registrar Usuario';
-                    this.nombre = '';
-                    this.tipo_documento = 'DNI';
-                    this.num_documento = '';
-                    this.direccion = '';
-                    this.telefono = '';
-                    this.email = '';
-                    this.usuario = '';
-                    this.password = '';
-                    this.fotografia = '';
-                    this.idrol = 0;
-                    this.idsucursal = 0;
                     this.tipoAccion = 1;
                     break;
                   }
@@ -496,11 +547,9 @@ actualizarPersona() {
                     this.nombre = data['nombre'];
                     this.tipo_documento = data['tipo_documento'];
                     this.num_documento = data['num_documento'];
-                    this.direccion = data['direccion'];
                     this.telefono = data['telefono'];
-                    this.email = data['email'];
                     this.usuario = data['usuario'];
-                    this.password = data['password'];
+                    this.password = '';
                     this.fotografia = data['fotografia'];
                     this.fotoMuestra = data['fotografia'] ? 'img/usuarios/' + data['fotografia'] : 'img/usuarios/defecto.jpg';
                     this.idrol = data['idrol'];
@@ -511,110 +560,95 @@ actualizarPersona() {
             }
         }
       },
-        desactivarUsuario(id) {
-            swal({
-                title: 'Esta seguro de desactivar este usuario?',
-                type: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Aceptar!',
-                cancelButtonText: 'Cancelar',
-                confirmButtonClass: 'btn btn-success',
-                cancelButtonClass: 'btn btn-danger',
-                buttonsStyling: false,
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    let me = this;
+      
+      desactivarUsuario(id) {
+        swal({
+          title: 'Esta seguro de desactivar este usuario?',
+          type: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Aceptar!',
+          cancelButtonText: 'Cancelar',
+          buttonsStyling: false,
+          reverseButtons: true
+        }).then((result) => {
+          if (result.value) {
+            let me = this;
 
-                    axios.put('/user/desactivar', {
-                        'id': id
-                    }).then(function (response) {
-                        me.listarPersona(1, '', 'nombre');
-                        swal(
-                            'Desactivado!',
-                            'El registro ha sido desactivado con éxito.',
-                            'success'
-                        )
-                    }).catch(function (error) {
-                        console.log(error);
-                    });
+            axios.put('/user/desactivar', {
+              'id': id
+            }).then(function (response) {
+              me.listarPersona(1, '', 'nombre');
+              swal(
+                'Desactivado!',
+                'El registro ha sido desactivado con éxito.',
+                'success'
+              )
+            }).catch(function (error) {
+              console.log(error);
+            });
+          }
+        })
+      },
+      
+      activarUsuario(id) {
+        swal({
+          title: 'Esta seguro de activar este usuario?',
+          type: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Aceptar!',
+          cancelButtonText: 'Cancelar',
+          buttonsStyling: false,
+          reverseButtons: true
+        }).then((result) => {
+          if (result.value) {
+            let me = this;
 
-
-                } else if (
-                    // Read more about handling dismissals
-                    result.dismiss === swal.DismissReason.cancel
-                ) {
-
-                }
-            })
-        },
-        activarUsuario(id) {
-            swal({
-                title: 'Esta seguro de activar este usuario?',
-                type: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Aceptar!',
-                cancelButtonText: 'Cancelar',
-                confirmButtonClass: 'btn btn-success',
-                cancelButtonClass: 'btn btn-danger',
-                buttonsStyling: false,
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    let me = this;
-
-                    axios.put('/user/activar', {
-                        'id': id
-                    }).then(function (response) {
-                        me.listarPersona(1, '', 'nombre');
-                        swal(
-                            'Activado!',
-                            'El registro ha sido activado con éxito.',
-                            'success'
-                        )
-                    }).catch(function (error) {
-                        console.log(error);
-                    });
-
-
-                } else if (
-                    // Read more about handling dismissals
-                    result.dismiss === swal.DismissReason.cancel
-                ) {
-
-                }
-            })
-        },
-        cargarReporteUsuariosExcel() {
-            window.open('/user/listarReporteUsuariosExcel', '_blank');
-        }
+            axios.put('/user/activar', {
+              'id': id
+            }).then(function (response) {
+              me.listarPersona(1, '', 'nombre');
+              swal(
+                'Activado!',
+                'El registro ha sido activado con éxito.',
+                'success'
+              )
+            }).catch(function (error) {
+              console.log(error);
+            });
+          }
+        })
+      },
+      
+      cargarReporteUsuariosExcel() {
+        window.open('/user/listarReporteUsuariosExcel', '_blank');
+      }
     },
     mounted() {
-        this.listarPersona(1, this.buscar, this.criterio);
+      this.listarPersona(1, this.buscar, this.criterio);
     }
-}
-</script>
-<style scoped>
->>> .p-panel-header {
-    padding: 0.75rem;
-}
-.panel-header {
-    display: flex;
-    align-items: center;
-}
+  }
+  </script>
+  
+  <style scoped>
+  >>> .p-panel-header {
+      padding: 0.75rem;
+  }
+  .panel-header {
+      display: flex;
+      align-items: center;
+  }
 
-.panel-icon {
-    font-size: 2rem;
-    padding-left: 10px;
-}
+  .panel-icon {
+      font-size: 2rem;
+      padding-left: 10px;
+  }
 
-.panel-icon {
-    font-size: 1.5rem;
-    margin: 0;
-}
-
-</style>
+  .panel-icon {
+      font-size: 1.5rem;
+      margin: 0;
+  }
+  </style>

@@ -107,26 +107,36 @@ class AlmacenController extends Controller
     }
     public function store(Request $request)
     {
-        if (!$request->ajax())
-            return redirect('/');
-        $almacenes = new Almacen();
-        $almacenes->nombre_almacen = $request->nombre_almacen;
-        $almacenes->ubicacion = $request->ubicacion;
-        $almacenes->encargado = $request->encargado;
-        $almacenes->telefono = $request->telefono;
-        $almacenes->sucursal = $request->sucursal;
-        $almacenes->observacion = $request->observacion;
-        Log::info('DATOS REGISTRO ALMACEN:', [
-            'nombre_almacen' => $request->nombre_almacen,
-            'ubicacion' => $request->ubicacion,
-            'encargado' => $request->encargado,
-            'telefono' => $request->telefono,
-            'sucursal' => $request->sucursal,
-            'observacion' => $request->observacion,
-        ]);
-        $almacenes->save();
-         $encargados = explode(',', $request->encargado);
-    $almacenes->encargado = json_encode($encargados);
+        if (!$request->ajax()) return redirect('/');
+        
+        try {
+            $almacenes = new Almacen();
+            $almacenes->nombre_almacen = $request->nombre_almacen;
+            $almacenes->ubicacion = $request->ubicacion;
+            $almacenes->encargado = $request->encargado;
+            $almacenes->telefono = $request->telefono;
+            $almacenes->sucursal = $request->sucursal;
+            $almacenes->observacion = $request->observacion;
+            $almacenes->save();
+            
+            $encargados = explode(',', $request->encargado);
+            $almacenes->encargado = json_encode($encargados);
+            
+            return response()->json(['success' => true]);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorCode = $e->errorInfo[1];
+            if($errorCode == 1062){
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Duplicate entry: El nombre del almacén ya existe'
+                ], 422);
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar el almacén'
+            ], 500);
+        }
     }
     public function update(Request $request)
     {
@@ -187,5 +197,24 @@ class AlmacenController extends Controller
             'message' => 'No se pudo eliminar el almacén'
         ], 500);
     }
+}
+public function verificarNombre(Request $request)
+{
+    if (!$request->ajax()) return redirect('/');
+    
+    $nombre = $request->nombre;
+    $id = $request->id;
+    
+    $query = Almacen::where('nombre_almacen', $nombre);
+    
+    if ($id) {
+        $query->where('id', '!=', $id);
+    }
+    
+    $existe = $query->exists();
+    
+    return response()->json([
+        'existe' => $existe
+    ]);
 }
 }

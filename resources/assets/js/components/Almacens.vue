@@ -308,33 +308,55 @@ export default {
             }
         },
         async enviarFormulario() {
-            await esquemaAlmacen.validate(this.datosFormulario, { abortEarly: false })
-            .then(() => {
-                // Verificar si el nombre del almacén está vacío
-                if (!this.datosFormulario.nombre_almacen) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Campo vacío',
-                    text: 'El nombre del almacén debe ser llenado.',
-                })
-                return
-                }
-                if (this.tipoAccion == 2) {
-                this.actualizarAlmacen(this.datosFormulario)
-                } else {
-                this.registrarAlmacen(this.datosFormulario)
-                }
-            })
-            .catch((error) => {
-                console.log(error)
-                const erroresValidacion = {}
-                error.inner.forEach((e) => {
-                erroresValidacion[e.path] = e.message
-                })
+  await esquemaAlmacen.validate(this.datosFormulario, { abortEarly: false })
+  .then(async () => {
+    // Verificar si el nombre del almacén ya existe
+    let existe = await this.verificarNombreExistente();
+    
+    if (existe) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Nombre duplicado',
+        text: 'El nombre del almacén ya existe, por favor ingrese otro nombre.',
+      });
+      return;
+    }
 
-                this.errores = erroresValidacion
-            })
-        },
+    if (this.tipoAccion == 2) {
+      this.actualizarAlmacen(this.datosFormulario);
+    } else {
+      this.registrarAlmacen(this.datosFormulario);
+    }
+  })
+  .catch((error) => {
+    console.log(error);
+    const erroresValidacion = {};
+    error.inner.forEach((e) => {
+      erroresValidacion[e.path] = e.message;
+    });
+    this.errores = erroresValidacion;
+  });
+},
+verificarNombreExistente() {
+  return new Promise((resolve) => {
+    let me = this;
+    let url = "/almacen/verificar-nombre?nombre=" + me.datosFormulario.nombre_almacen;
+    
+    // Si es actualización, incluir el ID para excluirlo de la verificación
+    if (me.tipoAccion == 2) {
+      url += "&id=" + me.datosFormulario.id;
+    }
+
+    axios.get(url)
+      .then(function(response) {
+        resolve(response.data.existe);
+      })
+      .catch(function(error) {
+        console.log(error);
+        resolve(false);
+      });
+  });
+},
         listarAlmacenes(page, buscar, criterio) {
             let me = this;
             var url =
@@ -352,36 +374,86 @@ export default {
                 });
             },
         
-        registrarAlmacen(data) {
-            console.log("sucursal ",this.sucursalSeleccionado);
-            console.log("usuarios ",this.usuariosSeleccionados);
-            console.log("DATA ",data)
-            let me = this;
-            axios
-                .post("/almacen/registrar", data)
-                .then(function (response) {
-                me.cerrarModal();
-                me.listarAlmacenes(1, "", "nombre_almacen");
-                me.usuariosSeleccionados = [];
-                me.arrayUsuario = [];
-                })
-                .catch(function (error) {
-                console.log(error);
+            registrarAlmacen(data) {
+    let me = this;
+    axios.post("/almacen/registrar", data)
+        .then(function(response) {
+            me.cerrarModal();
+            me.listarAlmacenes(1, "", "nombre_almacen");
+            me.usuariosSeleccionados = [];
+            me.arrayUsuario = [];
+            
+            // Mostrar mensaje de éxito
+            Swal.fire({
+                icon: 'success',
+                title: 'Registro exitoso',
+                text: 'El almacén ha sido registrado correctamente',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        })
+        .catch(function(error) {
+            console.log(error);
+            
+            // Manejar específicamente el error de duplicado
+            if (error.response && error.response.status === 422 && 
+                error.response.data.message.includes('Duplicate entry')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al registrar',
+                    text: 'El nombre del almacén ya existe. Por favor ingrese otro nombre.',
+                    confirmButtonText: 'Entendido'
                 });
-        },
-        actualizarAlmacen(data) {
-            let me = this;
-            axios
-                .put("/almacen/editar", data)
-                .then(function (response) {
-                me.cerrarModal();
-                //console.log(response)
-                me.listarAlmacenes(1, "", "nombre_almacen");
-                })
-                .catch(function (error) {
-                console.log(error);
+            } else {
+                // Manejar otros errores
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al registrar',
+                    text: 'Ocurrió un error al intentar registrar el almacén',
+                    confirmButtonText: 'Entendido'
                 });
-        },
+            }
+        });
+},
+actualizarAlmacen(data) {
+    let me = this;
+    axios.put("/almacen/editar", data)
+        .then(function(response) {
+            me.cerrarModal();
+            me.listarAlmacenes(1, "", "nombre_almacen");
+            
+            // Mostrar mensaje de éxito
+            Swal.fire({
+                icon: 'success',
+                title: 'Actualización exitosa',
+                text: 'El almacén ha sido actualizado correctamente',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        })
+        .catch(function(error) {
+            console.log(error);
+            
+            // Manejar específicamente el error de duplicado
+            if (error.response && error.response.status === 422 && 
+                error.response.data.message.includes('Duplicate entry')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al actualizar',
+                    text: 'El nombre del almacén ya existe. Por favor ingrese otro nombre.',
+                    confirmButtonText: 'Entendido'
+                });
+            } else {
+                // Manejar otros errores
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al actualizar',
+                    text: 'Ocurrió un error al intentar actualizar el almacén',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        });
+},
         abrirModal(modelo, accion, data = []) {
             switch (modelo) {
                 case "almacenes": {

@@ -899,7 +899,10 @@ Route::group(["middleware" => ["auth"]], function () {
             "/variables/imprimirCarta/{id}/{idventainstitucional}",
             "VentasInstitucionalesController@imprimirFactura"
         );
-
+        Route::get(
+            'almacen/verificar-nombre',
+            [AlmacenController::class, 'verificarNombre']
+        );
         //BUSCAR CLIENTE
         Route::get("/api/clientes", "ClienteController@buscarPorDocumento");
 

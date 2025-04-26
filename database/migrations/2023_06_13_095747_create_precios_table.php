@@ -23,28 +23,28 @@ class CreatePreciosTable extends Migration
         // Inserta un valor en la tabla 'precios' después de crearla
         DB::table('precios')->insert([
             [
-                'nombre_precio' => 'ESTUDIANTE',
+                'nombre_precio' => 'PRECIO UNO ',
                 'porcentage' => 10.50,
                 'condicion' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'nombre_precio' => 'SIN FACTURA',
+                'nombre_precio' => 'PRECIO DOS',
                 'porcentage' => 20.75,
                 'condicion' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'nombre_precio' => 'PUBLICO',
+                'nombre_precio' => 'PRECIO TRES',
                 'porcentage' => 15.25,
                 'condicion' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'nombre_precio' => 'FACTURA',
+                'nombre_precio' => 'PRECIO CUATRO',
                 'porcentage' => 30.00,
                 'condicion' => 1,
                 'created_at' => now(),

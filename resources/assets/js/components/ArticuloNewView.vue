@@ -594,7 +594,7 @@ export default {
                 { field: 'nombre', header: 'NOMBRE COMERCIAL' },
           
                 { field: 'unidad_envase', header: 'UNIDADES POR PAQUETE' },
-                { field: 'precio_costo_unid', header: 'COSTO UNITARIO' },
+               
                 { field: 'precio_costo_paq', header: 'COSTO PAQUETE' },
                 // Las columnas dinámicas se insertarán aquí
                 { field: 'nombre_categoria', header: 'LINEA' },
@@ -603,7 +603,6 @@ export default {
                 { field: 'stock', header: 'STOCK MINIMO' },
                 { field: 'nombre_proveedor', header: 'PROVEEDOR' },
                 { field: 'descripcion', header: 'DESCRIPCION' },
-                { field: 'condicion', header: 'CONTROLADO', type: 'badge' },
                 { field: 'nombre_grupo', header: 'GRUPO/FAMILIA' },
                 { field: 'fotografia', header: 'FOTOGRAFIA', type: 'image' }
             ]
@@ -654,7 +653,7 @@ export default {
         computedColumns() {
             const dynamicColumns = this.precios.map((precio, index) => ({
                 field: `precio_${['uno', 'dos', 'tres', 'cuatro'][index]}`,
-                header: `PRECIO ${precio.nombre_precio}`,
+                header: ` ${precio.nombre_precio}`,
                 type: 'dynamicPrice'
             }));
             const index = this.headers.findIndex(header => header.field === 'precio_costo_paq') + 1;

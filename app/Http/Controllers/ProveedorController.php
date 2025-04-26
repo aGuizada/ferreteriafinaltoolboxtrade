@@ -109,9 +109,17 @@ class ProveedorController extends Controller
 
     public function store(Request $request)
     {
-        if (!$request->ajax())
-            return redirect('/');
-
+        if (!$request->ajax()) return redirect('/');
+    
+        // Validar si el proveedor ya existe
+        $proveedorExistente = Persona::where('nombre', $request->nombre)->first();
+        if ($proveedorExistente) {
+            return response()->json([
+                'error' => true,
+                'message' => 'El proveedor ya existe en el sistema'
+            ], 422);
+        }
+    
         try {
             DB::beginTransaction();
             $persona = new Persona();
@@ -120,58 +128,79 @@ class ProveedorController extends Controller
             $persona->tipo_documento = $request->tipo_documento;
             $persona->num_documento = $request->num_documento;
             $persona->direccion = $request->direccion;
-            $persona->telefono = $request->telefono;
-            $persona->email = $request->email;
+            $persona->telefono = $request->telefono ?? null; // Hacer opcional
+            $persona->email = $request->email ?? null; // Hacer opcional
             $persona->save();
-
+    
             $proveedor = new Proveedor();
             $proveedor->contacto = $request->contacto;
             $proveedor->telefono_contacto = $request->telefono_contacto;
             $proveedor->id = $persona->id;
             $proveedor->save();
-
+    
             DB::commit();
-
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Proveedor registrado con éxito'
+            ]);
+    
         } catch (Exception $e) {
             DB::rollBack();
+            return response()->json([
+                'error' => true,
+                'message' => 'Error al registrar proveedor: ' . $e->getMessage()
+            ], 500);
         }
-
-
-
     }
-
+    
     public function update(Request $request)
     {
-        if (!$request->ajax())
-            return redirect('/');
-
+        if (!$request->ajax()) return redirect('/');
+    
+        // Validar si el proveedor ya existe (excepto el actual)
+        $proveedorExistente = Persona::where('nombre', $request->nombre)
+                                    ->where('id', '!=', $request->id)
+                                    ->first();
+        if ($proveedorExistente) {
+            return response()->json([
+                'error' => true,
+                'message' => 'El proveedor ya existe en el sistema'
+            ], 422);
+        }
+    
         try {
             DB::beginTransaction();
-
-            //Buscar primero el proveedor a modificar
+    
             $proveedor = Proveedor::findOrFail($request->id);
-
             $persona = Persona::findOrFail($proveedor->id);
-
+    
             $persona->nombre = $request->nombre;
             $persona->tipo_documento = $request->tipo_documento;
             $persona->num_documento = $request->num_documento;
             $persona->direccion = $request->direccion;
-            $persona->telefono = $request->telefono;
-            $persona->email = $request->email;
+            $persona->telefono = $request->telefono ?? null; // Hacer opcional
+            $persona->email = $request->email ?? null; // Hacer opcional
             $persona->save();
-
-
+    
             $proveedor->contacto = $request->contacto;
             $proveedor->telefono_contacto = $request->telefono_contacto;
             $proveedor->save();
-
+    
             DB::commit();
-
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Proveedor actualizado con éxito'
+            ]);
+    
         } catch (Exception $e) {
             DB::rollBack();
+            return response()->json([
+                'error' => true,
+                'message' => 'Error al actualizar proveedor: ' . $e->getMessage()
+            ], 500);
         }
-
     }
 
     public function importar(Request $request)

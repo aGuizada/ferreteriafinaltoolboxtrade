@@ -40,8 +40,7 @@
                   </Column>
                   <Column field="num_documento" header="NIT/CI"></Column>
                   <Column field="direccion" header="Dirección"></Column>
-                  <Column field="telefono" header="Teléfono"></Column>
-                  <Column field="email" header="Email"></Column>
+                 
                   <Column field="contacto" header="Contacto"></Column>
               </DataTable>
           </template>
@@ -65,7 +64,11 @@
                       <InputText id="direccion" v-model="datosFormulario.direccion" :class="{'p-invalid': errores.direccion}" @input="validarCampo('direccion')" />
                       <small class="p-error" v-if="errores.direccion">{{ errores.direccion }}</small>
                   </div>
-
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="contacto">Contacto</label>
+                      <InputText id="contacto" v-model="datosFormulario.contacto" :class="{'p-invalid': errores.contacto}" @input="validarCampo('contacto')" />
+                      <small class="p-error" v-if="errores.contacto">{{ errores.contacto }}</small>
+                  </div>
                   <div class="p-field p-col-12 p-md-6">
                       <label for="tipo_documento">Tipo de documento</label>
                       <Dropdown id="tipo_documento" v-model="datosFormulario.tipo_documento" :options="tiposDocumentos" optionLabel="etiqueta" optionValue="valor" placeholder="Selecciona un tipo de documento" :class="{'p-invalid': errores.tipo_documento}" @change="validarCampo('tipo_documento')" />
@@ -78,27 +81,12 @@
                       <small class="p-error" v-if="errores.num_documento">{{ errores.num_documento }}</small>
                   </div>
 
-                  <div class="p-field p-col-12 p-md-6">
-                      <label for="email">Correo electrónico</label>
-                      <InputText id="email" v-model="datosFormulario.email" :class="{'p-invalid': errores.email}" @input="validarCampo('email')" />
-                      <small class="p-error" v-if="errores.email">{{ errores.email }}</small>
-                  </div>
 
-                  <div class="p-field p-col-12 p-md-6">
-                      <label for="telefono">Teléfono</label>
-                      <InputNumber id="telefono" v-model="datosFormulario.telefono" :class="{'p-invalid': errores.telefono}" @input="validarCampo('telefono')" />
-                      <small class="p-error" v-if="errores.telefono">{{ errores.telefono }}</small>
-                  </div>
-
-                  <div class="p-field p-col-12 p-md-6">
-                      <label for="contacto">Contacto</label>
-                      <InputText id="contacto" v-model="datosFormulario.contacto" :class="{'p-invalid': errores.contacto}" @input="validarCampo('contacto')" />
-                      <small class="p-error" v-if="errores.contacto">{{ errores.contacto }}</small>
-                  </div>
+            
 
                   <div class="p-field p-col-12 p-md-6">
                       <label for="telefono_contacto">Teléfono de contacto</label>
-                      <InputNumber id="telefono_contacto" v-model="datosFormulario.telefono_contacto" :class="{'p-invalid': errores.telefono_contacto}" @input="validarCampo('telefono_contacto')" />
+                      <InputText  id="telefono_contacto" v-model="datosFormulario.telefono_contacto" :class="{'p-invalid': errores.telefono_contacto}" @input="validarCampo('telefono_contacto')" />
                       <small class="p-error" v-if="errores.telefono_contacto">{{ errores.telefono_contacto }}</small>
                   </div>
               </div>
@@ -259,22 +247,63 @@ methods: {
     }
   },
   async enviarFormulario() {
-    await esquemaProveedor.validate(this.datosFormulario, { abortEarly: false })
-      .then(() => {
-        if (this.tipoAccion == 2) {
-          this.actualizarPersona(this.datosFormulario);
-        } else {
-          this.registrarPersona(this.datosFormulario);
-        }
-      })
-      .catch((error) => {
+  try {
+    await esquemaProveedor.validate(this.datosFormulario, { abortEarly: false });
+    
+    if (this.tipoAccion == 2) {
+      const response = await axios.put('/proveedor/actualizar', this.datosFormulario);
+      this.mostrarMensajeExito('Proveedor actualizado con éxito');
+    } else {
+      const response = await axios.post('/proveedor/registrar', this.datosFormulario);
+      this.mostrarMensajeExito('Proveedor registrado con éxito');
+    }
+    
+    this.cerrarModal();
+    this.listarPersona(1, '', 'nombre');
+    
+  } catch (error) {
+    if (error.response && error.response.status === 422) {
+      // Manejar errores de validación del servidor
+      if (error.response.data && error.response.data.message) {
+        this.mostrarMensajeError(error.response.data.message);
+      } else {
+        // Manejar otros errores de validación
         const erroresValidacion = {};
-        error.inner.forEach((e) => {
+        if (error.response.data && error.response.data.errors) {
+          error.response.data.errors.forEach(function(e) {
+            erroresValidacion[e.field] = e.message;
+          });
+        }
+        this.errores = erroresValidacion;
+      }
+    } else {
+      // Manejar errores de validación del frontend
+      const erroresValidacion = {};
+      if (error.inner) {
+        error.inner.forEach(function(e) {
           erroresValidacion[e.path] = e.message;
         });
-
-        this.errores = erroresValidacion;
-      });
+      }
+      this.errores = erroresValidacion;
+    }
+  }
+},
+mostrarMensajeExito(mensaje) {
+    Swal.fire({
+      title: 'Éxito',
+      text: mensaje,
+      icon: 'success',
+      confirmButtonText: 'Aceptar'
+    });
+  },
+  
+  mostrarMensajeError(mensaje) {
+    Swal.fire({
+      title: 'Error',
+      text: mensaje,
+      icon: 'error',
+      confirmButtonText: 'Aceptar'
+    });
   },
   getTipoDocumentoText(value) {
     const documento = this.tiposDocumentos.find(doc => doc.valor === value);
