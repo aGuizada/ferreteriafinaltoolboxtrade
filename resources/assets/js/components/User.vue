@@ -10,21 +10,24 @@
                 </template>
       
         <template>
+          <div class="p-field ">
           <span>
               <Button icon="pi pi-plus" class="p-button-secondary" @click="abrirModal('persona', 'registrar')" label="Nuevo" />
               <Button icon="pi pi-file-excel" class="p-button-info" @click="cargarReporteUsuariosExcel()" label="Reporte" />
-            </span>
-          <div class="p-fluid p-formgrid p-grid">
-            <div class="p-field-sm">
+            
               <Dropdown v-model="criterio"  :options="criterioOptions" optionLabel="label" optionValue="value" placeholder="Seleccione criterio" />
-            </div>
-            <div class="p-field ">
+           
+           
               <span class="p-input-icon-left">
                 <i class="pi pi-search" />
                 <InputText v-model="buscar" placeholder="Buscar..." @input="listarPersona(1, buscar, criterio)" />
               </span>
-            </div>
+         
+          
+            </span>
           </div>
+           
+       
   
          <DataTable :value="arrayPersona" :paginator="true" :rows="10"
                      :totalRecords="pagination.total" :lazy="true"

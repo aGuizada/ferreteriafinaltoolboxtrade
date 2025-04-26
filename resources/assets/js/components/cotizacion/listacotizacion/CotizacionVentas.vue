@@ -1,27 +1,29 @@
 <template>
     <main class="main">
       <div class="panel-header ">
-        <div class="container">
+        
           <div class="d-flex justify-content-between align-items-center py-3">
             <h4 >
               <i class="bi bi-file-earmark-text mr-2"></i> Cotizaciones
             </h4>
           </div>
-        </div>
+      
       </div>
   
       <!-- Contenedor principal -->
-      <div class="container">
-        <div class="card shadow-sm">
-          <div class="card-body p-0">
+  
             <!-- Listado de cotizaciones -->
             <template v-if="listado == 1">
               <div class="p-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <div>
-                    <button type="button" @click="mostrarDetalle('venta', 'cotizacion')" class="btn btn-primary">
-                      <i class="bi bi-plus-circle mr-1"></i> Nueva cotización
-                    </button>
+                    <Button
+                    @click="mostrarDetalle('venta', 'cotizacion')" 
+          label="Nueva cotización"
+          icon="pi pi-plus"
+          class="p-button-secondary"
+        />
+                  
                   </div>
                   <div class="col-md-5">
                     <div class="input-group">
@@ -42,7 +44,7 @@
                 </div>
   
                 <div class="table-responsive">
-                  <table class="table table-hover">
+                  <table class="table table-hover table-bordered">
                     <thead class="bg-light">
                       <tr>
                         <th class="border-top-0">ID</th>
@@ -57,14 +59,14 @@
                     </thead>
                     <tbody>
                       <tr v-for="venta in arrayVenta" :key="venta.id">
-                        <td class="align-middle"><span class="badge badge-light">#{{ venta.id }}</span></td>
+                        <td class="align-middle"><span class="badge badge-dark">#{{ venta.id }}</span></td>
                         <td class="align-middle">
                           <div>{{ new Intl.DateTimeFormat('es-ES').format(new Date(venta.fecha_hora)) }}</div>
                           <small class="text-muted">{{ new Date(venta.fecha_hora).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) }}</small>
                         </td>
                         <td class="align-middle">{{ venta.nombre }}</td>
                         <td class="align-middle">{{ venta.num_documento }}</td>
-                        <td class="align-middle font-weight-bold text-primary">{{ venta.total }}</td>
+                        <td class="align-middle font-weight-bold badge-dark">{{ venta.total }}</td>
                         <td class="align-middle">
                           <span 
                             :class="[
@@ -85,51 +87,56 @@
                           </span>
                         </td>
                         <td class="align-middle text-center">
-                          <div class="btn-group">
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-outline-secondary"
-                              title="Ver detalles"
-                              @click="abrirModalDetalles(venta)"
-                            >
-                              <i class="bi bi-eye"></i>
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-outline-primary"
-                              title="Generar PDF"
-                              @click="pdfVenta(venta.id)"
-                            >
-                              <i class="bi bi-file-pdf"></i>
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-outline-warning"
-                              title="Editar"
-                              @click="mostrarDetalle('venta', 'editar', venta)"
-                            >
-                              <i class="bi bi-pencil"></i>
-                            </button>
-                            <button
-                              v-if="venta.condicion"
-                              type="button"
-                              class="btn btn-sm btn-outline-danger"
-                              title="Desactivar"
-                              @click="desactivarCotizacion(venta.id)"
-                            >
-                              <i class="bi bi-trash"></i>
-                            </button>
-                            <button
-                              v-else
-                              type="button"
-                              class="btn btn-sm btn-outline-success"
-                              title="Activar"
-                              @click="activarCotizacion(venta.id)"
-                            >
-                              <i class="bi bi-check-lg"></i>
-                            </button>
-                          </div>
-                        </td>
+  <div class="d-flex gap-2"> <!-- Contenedor flex con separación -->
+    <button
+      type="button"
+      class="btn btn-md btn-secondary"
+      title="Ver detalles"
+      @click="abrirModalDetalles(venta)"
+      style="min-width: 40px;"
+    >
+      <i class="bi bi-eye"></i>
+    </button>
+    <button
+      type="button"
+      class="btn btn-md btn-primary"
+      title="Generar PDF"
+      @click="pdfVenta(venta.id)"
+      style="min-width: 40px;"
+    >
+      <i class="bi bi-file-pdf"></i>
+    </button>
+    <button
+      type="button"
+      class="btn btn-md btn-warning"
+      title="Editar"
+      @click="mostrarDetalle('venta', 'editar', venta)"
+      style="min-width: 40px;"
+    >
+      <i class="bi bi-pencil"></i>
+    </button>
+    <button
+      v-if="venta.condicion"
+      type="button"
+      class="btn btn-md btn-danger"
+      title="Desactivar"
+      @click="desactivarCotizacion(venta.id)"
+      style="min-width: 40px;"
+    >
+      <i class="bi bi-trash"></i>
+    </button>
+    <button
+      v-else
+      type="button"
+      class="btn btn-md btn-success"
+      title="Activar"
+      @click="activarCotizacion(venta.id)"
+      style="min-width: 40px;"
+    >
+      <i class="bi bi-check-lg"></i>
+    </button>
+  </div>
+</td>
                       </tr>
                     </tbody>
                   </table>
@@ -453,10 +460,7 @@
                 </div>
               </div>
             </template>
-          </div>
-        </div>
-      </div>
-  
+      
       <!-- Modal de selección de artículos -->
       <div 
         class="modal fade" 
@@ -575,9 +579,10 @@
  
   <script>
   import vSelect from 'vue-select';
-
+  import Button from "primevue/button";
 export default {
   components: {
+    Button,
     vSelect
   },
   
