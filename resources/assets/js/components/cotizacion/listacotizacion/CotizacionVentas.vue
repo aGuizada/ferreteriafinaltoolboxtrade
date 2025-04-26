@@ -1,9 +1,9 @@
 <template>
     <main class="main">
-      <div class="panel-header bg-gradient-primary mb-3">
+      <div class="panel-header ">
         <div class="container">
           <div class="d-flex justify-content-between align-items-center py-3">
-            <h4 class="text-white m-0">
+            <h4 >
               <i class="bi bi-file-earmark-text mr-2"></i> Cotizaciones
             </h4>
           </div>

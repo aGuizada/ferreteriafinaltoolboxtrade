@@ -60,41 +60,46 @@
             </template>
 
             <form @submit.prevent="enviarFormulario">
-                <div class="p-fluid p-formgrid p-grid">
-                    <div class="p-field p-col-12">
-                        <label for="nombre">Nombre del cliente <span class="p-error">*</span></label>
-                        <InputText id="nombre" v-model="datosFormulario.nombre" :class="{ 'p-invalid': errores.nombre }"
-                            @input="validarCampo('nombre')" />
-                        <small class="p-error" v-if="errores.nombre">{{ errores.nombre }}</small>
-                    </div>
+                <div class="p-fluid form-horizontal">
+    <!-- Fila 1: Nombre -->
+    <div class="form-group row p-my-2">
+        <label class="col-md-3 col-form-label p-text-bold">Nombre <span class="p-error">*</span></label>
+        <div class="col-md-9">
+            <InputText v-model="datosFormulario.nombre" 
+                      class="w-full" 
+                      placeholder="Nombre del cliente"
+                      :class="{ 'p-invalid': errores.nombre }"/>
+            <small class="p-error" v-if="errores.nombre">{{ errores.nombre }}</small>
+        </div>
+    </div>
 
-                    <div class="p-field p-col-12 p-md-6">
-                        <label for="tipo_documento">Tipo de documento <span class="p-error">*</span></label>
-                        <Dropdown id="tipo_documento" v-model="datosFormulario.tipo_documento"
-                            :options="tipoDocumentoOptions" optionLabel="label" optionValue="value"
-                            placeholder="Selecciona un tipo de documento"
-                            :class="{ 'p-invalid': errores.tipo_documento }" @change="validarCampo('tipo_documento')" />
-                        <small class="p-error" v-if="errores.tipo_documento">{{ errores.tipo_documento }}</small>
-                    </div>
+    <!-- Fila 2: Tipo Documento -->
+    <div class="form-group row p-my-2">
+        <label class="col-md-3 col-form-label p-text-bold">Tipo Documento <span class="p-error">*</span></label>
+        <div class="col-md-9">
+            <Dropdown v-model="datosFormulario.tipo_documento"
+                     :options="tipoDocumentoOptions" 
+                     optionLabel="label" 
+                     optionValue="value"
+                     class="w-full"
+                     placeholder="Seleccione tipo"
+                     :class="{ 'p-invalid': errores.tipo_documento }"/>
+            <small class="p-error" v-if="errores.tipo_documento">{{ errores.tipo_documento }}</small>
+        </div>
+    </div>
 
-                    <div class="p-field p-col-12 p-md-3">
-                        <label :for="'num_documento_' + datosFormulario.tipo_documento">N° {{ getTipoDocumentoLabel() }}
-                            <span class="p-error">*</span></label>
-                        <InputText :id="'num_documento_' + datosFormulario.tipo_documento"
-                            v-model="datosFormulario.num_documento" :class="{ 'p-invalid': errores.num_documento }"
-                            @input="validarCampo('num_documento')" />
-                        <small class="p-error" v-if="errores.num_documento">{{ errores.num_documento }}</small>
-                    </div>
-
-                    <div class="p-field p-col-12 p-md-3">
-                        <label for="complemento">Complemento</label>
-                        <div class="p-inputgroup">
-                            <InputText id="complemento" v-model="datosFormulario.complemento"
-                                :disabled="!mostrarComplemento" />
-                            <Button icon="pi pi-check" @click="mostrarComplemento = !mostrarComplemento" />
-                        </div>
-                    </div>
-                </div>
+    <!-- Fila 3: Número Documento -->
+    <div class="form-group row p-my-2">
+        <label class="col-md-3 col-form-label p-text-bold">N° {{ getTipoDocumentoLabel() }} <span class="p-error">*</span></label>
+        <div class="col-md-9">
+            <InputText v-model="datosFormulario.num_documento"
+                     class="w-full"
+                     placeholder="Número de documento"
+                     :class="{ 'p-invalid': errores.num_documento }"/>
+            <small class="p-error" v-if="errores.num_documento">{{ errores.num_documento }}</small>
+        </div>
+    </div>
+</div>
 
                 <div v-if="tipoAccion == 2" class="p-mb-3">
                     <Message severity="info">Este cliente fue creado por: <strong>{{ usuarioSeleccionado }}</strong>.
@@ -505,5 +510,13 @@ eliminarCliente(cliente) {
     font-size: 1.5rem;
     margin: 0;
 }
-
+.form-group.row {
+    margin-bottom: 1rem;
+    align-items: center;
+}
+.col-form-label {
+    padding-top: calc(0.375rem + 1px);
+    padding-bottom: calc(0.375rem + 1px);
+    margin-bottom: 0;
+}
 </style>

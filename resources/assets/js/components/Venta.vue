@@ -16,9 +16,9 @@
       <div class="p-d-flex p-ai-center p-mb-4">
         <Button
           @click="abrirTipoVenta"
-          label="Nueva"
+          label="Nueva Venta"
           icon="pi pi-plus"
-          class="p-button-success-sm p-mr-2"
+          class="p-button-secondary"
         />
         <span class="p-input-icon-left p-input-icon-right p-w-100">
           <i class="pi pi-search" />
