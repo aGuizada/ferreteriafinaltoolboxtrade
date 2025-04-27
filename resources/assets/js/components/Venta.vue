@@ -2146,49 +2146,47 @@ export default {
 
     // Métodos para ventas a crédito
     generarCuotas() {
-    if (!this.numero_cuotas || !this.tiempo_diaz) {
+      if (!this.numero_cuotas || !this.tiempo_diaz) {
         Swal.fire({
-            icon: "warning",
-            title: "Campos incompletos",
-            text: "Ingrese la cantidad de cuotas y frecuencia de pagos",
+          icon: "warning",
+          title: "Campos incompletos",
+          text: "Ingrese la cantidad de cuotas y frecuencia de pagos",
         });
         return;
-    }
+      }
 
-    this.cuotas = [];
-    const fechaHoy = new Date();
-    const montoEntero = Math.floor(this.calcularTotal / this.numero_cuotas);
-    const montoDecimal = (
+      this.cuotas = [];
+      const fechaHoy = new Date();
+      const montoEntero = Math.floor(this.calcularTotal / this.numero_cuotas);
+      const montoDecimal = (
         this.calcularTotal -
         montoEntero * (this.numero_cuotas - 1)
-    ).toFixed(2);
-    let saldoRestante = this.calcularTotal;
+      ).toFixed(2);
+      let saldoRestante = this.calcularTotal;
 
-    for (let i = 0; i < this.numero_cuotas; i++) {
+      for (let i = 0; i < this.numero_cuotas; i++) {
         const fechaPago = new Date(
-            fechaHoy.getTime() + (i + 1) * this.tiempo_diaz * 24 * 60 * 60 * 1000
+          fechaHoy.getTime() + (i + 1) * this.tiempo_diaz * 24 * 60 * 60 * 1000
         );
 
         const cuota = {
-            fecha_pago: fechaPago.toISOString().split("T")[0],
-            precio_cuota: i === this.numero_cuotas - 1
-                ? parseFloat(montoDecimal).toFixed(2)
-                : montoEntero,
-            totalCancelado: 0,
-            saldo_restante: saldoRestante,
-            fecha_cancelado: null,
-            estado: "Pendiente",
+          fecha_pago: fechaPago.toISOString().split("T")[0],
+          precio_cuota:
+            i === this.numero_cuotas - 1
+              ? parseFloat(montoDecimal).toFixed(2)
+              : montoEntero,
+          totalCancelado: 0,
+          saldo_restante: saldoRestante,
+          fecha_cancelado: null,
+          estado: "Pendiente",
         };
 
         saldoRestante -= cuota.precio_cuota;
         saldoRestante = parseFloat(saldoRestante).toFixed(2);
 
         this.cuotas.push(cuota);
-    }
-    
-    // Para asegurar que plazos existe y contiene los mismos datos
-    this.plazos = [...this.cuotas];
-},
+      }
+    },
 
     // Métodos para ventas al contado
     validarYRegistrarPago() {
@@ -2393,11 +2391,6 @@ export default {
             throw new Error("El detalle de la venta está vacío o no es válido");
         }
         
-        // Verificar si es venta a crédito y tiene plazos definidos
-        if (this.tipoVenta === "credito" && (!this.plazos || this.plazos.length === 0)) {
-            throw new Error("Debe definir los plazos para una venta a crédito");
-        }
-        
         // Preparar datos comunes para cualquier tipo de venta
         const ventaData = {
             idcliente: this.idcliente,
@@ -2415,6 +2408,7 @@ export default {
         // Añadir datos específicos para ventas a crédito
         if (this.tipoVenta === "credito") {
             ventaData.tipoVenta = "credito";
+            // Asegúrate de que estos campos existan y tengan datos válidos
             ventaData.plazos = this.plazos || [];
             ventaData.fecha_primer_pago = this.fecha_primer_pago;
             ventaData.condiciones_credito = this.condiciones_credito || {};
@@ -2424,7 +2418,47 @@ export default {
         const response = await axios.post("/venta/registrar", ventaData);
         
         if (response.data.id) {
-            // Resto del código sin cambios...
+            // Venta exitosa
+            this.listado = 1;
+            this.cerrarModal2();
+            this.listarVenta(1, "", "num_comprob");
+            this.ejecutarFlujoCompleto();
+            
+            // Verificar y mostrar información de la caja
+            if (response.data.caja) {
+                this.$toast.add({
+                    severity: 'info',
+                    summary: 'Información de Caja',
+                    detail: `
+                        Ventas al Contado: ${this.formatCurrency(response.data.caja.ventasContado)}
+                        Pagos QR: ${this.formatCurrency(response.data.caja.pagosQR)}
+                        Saldo Actual: ${this.formatCurrency(response.data.caja.saldoCaja)}
+                    `,
+                    life: 5000
+                });
+            }
+            
+            // Mensajes según tipo de venta
+            if (this.tipoVenta === "credito") {
+                Swal.fire(
+                    "Venta exitosa",
+                    "La venta a crédito se ha registrado correctamente",
+                    "success"
+                );
+            } else if (this.tipoVenta === "adelantada") {
+                Swal.fire(
+                    "Pedido registrado",
+                    "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
+                    "success"
+                );
+            } else {
+                this.imprimirResivo(response.data.id);
+            }
+            
+            this.reiniciarFormulario();
+        } else {
+            // Error en la venta
+            Swal.fire("Error", "No se pudo completar la venta", "error");
         }
     } catch (error) {
         console.error("Error al registrar venta:", error);
