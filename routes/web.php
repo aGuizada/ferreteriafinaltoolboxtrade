@@ -925,7 +925,7 @@ Route::group(["middleware" => ["auth"]], function () {
 
 // Ruta para confirmar entregas de ventas adelantadas
 Route::put('/venta/confirmar-entrega', 'VentaController@confirmarEntrega')->name('venta.confirmarEntrega');
-
+Route::get('/inventarios/generar-reporte-inversion', 'InventarioController@generarReporteInversion')->name('inventarios.reporte-inversion');
 // Ruta para obtener datos de venta
 Route::get('/venta', 'VentaController@index')->name('venta.index');
 Route::get('/venta/obtenerCabecera', 'VentaController@obtenerCabecera');
