@@ -233,58 +233,73 @@ class VentaController extends Controller
      */
     private function crearVenta($request)
     {
-        $venta = new Venta();
-        
-        // Asignación básica de datos
-        $venta->idcliente = $request->idcliente;
-        $venta->idtipo_pago = $request->idtipo_pago;
-        $venta->idtipo_venta = $request->idtipo_venta;
-        $venta->tipo_comprobante = $request->tipo_comprobante;
-        $venta->serie_comprobante = $request->serie_comprobante;
-        $venta->num_comprobante = $request->num_comprobante;
-        $venta->impuesto = $request->impuesto;
-        $venta->total = $request->total;
-        $venta->idusuario = \Auth::user()->id;
-        $venta->fecha_hora = now()->setTimezone('America/La_Paz');
-        $venta->idcaja = Caja::latest()->first()->id;
-        
-        // Para ventas al contado, guardar monto recibido y cambio
-        if ($request->idtipo_venta == 1 && isset($request->monto_recibido)) {
-            $venta->monto_recibido = $request->monto_recibido;
-            $venta->cambio = $request->cambio;
-        }
-        
-        // Establecer el estado según el tipo de venta
-        if ($request->idtipo_venta == 2) { // Crédito
-            $venta->estado = 'Pendiente';
-        } else  if ($request->idtipo_venta == 3) { // Adelantada
-            $venta->estado = 'Pendiente';
+        try {
+            DB::beginTransaction();
             
-            // Guardar datos de entrega para ventas adelantadas
-            $venta->direccion_entrega = $request->direccion_entrega;
-            $venta->telefono_contacto = $request->telefono_contacto;
-            $venta->fecha_entrega = $request->fecha_entrega;
-            $venta->observaciones = $request->observaciones;
+            // Lock the table and get the latest receipt number
+            $ultimaVenta = DB::table('ventas')
+                ->lockForUpdate()
+                ->orderBy('id', 'desc')
+                ->first();
+                
+            $ultimoNumero = $ultimaVenta ? intval($ultimaVenta->num_comprobante) : 0;
+            $nuevoNumero = str_pad($ultimoNumero + 1, 5, '0', STR_PAD_LEFT);
             
-            // Si es pago en efectivo, guardar monto y cambio
-            if ($request->idtipo_pago == 1 && isset($request->monto_recibido)) {
+            $venta = new Venta();
+            $venta->idcliente = $request->idcliente;
+            $venta->idtipo_pago = $request->idtipo_pago;
+            $venta->idtipo_venta = $request->idtipo_venta;
+            $venta->tipo_comprobante = $request->tipo_comprobante;
+            $venta->serie_comprobante = $request->serie_comprobante;
+            $venta->num_comprobante = $nuevoNumero;
+            $venta->impuesto = $request->impuesto;
+            $venta->total = $request->total;
+            $venta->idusuario = \Auth::user()->id;
+            $venta->fecha_hora = now()->setTimezone('America/La_Paz');
+            $venta->idcaja = Caja::latest()->first()->id;
+            
+            // Para ventas al contado, guardar monto recibido y cambio
+            if ($request->idtipo_venta == 1 && isset($request->monto_recibido)) {
                 $venta->monto_recibido = $request->monto_recibido;
                 $venta->cambio = $request->cambio;
             }
-        
-        } else { // Contado
-            $venta->estado = 'Registrado';
+            
+            // Establecer el estado según el tipo de venta
+            if ($request->idtipo_venta == 2) { // Crédito
+                $venta->estado = 'Pendiente';
+            } else  if ($request->idtipo_venta == 3) { // Adelantada
+                $venta->estado = 'Pendiente';
+                
+                // Guardar datos de entrega para ventas adelantadas
+                $venta->direccion_entrega = $request->direccion_entrega;
+                $venta->telefono_contacto = $request->telefono_contacto;
+                $venta->fecha_entrega = $request->fecha_entrega;
+                $venta->observaciones = $request->observaciones;
+                
+                // Si es pago en efectivo, guardar monto y cambio
+                if ($request->idtipo_pago == 1 && isset($request->monto_recibido)) {
+                    $venta->monto_recibido = $request->monto_recibido;
+                    $venta->cambio = $request->cambio;
+                }
+            
+            } else { // Contado
+                $venta->estado = 'Registrado';
+            }
+            
+            $venta->save();
+            
+            // Si es venta a crédito, registrar información adicional
+            if ($request->idtipo_venta == 2) {
+                $creditoventa = $this->crearCreditoVenta($venta, $request);
+                $this->registrarCuotasCredito($creditoventa, $request->cuotaspago);
+            }
+            
+            DB::commit();
+            return $venta;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
         }
-        
-        $venta->save();
-        
-        // Si es venta a crédito, registrar información adicional
-        if ($request->idtipo_venta == 2) {
-            $creditoventa = $this->crearCreditoVenta($venta, $request);
-            $this->registrarCuotasCredito($creditoventa, $request->cuotaspago);
-        }
-        
-        return $venta;
     }
     /**
      * Crea una venta con recibo
@@ -911,18 +926,40 @@ public function obtenerCuotas(Request $request)
      * Obtiene el último número de comprobante
      */
     public function obtenerUltimoComprobante(Request $request) {
-        $idsucursal = $request->idsucursal;
-    
-        $ultimoComprobanteVentas = Venta::join('users', 'ventas.idusuario', '=', 'users.id')
-            ->select('ventas.num_comprobante')
-            ->where('users.idsucursal', $idsucursal)
-            ->orderBy('ventas.num_comprobante', 'desc')
-            ->limit(1)
-            ->first();
-
-        $lastComprobanteVentas = $ultimoComprobanteVentas ? $ultimoComprobanteVentas->num_comprobante : 0;
-    
-        return response()->json(['last_comprobante' => $lastComprobanteVentas]);
+        try {
+            DB::beginTransaction();
+            
+            // Get the last receipt number with table lock to prevent race conditions
+            $ultimaVenta = DB::table('ventas')
+                ->lockForUpdate()
+                ->orderBy('id', 'desc')  // Changed to order by ID to ensure proper sequence
+                ->first();
+                
+            // If there's a previous sale, increment the number, otherwise start from 1
+            if ($ultimaVenta) {
+                $ultimoNumero = intval($ultimaVenta->num_comprobante);
+                $siguienteNumero = $ultimoNumero + 1;
+            } else {
+                $siguienteNumero = 1;
+            }
+            
+            // Format number with leading zeros (5 digits)
+            $numeroFormateado = str_pad($siguienteNumero, 5, '0', STR_PAD_LEFT);
+            
+            DB::commit();
+            
+            return response()->json([
+                'last_comprobante' => $numeroFormateado,
+                'numero' => $siguienteNumero
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al obtener último comprobante: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error al obtener último comprobante',
+                'last_comprobante' => '00001'
+            ]);
+        }
     }
 
     /**

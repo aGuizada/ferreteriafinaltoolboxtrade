@@ -1659,19 +1659,121 @@ export default {
     },
   },
   methods: {
+    async obtenerDatosSesionYComprobante() {
+      try {
+        // Clear existing number
+        this.num_comprob = '';
+        
+        const response = await axios.get("/obtener-ultimo-comprobante");
+        if (response.data.last_comprobante) {
+          this.num_comprob = response.data.last_comprobante;
+        } else {
+          this.num_comprob = '00001';
+        }
+        
+        // Store the number for validation
+        this.last_comprobante = parseInt(this.num_comprob);
+        
+      } catch (error) {
+        console.error("Error al obtener último comprobante:", error);
+        this.num_comprob = '00001';
+        this.last_comprobante = 1;
+      }
+    },
+
+    async registrarVenta(idtipo_pago = 1) {       
+      try {
+          this.mostrarSpinner = true;         
+
+          // Crear o buscar cliente
+          await this.buscarOCrearCliente();         
+
+          // Obtener número de comprobante actualizado
+          await this.obtenerDatosSesionYComprobante();
+
+          // Preparar datos comunes
+          const ventaData = {
+              idcliente: this.idcliente,
+              tipo_comprobante: this.tipo_comprobante,
+              serie_comprobante: this.serie_comprobante,
+              num_comprobante: this.num_comprob,
+              impuesto: this.impuesto || 0.18,
+              total: this.calcularTotal,
+              idAlmacen: this.idAlmacen,
+              idtipo_pago: idtipo_pago,
+              idtipo_venta: this.idtipo_venta,
+              data: this.arrayDetalle,
+          };
+
+          // Agregar campos específicos para venta adelantada
+          if (this.tipoVenta === 'adelantada') {
+              ventaData.direccion_entrega = this.direccionEntrega;
+              ventaData.telefono_contacto = this.telefonoContacto;
+              ventaData.fecha_entrega = this.fechaEntrega 
+                  ? this.fechaEntrega.toISOString().split('T')[0] 
+                  : null;
+              ventaData.observaciones = this.observaciones;
+              
+              // Estado inicial para ventas adelantadas
+              ventaData.estado = 'Pendiente'; 
+              
+              // Si es pago en efectivo, agregar monto y cambio
+              if (this.tipoPagoAdelantado === 'efectivo') {
+                  ventaData.monto_recibido = this.montoAdelantado;
+                  ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+              }
+          }
+
+          console.log("Datos de venta a enviar:", ventaData);
+          const response = await axios.post("/venta/registrar", ventaData);
+
+          if (response.data.id) {
+              // Éxito - manejar respuesta
+              await this.obtenerDatosSesionYComprobante(); // Obtener nuevo número para la próxima venta
+              this.listado = 1;
+              this.cerrarModal2();
+              this.listarVenta(1, "", "num_comprob");
+
+              // Mensaje de éxito específico
+              if (this.tipoVenta === 'adelantada') {
+                  Swal.fire(
+                      "Pedido registrado",
+                      "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
+                      "success"
+                  );
+              } else {
+                  this.imprimirResivo(response.data.id);
+              }
+
+              this.reiniciarFormulario();
+          } else {
+              Swal.fire("Error", "No se pudo completar la venta", "error");
+          }
+      } catch (error) {
+          console.error("Error al registrar venta:", error);
+          Swal.fire(
+              "Error",
+              "Ocurrió un error al procesar la venta: " +
+                  (error.response ? error.response.data.error : error.message),
+              "error"
+          );
+      } finally {
+          this.mostrarSpinner = false;
+      }
+    },
     registrarVentaQR() {
-    if (!this.qrPagoVerificado) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Verificación requerida',
-        text: 'Debe verificar que el pago QR se ha realizado correctamente antes de continuar.'
-      });
-      return;
-    }
-    
-    // El método llama al mismo registrarVenta pero con el ID de tipo de pago para QR (4)
-    this.registrarVenta(4); // 4 es el ID para tipo de pago QR
-  },
+      if (!this.qrPagoVerificado) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Verificación requerida',
+          text: 'Debe verificar que el pago QR se ha realizado correctamente antes de continuar.'
+        });
+        return;
+      }
+      
+      // El método llama al mismo registrarVenta pero con el ID de tipo de pago para QR (4)
+      this.registrarVenta(4); // 4 es el ID para tipo de pago QR
+    },
     limpiarSeleccion() {
       // Set arraySeleccionado to null to close the modal
       this.arraySeleccionado = null;
@@ -1720,6 +1822,8 @@ export default {
           return "warning";
         case "Entregado":
           return "success";
+        case "Registrado":
+          return "info";
         case "Anulado":
           return "danger";
         default:
@@ -2117,25 +2221,9 @@ export default {
         console.error("Error al obtener datos de usuario:", error);
       }
     },
-    async obtenerDatosSesionYComprobante() {
-      try {
-        const response = await axios.get("/obtener-ultimo-comprobante");
-        this.last_comprobante = response.data.last_comprobante;
-        this.nextNumber();
-      } catch (error) {
-        console.error("Error al obtener último comprobante:", error);
-      }
-    },
     async ejecutarFlujoCompleto() {
       await this.obtenerDatosUsuario();
       await this.obtenerDatosSesionYComprobante();
-    },
-    nextNumber() {
-      if (!this.num_comprob || this.num_comprob === "") {
-        this.last_comprobante++;
-        // Completa con ceros a la izquierda hasta alcanzar 5 dígitos
-        this.num_comprob = this.last_comprobante.toString().padStart(5, "0");
-      }
     },
 
     // Métodos para modales
@@ -2384,122 +2472,42 @@ export default {
         this.mostrarSpinner = false;
       }
     },
-
-    // Registro de venta
-    async registrarVenta(idtipo_pago = 1) {       
-    try {
-        this.mostrarSpinner = true;         
-
-        // Crear o buscar cliente
-        await this.buscarOCrearCliente();         
-
-        // Preparar datos comunes
-        const ventaData = {
-            idcliente: this.idcliente,
-            tipo_comprobante: this.tipo_comprobante,
-            serie_comprobante: this.serie_comprobante,
-            num_comprobante: this.num_comprob,
-            impuesto: this.impuesto || 0.18,
-            total: this.calcularTotal,
-            idAlmacen: this.idAlmacen,
-            idtipo_pago: idtipo_pago,
-            idtipo_venta: this.idtipo_venta,
-            data: this.arrayDetalle,
-        };
-
-        // Agregar campos específicos para venta adelantada
-        if (this.tipoVenta === 'adelantada') {
-            ventaData.direccion_entrega = this.direccionEntrega;
-            ventaData.telefono_contacto = this.telefonoContacto;
-            ventaData.fecha_entrega = this.fechaEntrega 
-                ? this.fechaEntrega.toISOString().split('T')[0] 
-                : null;
-            ventaData.observaciones = this.observaciones;
+    verVenta(id) {
+      this.listado = 2;
+      this.cargando = true;
+    
+      // Obtener cabecera de venta
+      axios.get(`/venta/obtenerCabecera?id=${id}`)
+        .then((response) => {
+          if (response.data.venta) {
+            // Combinar datos principales con datos adelantados si existen
+            this.ventaDetalle = {
+              ...response.data.venta,
+              ...(response.data.datosAdelantados || {})
+            };
             
-            // Estado inicial para ventas adelantadas
-            ventaData.estado = 'Pendiente'; 
-            
-            // Si es pago en efectivo, agregar monto y cambio
-            if (this.tipoPagoAdelantado === 'efectivo') {
-                ventaData.monto_recibido = this.montoAdelantado;
-                ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
-            }
-        }
-
-        console.log("Datos de venta a enviar:", ventaData);
-        const response = await axios.post("/venta/registrar", ventaData);
-
-        if (response.data.id) {
-            // Éxito - manejar respuesta
-            this.listado = 1;
-            this.cerrarModal2();
-            this.listarVenta(1, "", "num_comprob");
-            this.ejecutarFlujoCompleto();
-
-            // Mensaje de éxito específico
-            if (this.tipoVenta === 'adelantada') {
-                Swal.fire(
-                    "Pedido registrado",
-                    "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
-                    "success"
-                );
-            } else {
-                this.imprimirResivo(response.data.id);
-            }
-
-            this.reiniciarFormulario();
-        } else {
-            Swal.fire("Error", "No se pudo completar la venta", "error");
-        }
-    } catch (error) {
-        console.error("Error al registrar venta:", error);
-        Swal.fire(
-            "Error",
-            "Ocurrió un error al procesar la venta: " +
-                (error.response ? error.response.data.error : error.message),
-            "error"
-        );
-    } finally {
-        this.mostrarSpinner = false;
-    }
-},
-verVenta(id) {
-  this.listado = 2;
-  this.cargando = true;
-
-  // Obtener cabecera de venta
-  axios.get(`/venta/obtenerCabecera?id=${id}`)
-    .then((response) => {
-      if (response.data.venta) {
-        // Combinar datos principales con datos adelantados si existen
-        this.ventaDetalle = {
-          ...response.data.venta,
-          ...(response.data.datosAdelantados || {})
-        };
-        
-        this.cliente = response.data.venta.nombre;
-        this.tipo_comprobante = response.data.venta.tipo_comprobante;
-        this.num_comprobante = response.data.venta.num_comprobante;
-        this.total = response.data.venta.total;
-      }
-      this.cargando = false;
-    })
-    .catch((error) => {
-      console.error("Error al obtener cabecera:", error);
-      Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
-      this.cargando = false;
-    });
-
-  // Obtener detalles de productos
-  axios.get(`/venta/obtenerDetalles?id=${id}`)
-    .then((response) => {
-      this.arrayDetalle = response.data.detalles;
-    })
-    .catch((error) => {
-      console.error("Error al obtener detalles:", error);
-    });
-},
-
+            this.cliente = response.data.venta.nombre;
+            this.tipo_comprobante = response.data.venta.tipo_comprobante;
+            this.num_comprobante = response.data.venta.num_comprobante;
+            this.total = response.data.venta.total;
+          }
+          this.cargando = false;
+        })
+        .catch((error) => {
+          console.error("Error al obtener cabecera:", error);
+          Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
+          this.cargando = false;
+        });
+    
+      // Obtener detalles de productos
+      axios.get(`/venta/obtenerDetalles?id=${id}`)
+        .then((response) => {
+          this.arrayDetalle = response.data.detalles;
+        })
+        .catch((error) => {
+          console.error("Error al obtener detalles:", error);
+        });
+    },
     // Formato para fechas
     formatFecha(fecha) {
       if (!fecha) return "N/A";
@@ -2753,6 +2761,9 @@ verVenta(id) {
       this.observaciones = "";
       this.tipoPagoAdelantado = null;
       this.montoAdelantado = null;
+
+      // Obtener nuevo número de comprobante después de cada venta
+      this.obtenerDatosSesionYComprobante();
     },
   },
   mounted() {
@@ -3210,213 +3221,6 @@ verVenta(id) {
   padding: 12px 15px;
   font-size: 1rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.stock-title {
-  display: flex;
-  align-items: center;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.stock-value {
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-align: center;
-}
-
-.product-description {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  border: 1px solid #e9ecef;
-  margin-bottom: 1.5rem;
-}
-
-.description-content {
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  min-height: 100px;
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.product-price-section,
-.product-info {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  height: 100%;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.info-section-title {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #495057;
-  border-bottom: 2px solid #e9ecef;
-  padding-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-.precio-opcion {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  background-color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.precio-opcion:hover {
-  background-color: #f0f8ff;
-  transform: translateX(3px);
-}
-
-.precio-opcion input {
-  margin-right: 10px;
-}
-
-.precio-opcion label {
-  margin-bottom: 0;
-  cursor: pointer;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-}
-
-.price-selected-label {
-  margin-top: 20px;
-  margin-bottom: 8px;
-  color: #495057;
-}
-
-.selected-price {
-  color: #2196f3;
-  font-size: 1.8rem;
-  margin: 0.5rem 0 1.5rem;
-  font-weight: bold;
-  text-align: center;
-  background-color: #e6f4ff;
-  padding: 10px;
-  border-radius: 6px;
-}
-
-.price-not-selected {
-  color: #dc3545;
-  background-color: #fff5f5;
-  font-size: 1.2rem;
-}
-
-.purchase-options {
-  margin-top: 1.5rem;
-  background-color: white;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.purchase-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #495057;
-}
-
-.quantity-control {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  border-left: 3px solid #2196f3;
-  transition: all 0.2s ease;
-}
-
-.detail-row:hover {
-  background-color: #f0f8ff;
-  transform: translateX(3px);
-}
-
-.detail-label {
-  font-weight: bold;
-  color: #495057;
-}
-
-.detail-value {
-  text-align: right;
-  color: #212529;
-  font-weight: 500;
-}
-
-.additional-info {
-  margin-top: 20px;
-}
-
-.additional-info-content {
-  padding: 10px;
-  background-color: white;
-  border-radius: 6px;
-  min-height: 80px;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.footer-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-/* Estilos para el contenedor principal */
-.product-details-container {
-  margin: 15px 0;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-/* Estilos para la imagen del producto */
-.product-image-container {
-  text-align: center;
-  margin-bottom: 1rem;
-  border: 1px solid #eee;
-  padding: 15px;
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.product-image {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-}
-
-/* Estilos para el indicador de stock */
-.stock-indicator {
-  margin: 0.8rem 0;
-  border-radius: 8px;
-  padding: 10px 15px;
-  font-size: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
