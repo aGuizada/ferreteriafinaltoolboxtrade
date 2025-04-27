@@ -257,7 +257,7 @@ class VentaController extends Controller
         // Establecer el estado según el tipo de venta
         if ($request->idtipo_venta == 2) { // Crédito
             $venta->estado = 'Pendiente';
-        } else if ($request->idtipo_venta == 3) { // Adelantada
+        } else  if ($request->idtipo_venta == 3) { // Adelantada
             $venta->estado = 'Pendiente';
             
             // Guardar datos de entrega para ventas adelantadas
@@ -271,6 +271,7 @@ class VentaController extends Controller
                 $venta->monto_recibido = $request->monto_recibido;
                 $venta->cambio = $request->cambio;
             }
+        
         } else { // Contado
             $venta->estado = 'Registrado';
         }

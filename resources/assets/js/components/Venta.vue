@@ -2388,13 +2388,12 @@ export default {
     // Registro de venta
     async registrarVenta(idtipo_pago = 1) {       
     try {
-        // Mostrar indicador de carga
         this.mostrarSpinner = true;         
 
         // Crear o buscar cliente
         await this.buscarOCrearCliente();         
 
-        // Preparar datos comunes para cualquier tipo de venta
+        // Preparar datos comunes
         const ventaData = {
             idcliente: this.idcliente,
             tipo_comprobante: this.tipo_comprobante,
@@ -2403,45 +2402,42 @@ export default {
             impuesto: this.impuesto || 0.18,
             total: this.calcularTotal,
             idAlmacen: this.idAlmacen,
-            idtipo_pago: idtipo_pago, // Aquí defines si es contado (1) o QR (4)
+            idtipo_pago: idtipo_pago,
             idtipo_venta: this.idtipo_venta,
             data: this.arrayDetalle,
-        };         
+        };
 
-        // [resto de tu código de preparación de datos]
+        // Agregar campos específicos para venta adelantada
+        if (this.tipoVenta === 'adelantada') {
+            ventaData.direccion_entrega = this.direccionEntrega;
+            ventaData.telefono_contacto = this.telefonoContacto;
+            ventaData.fecha_entrega = this.fechaEntrega 
+                ? this.fechaEntrega.toISOString().split('T')[0] 
+                : null;
+            ventaData.observaciones = this.observaciones;
+            
+            // Estado inicial para ventas adelantadas
+            ventaData.estado = 'Pendiente'; 
+            
+            // Si es pago en efectivo, agregar monto y cambio
+            if (this.tipoPagoAdelantado === 'efectivo') {
+                ventaData.monto_recibido = this.montoAdelantado;
+                ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+            }
+        }
 
         console.log("Datos de venta a enviar:", ventaData);
         const response = await axios.post("/venta/registrar", ventaData);
 
         if (response.data.id) {
-            // Venta exitosa
+            // Éxito - manejar respuesta
             this.listado = 1;
             this.cerrarModal2();
             this.listarVenta(1, "", "num_comprob");
             this.ejecutarFlujoCompleto();
 
-            // Verificar y mostrar información de la caja
-            if (response.data.caja) {
-                this.$toast.add({
-                    severity: 'info',
-                    summary: 'Información de Caja',
-                    detail: `
-                        Ventas al Contado: ${this.formatCurrency(response.data.caja.ventasContado)}
-                        Pagos QR: ${this.formatCurrency(response.data.caja.pagosQR)}
-                        Saldo Actual: ${this.formatCurrency(response.data.caja.saldoCaja)}
-                    `,
-                    life: 5000
-                });
-            }
-
-            // [resto de tu lógica de mensajes]
-            if (this.tipoVenta === "credito") {
-                Swal.fire(
-                    "Venta exitosa",
-                    "La venta a crédito se ha registrado correctamente",
-                    "success"
-                );
-            } else if (this.tipoVenta === "adelantada") {
+            // Mensaje de éxito específico
+            if (this.tipoVenta === 'adelantada') {
                 Swal.fire(
                     "Pedido registrado",
                     "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
@@ -2453,7 +2449,6 @@ export default {
 
             this.reiniciarFormulario();
         } else {
-            // Error en la venta
             Swal.fire("Error", "No se pudo completar la venta", "error");
         }
     } catch (error) {
@@ -2468,64 +2463,42 @@ export default {
         this.mostrarSpinner = false;
     }
 },
-    // Impresión y visualización
-    // En el método verVenta() de tu componente Vue
-    verVenta(id) {
-      this.listado = 2;
-      this.cargando = true;
+verVenta(id) {
+  this.listado = 2;
+  this.cargando = true;
 
-      // Obtener cabecera de venta
-      axios
-        .get(`/venta/obtenerCabecera?id=${id}`)
-        .then((response) => {
-          if (response.data.venta) {
-            // Datos básicos
-            const venta = response.data.venta;
-            this.ventaDetalle = venta;
-            this.cliente = venta.nombre;
-            this.tipo_comprobante = venta.tipo_comprobante;
-            this.num_comprobante = venta.num_comprobante;
-            this.total = venta.total;
+  // Obtener cabecera de venta
+  axios.get(`/venta/obtenerCabecera?id=${id}`)
+    .then((response) => {
+      if (response.data.venta) {
+        // Combinar datos principales con datos adelantados si existen
+        this.ventaDetalle = {
+          ...response.data.venta,
+          ...(response.data.datosAdelantados || {})
+        };
+        
+        this.cliente = response.data.venta.nombre;
+        this.tipo_comprobante = response.data.venta.tipo_comprobante;
+        this.num_comprobante = response.data.venta.num_comprobante;
+        this.total = response.data.venta.total;
+      }
+      this.cargando = false;
+    })
+    .catch((error) => {
+      console.error("Error al obtener cabecera:", error);
+      Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
+      this.cargando = false;
+    });
 
-            // Si es venta a crédito, cargar info de crédito
-            if (venta.idtipo_venta == 2) {
-              this.creditoInfo = response.data.credito || null;
-              this.cuotasCredito = response.data.cuotas || [];
-            } else {
-              // Limpiar datos de crédito si no es venta a crédito
-              this.creditoInfo = null;
-              this.cuotasCredito = [];
-            }
-          } else {
-            // Manejar el caso de venta no encontrada
-            Swal.fire(
-              "Error",
-              "No se pudo encontrar la información de la venta",
-              "error"
-            );
-          }
-          this.cargando = false;
-        })
-        .catch((error) => {
-          console.error("Error al obtener cabecera:", error);
-          Swal.fire(
-            "Error",
-            "No se pudo obtener los detalles de la venta",
-            "error"
-          );
-          this.cargando = false;
-        });
-
-      // Obtener detalles de productos
-      axios
-        .get(`/venta/obtenerDetalles?id=${id}`)
-        .then((response) => {
-          this.arrayDetalle = response.data.detalles;
-        })
-        .catch((error) => {
-          console.error("Error al obtener detalles:", error);
-        });
-    },
+  // Obtener detalles de productos
+  axios.get(`/venta/obtenerDetalles?id=${id}`)
+    .then((response) => {
+      this.arrayDetalle = response.data.detalles;
+    })
+    .catch((error) => {
+      console.error("Error al obtener detalles:", error);
+    });
+},
 
     // Formato para fechas
     formatFecha(fecha) {
