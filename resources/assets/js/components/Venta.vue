@@ -12,33 +12,92 @@
           <h4 class="panel-icon">Ventas</h4>
         </div>
       </template>
-      <!-- Buscador -->
-      <div class="p-d-flex p-ai-center p-mb-4">
-        <Button
-          @click="abrirTipoVenta"
-          label="Nueva"
-          icon="pi pi-plus"
-          class="p-button-success-sm p-mr-2"
-        />
-        <span class="p-input-icon-left p-input-icon-right p-w-100">
-          <i class="pi pi-search" />
-          <InputText
-            v-model="buscar"
-            @input="buscarVenta"
-            placeholder="Buscar venta..."
-            class="p-inputtext-lg-sm moto-search p-w-100"
-          />
-          <i
-            class="pi pi-times"
-            v-if="buscar"
-            @click="
-              buscar = '';
-              buscarVenta();
-            "
-            style="cursor: pointer"
-          />
-        </span>
+      <div class="p-d-flex p-ai-center p-mb-4" style="gap: 0.5rem;">
+  <!-- Botón Nueva Venta -->
+  <Button
+    @click="abrirTipoVenta"
+    label="Nueva Venta"
+    icon="pi pi-plus"
+    class="p-button-success p-button-sm p-mr-2"
+  />
+
+  <!-- Buscador -->
+  <span class="p-input-icon-left p-input-icon-right p-w-100">
+    <i class="pi pi-search"></i>
+    <InputText
+      v-model="buscar"
+      @input="buscarVenta"
+      placeholder="Buscar venta..."
+      class="p-inputtext-sm moto-search p-w-100"
+    />
+    <i
+      class="pi pi-times"
+      v-if="buscar"
+      @click="
+        buscar = '';
+        buscarVenta();
+      "
+      style="cursor: pointer;"
+    ></i>
+  </span>
+
+  <!-- Botón Reporte usando PrimeVue -->
+  <Button
+    @click="mostrarModal = true"
+    label="Reporte"
+    icon="pi pi-file-pdf"
+    class="p-button-danger p-button-sm p-ml-2"
+  />
+</div>
+
+
+
+      
+      <div class="modal fade" :class="{ show: mostrarModal }" tabindex="-1" role="dialog" style="display: block;" v-if="mostrarModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fa fa-file-pdf-o"></i> Reporte de Ventas
+        </h5>
+        <button type="button" class="close" @click="cerrarModalReporte">
+  <span>&times;</span>
+</button>
       </div>
+
+      <div class="modal-body">
+        <!-- Formulario de fechas -->
+        <form @submit.prevent="generarReporte">
+          <div class="form-group">
+            <label for="fecha_inicio">Fecha Inicio:</label>
+            <input type="date" v-model="fecha_inicio" id="fecha_inicio" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="fecha_fin">Fecha Fin:</label>
+            <input type="date" v-model="fecha_fin" id="fecha_fin" class="form-control">
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary" :disabled="cargando">
+              <span v-if="cargando" class="spinner-border spinner-border-sm"></span>
+              Generar PDF
+            </button>
+
+            <!-- BOTÓN para cerrar -->
+            <button type="button" class="btn btn-secondary" @click="cerrarModalReporte">
+  Cerrar
+</button>
+          </div>
+        </form>
+
+        <div v-if="error" class="alert alert-danger mt-2">{{ error }}</div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
       <!-- Listado de Ventas -->
       <template v-if="listado == 1">
@@ -1232,6 +1291,7 @@
     </div>
   </div>
 </div>
+
     <!-- Modal de búsqueda de artículos -->
     <Dialog
       :visible.sync="modal"
@@ -1408,6 +1468,7 @@
           class="p-button-danger"
         ></Button>
       </template>
+      
     </Dialog>
   </main>
 </template>
@@ -1453,6 +1514,11 @@ export default {
 
   data() {
     return {
+      mostrarModal: false,
+      fecha_inicio: "",
+      fecha_fin: "",
+      cargando: false,
+      error: "",
       qrPagoVerificado: true,
       ventaDetalle: null,
       creditoInfo: null,
@@ -1562,6 +1628,7 @@ export default {
     };
   },
   watch: {
+
     recibido(newValue) {
       this.montoInvalido = newValue !== null && !this.montoValido;
     },
@@ -1653,6 +1720,60 @@ export default {
     },
   },
   methods: {
+    cerrarModalReporte() {
+  console.log("Método cerrarModalReporte ejecutado");
+  this.mostrarModal = false;
+  this.error = "";
+  this.fecha_inicio = "";
+  this.fecha_fin = "";
+},
+    async generarReporte() {
+      this.error = "";
+      if (!this.fecha_inicio || !this.fecha_fin) {
+        this.error = "Debe seleccionar ambas fechas.";
+        return;
+      }
+      if (this.fecha_fin < this.fecha_inicio) {
+        this.error = "La fecha fin no puede ser menor que la fecha inicio.";
+        return;
+      }
+      this.cargando = true;
+      try {
+        // Usamos FormData para enviar los datos como POST
+        const formData = new FormData();
+        formData.append("fecha_inicio", this.fecha_inicio);
+        formData.append("fecha_fin", this.fecha_fin);
+
+        // Usamos fetch para recibir el PDF como blob
+        const response = await fetch("/reporte-ventas/pdf", {
+          method: "POST",
+          headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Error al generar el PDF");
+        }
+
+        const blob = await response.blob();
+        // Descargar el PDF
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `reporte_ventas_${this.fecha_inicio}_al_${this.fecha_fin}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        this.error = "No se pudo generar el PDF. " + (e.message || "");
+      } finally {
+        this.cargando = false;
+      }
+    },
     async obtenerDatosSesionYComprobante() {
       try {
         // Clear existing number

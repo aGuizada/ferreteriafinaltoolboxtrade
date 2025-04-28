@@ -922,7 +922,8 @@ Route::group(["middleware" => ["auth"]], function () {
         Route::delete('/cliente/eliminar/{id}', 'ClienteController@eliminarCliente');
              route::delete('/almacen/eliminar/{id}', 'AlmacenController@destroy');
       Route::post('/venta/registrar', 'VentaController@store')->name('venta.store');
-
+      Route::get('/reporte-ventas', 'VentaController@formularioReporte')->name('ventas.reporte.form');
+      Route::post('/reporte-ventas/pdf', 'VentaController@generarReportePDF')->name('ventas.reporte.pdf');
 // Ruta para confirmar entregas de ventas adelantadas
 Route::put('/venta/confirmar-entrega', 'VentaController@confirmarEntrega')->name('venta.confirmarEntrega');
 Route::get('/inventarios/generar-reporte-inversion', 'InventarioController@generarReporteInversion')->name('inventarios.reporte-inversion');

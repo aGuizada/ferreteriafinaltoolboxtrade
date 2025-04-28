@@ -19,6 +19,7 @@ use App\Rol;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\NotifyAdmin;
 use FPDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 class VentaController extends Controller
@@ -1144,6 +1145,52 @@ public function obtenerCuotas(Request $request)
             ->get();
 
         return response()->json(['topVendedores' => $topVendedores]);
+    }
+    public function formularioReporte()
+    {
+        return view('reportes.ventas_form');
+    }
+    
+    // Genera el PDF de ventas entre fechas
+    public function generarReportePDF(Request $request)
+    {
+        // Validar solo si se envían fechas
+        $request->validate([
+            'fecha_inicio' => 'nullable|date',
+            'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
+        ]);
+    
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+    
+        // Si no se envían fechas, mostrar todas las ventas
+        if (!$fechaInicio || !$fechaFin) {
+            $ventas = \App\Venta::with('cliente')
+                ->orderBy('fecha_hora', 'asc')
+                ->get();
+            $fechaInicio = \App\Venta::min('fecha_hora') ? date('Y-m-d', strtotime(\App\Venta::min('fecha_hora'))) : null;
+            $fechaFin = \App\Venta::max('fecha_hora') ? date('Y-m-d', strtotime(\App\Venta::max('fecha_hora'))) : null;
+        } else {
+            // Filtrar por rango de fechas
+            $ventas = \App\Venta::with('cliente')
+                ->whereBetween('fecha_hora', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'])
+                ->orderBy('fecha_hora', 'asc')
+                ->get();
+        }
+    
+        $total = $ventas->sum('total');
+        $empresa = \App\Empresa::first();
+    
+        // Usar el alias PDF igual que en InventarioController
+        $pdf = \PDF::loadView('pdf.ventas_pdf', [
+            'ventas' => $ventas,
+            'fechaInicio' => $fechaInicio,
+            'fechaFin' => $fechaFin,
+            'total' => $total,
+            'empresa' => $empresa,
+        ])->setPaper('A4', 'portrait');
+    
+        return $pdf->download('reporte_ventas_' . ($fechaInicio ?? 'todas') . '_al_' . ($fechaFin ?? 'todas') . '.pdf');
     }
 
     /**
