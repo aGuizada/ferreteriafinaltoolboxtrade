@@ -894,20 +894,14 @@
             </DataTable>
 
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                @click="cerrarModal2()"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                @click="registrarVenta()"
-              >
-                Registrar
-              </button>
+          
+              <Button
+    label="Registrar"
+    icon="pi pi-check"
+    class="p-button-success"
+    @click="registrarVenta()"
+    :disabled="tipoVenta === 'credito' && (!cuotas || cuotas.length === 0)"
+/>
             </div>
           </div>
 
@@ -967,71 +961,6 @@
                           class="w-full"
                         />
                       </div>
-                    </div>
-                  </template>
-                </Card>
-              </div>
-              <div class="p-col-12 p-md-5">
-                <Card>
-                  <template #content>
-                    <h5>Detalles de Pago</h5>
-                    <div class="p-d-flex p-jc-between p-mb-2">
-                      <span
-                        ><i class="pi pi-dollar p-mr-2" /> Monto Total:</span
-                      >
-                      <span class="p-text-bold">
-                        {{ totalFormateado }} {{ monedaVenta[1] }}
-                      </span>
-                    </div>
-                    <div class="p-field p-mt-3">
-                      <label for="tipoPagoAdelantado" class="font-weight-bold">
-                        Método de Pago:
-                      </label>
-                      <Dropdown
-                        id="tipoPagoAdelantado"
-                        v-model="tipoPagoAdelantado"
-                        :options="opcionesPagoAdelantado"
-                        optionLabel="label"
-                        optionValue="value"
-                        placeholder="Seleccione método de pago"
-                        class="w-full"
-                      />
-                    </div>
-                    <div
-                      class="p-field"
-                      v-if="tipoPagoAdelantado === 'efectivo'"
-                    >
-                      <label for="montoAdelantado">
-                        <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
-                      </label>
-                      <div class="p-inputgroup">
-                        <span class="p-inputgroup-addon">{{
-                          monedaVenta[1]
-                        }}</span>
-                        <InputNumber
-                          id="montoAdelantado"
-                          v-model="montoAdelantado"
-                          placeholder="Ingrese el monto recibido"
-                          :class="{ 'p-invalid': montoAdelantadoInvalido }"
-                        />
-                      </div>
-                      <small class="p-error" v-if="montoAdelantadoInvalido">
-                        El monto recibido debe ser mayor o igual al total a
-                        pagar
-                      </small>
-                    </div>
-                    <div
-                      class="p-field"
-                      v-if="tipoPagoAdelantado === 'efectivo'"
-                    >
-                      <label for="cambioAdelantado">
-                        <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
-                      </label>
-                      <InputText
-                        id="cambioAdelantado"
-                        :value="calcularCambioAdelantado"
-                        readonly
-                      />
                     </div>
                   </template>
                 </Card>
@@ -1680,86 +1609,137 @@ export default {
         this.last_comprobante = 1;
       }
     },
+    async registrarVenta(idtipo_pago = 1) {
+    try {
+        // Validar datos de venta a crédito
+        if (this.tipoVenta === 'credito') {
+            if (!this.numero_cuotas || !this.tiempo_diaz) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
+                });
+                return;
+            }
 
-    async registrarVenta(idtipo_pago = 1) {       
-      try {
-          this.mostrarSpinner = true;         
+            if (!this.cuotas || this.cuotas.length === 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
+                });
+                return;
+            }
+        }
 
-          // Crear o buscar cliente
-          await this.buscarOCrearCliente();         
+        this.mostrarSpinner = true;
+        await this.buscarOCrearCliente();
+        await this.obtenerDatosSesionYComprobante();
 
-          // Obtener número de comprobante actualizado
-          await this.obtenerDatosSesionYComprobante();
+        const ventaData = {
+            idcliente: this.idcliente,
+            tipo_comprobante: this.tipo_comprobante,
+            serie_comprobante: this.serie_comprobante,
+            num_comprobante: this.num_comprob,
+            impuesto: this.impuesto || 0.18,
+            total: this.calcularTotal,
+            idAlmacen: this.idAlmacen,
+            idtipo_pago: idtipo_pago,
+            idtipo_venta: this.idtipo_venta,
+            data: this.arrayDetalle
+        };
 
-          // Preparar datos comunes
-          const ventaData = {
-              idcliente: this.idcliente,
-              tipo_comprobante: this.tipo_comprobante,
-              serie_comprobante: this.serie_comprobante,
-              num_comprobante: this.num_comprob,
-              impuesto: this.impuesto || 0.18,
-              total: this.calcularTotal,
-              idAlmacen: this.idAlmacen,
-              idtipo_pago: idtipo_pago,
-              idtipo_venta: this.idtipo_venta,
-              data: this.arrayDetalle,
-          };
+        if (this.tipoVenta === 'credito') {
+            ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
+                numero_cuota: index + 1,
+                fecha_pago: cuota.fecha_pago,
+                precio_cuota: parseFloat(cuota.precio_cuota),
+                saldo_restante: parseFloat(cuota.saldo_restante),
+                estado: 'Pendiente'
+            }));
 
-          // Agregar campos específicos para venta adelantada
-          if (this.tipoVenta === 'adelantada') {
-              ventaData.direccion_entrega = this.direccionEntrega;
-              ventaData.telefono_contacto = this.telefonoContacto;
-              ventaData.fecha_entrega = this.fechaEntrega 
-                  ? this.fechaEntrega.toISOString().split('T')[0] 
-                  : null;
-              ventaData.observaciones = this.observaciones;
-              
-              // Estado inicial para ventas adelantadas
-              ventaData.estado = 'Pendiente'; 
-              
-              // Si es pago en efectivo, agregar monto y cambio
-              if (this.tipoPagoAdelantado === 'efectivo') {
-                  ventaData.monto_recibido = this.montoAdelantado;
-                  ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
-              }
-          }
+            ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
+            ventaData.total = parseFloat(this.calcularTotal);
+            ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
+            ventaData.estado_credito = 'Pendiente';
+        }
 
-          console.log("Datos de venta a enviar:", ventaData);
-          const response = await axios.post("/venta/registrar", ventaData);
+        const response = await axios.post("/venta/registrar", ventaData);
 
-          if (response.data.id) {
-              // Éxito - manejar respuesta
-              await this.obtenerDatosSesionYComprobante(); // Obtener nuevo número para la próxima venta
-              this.listado = 1;
-              this.cerrarModal2();
-              this.listarVenta(1, "", "num_comprob");
+        if (response.data.id) {
+            await this.obtenerDatosSesionYComprobante();
+            this.listado = 1;
+            this.cerrarModal2();
+            this.listarVenta(1, "", "num_comprob");
 
-              // Mensaje de éxito específico
-              if (this.tipoVenta === 'adelantada') {
-                  Swal.fire(
-                      "Pedido registrado",
-                      "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
-                      "success"
-                  );
-              } else {
-                  this.imprimirResivo(response.data.id);
-              }
+            if (this.tipoVenta === 'adelantada') {
+                Swal.fire(
+                    "Pedido registrado",
+                    "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
+                    "success"
+                );
+            } else {
+                this.imprimirResivo(response.data.id);
+            }
 
-              this.reiniciarFormulario();
-          } else {
-              Swal.fire("Error", "No se pudo completar la venta", "error");
-          }
-      } catch (error) {
-          console.error("Error al registrar venta:", error);
-          Swal.fire(
-              "Error",
-              "Ocurrió un error al procesar la venta: " +
-                  (error.response ? error.response.data.error : error.message),
-              "error"
-          );
-      } finally {
-          this.mostrarSpinner = false;
-      }
+            this.reiniciarFormulario();
+        } else {
+            Swal.fire("Error", "No se pudo completar la venta", "error");
+        }
+    } catch (error) {
+        console.error("Error al registrar venta:", error);
+        let errorMessage = error.response && error.response.data && error.response.data.error 
+            ? error.response.data.error 
+            : 'Error al procesar la venta';
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al registrar la venta',
+            text: errorMessage
+        });
+    } finally {
+        this.mostrarSpinner = false;
+    }
+},
+    generarCuotas() {
+        if (!this.numero_cuotas || !this.tiempo_diaz) {
+            Swal.fire({
+                icon: "warning",
+                title: "Campos incompletos",
+                text: "Ingrese la cantidad de cuotas y frecuencia de pagos"
+            });
+            return;
+        }
+
+        // Validate numeric values
+        if (isNaN(this.numero_cuotas) || isNaN(this.tiempo_diaz)) {
+            Swal.fire({
+                icon: "error",
+                title: "Error en los datos",
+                text: "Los valores de cuotas y días deben ser números válidos"
+            });
+            return;
+        }
+
+        this.cuotas = [];
+        const fechaHoy = new Date();
+        const montoTotal = this.calcularTotal;
+        const montoPorCuota = parseFloat((montoTotal / this.numero_cuotas).toFixed(2));
+        let saldoRestante = montoTotal;
+
+        for (let i = 0; i < this.numero_cuotas; i++) {
+            const fechaPago = new Date(fechaHoy);
+            fechaPago.setDate(fechaPago.getDate() + ((i + 1) * parseInt(this.tiempo_diaz)));
+
+            const cuota = {
+                fecha_pago: fechaPago.toISOString().split('T')[0],
+                precio_cuota: montoPorCuota,
+                saldo_restante: parseFloat(saldoRestante.toFixed(2)),
+                estado: "Pendiente"
+            };
+
+            saldoRestante -= montoPorCuota;
+            this.cuotas.push(cuota);
+        }
     },
     registrarVentaQR() {
       if (!this.qrPagoVerificado) {

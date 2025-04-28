@@ -235,8 +235,25 @@ class VentaController extends Controller
     {
         try {
             DB::beginTransaction();
-            
-            // Lock the table and get the latest receipt number
+
+            // Validate credit sale data
+            if ($request->idtipo_venta == 2) {
+                if (!$request->numero_cuotas || !$request->tiempo_dias_cuota || !$request->total_credito) {
+                    \Log::error('Credit data validation failed:', [
+                        'numero_cuotas' => $request->numero_cuotas,
+                        'tiempo_dias_cuota' => $request->tiempo_dias_cuota,
+                        'total_credito' => $request->total_credito,
+                        'cuotaspago' => $request->cuotaspago
+                    ]);
+                    throw new \Exception('Datos de crédito incompletos');
+                }
+                
+                if (empty($request->cuotaspago)) {
+                    throw new \Exception('No se proporcionaron cuotas para el crédito');
+                }
+            }
+
+            // Get last receipt number
             $ultimaVenta = DB::table('ventas')
                 ->lockForUpdate()
                 ->orderBy('id', 'desc')
@@ -288,16 +305,45 @@ class VentaController extends Controller
             
             $venta->save();
             
-            // Si es venta a crédito, registrar información adicional
+            // Para ventas a crédito, guardar información del crédito
             if ($request->idtipo_venta == 2) {
-                $creditoventa = $this->crearCreditoVenta($venta, $request);
-                $this->registrarCuotasCredito($creditoventa, $request->cuotaspago);
+                $creditoventa = new CreditoVenta();
+                $creditoventa->idventa = $venta->id;
+                $creditoventa->idcliente = $request->idcliente;
+                $creditoventa->numero_cuotas = intval($request->numero_cuotas);
+                $creditoventa->tiempo_dias_cuota = intval($request->tiempo_dias_cuota);
+                $creditoventa->total = floatval($request->total_credito);
+                $creditoventa->estado = 'Pendiente';
+                
+                // Get first unpaid installment date
+                $primeraCuota = collect($request->cuotaspago)->first();
+                if (!$primeraCuota || !isset($primeraCuota['fecha_pago'])) {
+                    throw new \Exception('Primera cuota no proporcionada correctamente');
+                }
+                
+                $creditoventa->proximo_pago = $primeraCuota['fecha_pago'];
+                $creditoventa->save();
+
+                // Save installments
+                foreach ($request->cuotaspago as $index => $cuota) {
+                    $cuotaCredito = new CuotasCredito();
+                    $cuotaCredito->idcredito = $creditoventa->id;
+                    $cuotaCredito->numero_cuota = $index + 1;
+                    $cuotaCredito->fecha_pago = $cuota['fecha_pago'];
+                    $cuotaCredito->precio_cuota = floatval($cuota['precio_cuota']);
+                    $cuotaCredito->saldo_restante = floatval($cuota['saldo_restante']);
+                    $cuotaCredito->estado = 'Pendiente';
+                    $cuotaCredito->save();
+                }
             }
             
             DB::commit();
             return $venta;
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error en crearVenta: ' . $e->getMessage(), [
+                'request_data' => $request->all()
+            ]);
             throw $e;
         }
     }
@@ -418,6 +464,23 @@ class VentaController extends Controller
         return response()->json([
             'error' => 'No se pudo registrar la venta: ' . $e->getMessage()
         ], 500);
+    }
+}
+private function registrarCuotasCredito($creditoVenta, $cuotasPago)
+{
+    if (empty($cuotasPago) || !is_array($cuotasPago)) {
+        throw new \Exception('No se proporcionaron cuotas para el crédito');
+    }
+
+    foreach ($cuotasPago as $index => $cuota) {
+        $cuotaCredito = new CuotasCredito();
+        $cuotaCredito->idcredito = $creditoVenta->id;
+        $cuotaCredito->numero_cuota = $cuota['numero_cuota'] ?? ($index + 1);
+        $cuotaCredito->fecha_pago = $cuota['fecha_pago'];
+        $cuotaCredito->precio_cuota = floatval($cuota['precio_cuota']);
+        $cuotaCredito->saldo_restante = floatval($cuota['saldo_restante']);
+        $cuotaCredito->estado = $cuota['estado'] ?? 'Pendiente';
+        $cuotaCredito->save();
     }
 }
 public function confirmarEntrega(Request $request)
@@ -627,26 +690,33 @@ public function obtenerCuotas(Request $request)
             return redirect('/');
         }
 
-        // Obtener el rol del usuario autenticado
-        $rolUsuario = Auth::user()->idrol;
+        try {
+            // Obtener el rol del usuario autenticado
+            $usuario = Auth::user();
+            
+            // Verificar si el usuario tiene permiso (no es rol 2)
+            if ($usuario->idrol === 2) {
+                return response()->json([
+                    'error' => 'No tiene permisos para anular ventas'
+                ], 403);
+            }
 
-        // Verificar si el usuario es administrador
-        if ($rolUsuario !== 1) {
+            // Buscar la venta a anular
+            $venta = Venta::findOrFail($request->id);
+
+            // Anular la venta
+            $venta->estado = 'Anulado';
+            $venta->save();
+
             return response()->json([
-                'error' => 'Sólo los administradores pueden anular ventas.'
-            ], 403);
+                'mensaje' => 'Venta anulada correctamente'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al anular la venta: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Buscar la venta a anular
-        $venta = Venta::findOrFail($request->id);
-
-        // Anular la venta
-        $venta->estado = 'Anulado';
-        $venta->save();
-
-        return response()->json([
-            'mensaje' => 'Venta anulada correctamente.'
-        ]);
     }
 
     /**
@@ -967,25 +1037,33 @@ public function obtenerCuotas(Request $request)
      */
     private function crearCreditoVenta($venta, $request)
     {
+        // Permitir ambos nombres de campo para compatibilidad
+        $numeroCuotas = $request->numero_cuotas ?? $request->numero_cuotasCredito ?? null;
+        $tiempoDiasCuota = $request->tiempo_dias_cuota ?? null;
+        $totalCredito = $request->total ?? $request->total_credito ?? null;
+    
+        // Validar que los datos requeridos no sean nulos
+        if (!$numeroCuotas || !$tiempoDiasCuota || !$totalCredito) {
+            throw new \Exception('Datos de crédito incompletos: número de cuotas, tiempo de días por cuota o total no proporcionados.');
+        }
+    
         $creditoventa = new CreditoVenta();
         $creditoventa->idventa = $venta->id;
         $creditoventa->idcliente = $request->idcliente;
-        $creditoventa->numero_cuotas = $request->numero_cuotasCredito;
-        $creditoventa->tiempo_dias_cuota = $request->tiempo_dias_cuotaCredito;
-        $creditoventa->total = $request->totalCredito;
-        $creditoventa->estado = $request->estadoCredito;
-
-        $primerCuotaNoPagada = null;
-        foreach ($request->cuotaspago as $cuota) {
-            if ($cuota['estado'] !== 'Pagado') {
-                $primerCuotaNoPagada = $cuota;
-                break;
-            }
+        $creditoventa->numero_cuotas = intval($numeroCuotas);
+        $creditoventa->tiempo_dias_cuota = intval($tiempoDiasCuota);
+        $creditoventa->total = floatval($totalCredito);
+        $creditoventa->estado = $request->estado ?? 'Pendiente';
+    
+        // Validar y asignar el próximo pago
+        $primerCuotaNoPagada = collect($request->cuotaspago)->firstWhere('estado', '!=', 'Pagado');
+        if (!$primerCuotaNoPagada || !isset($primerCuotaNoPagada['fecha_pago'])) {
+            throw new \Exception('No se proporcionó una fecha válida para el próximo pago.');
         }
         $creditoventa->proximo_pago = $primerCuotaNoPagada['fecha_pago'];
-
+    
         $creditoventa->save();
-
+    
         return $creditoventa;
     }
 
