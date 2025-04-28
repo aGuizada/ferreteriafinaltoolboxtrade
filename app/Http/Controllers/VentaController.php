@@ -1084,6 +1084,67 @@ public function obtenerCuotas(Request $request)
     
         return $creditoventa;
     }
+    public function topClientes(Request $request)
+    {
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+
+        $topVendedores = Venta::join('personas', 'ventas.idcliente', '=', 'personas.id')
+            ->select(
+                'ventas.idcliente',
+                'personas.nombre as nombreCliente',
+                DB::raw('COUNT(*) as cantidadCompras'),
+                DB::raw('SUM(ventas.total) as totalGastado')
+            )
+            ->whereBetween('ventas.fecha_hora', [$fechaInicio, $fechaFin])
+            ->groupBy('ventas.idcliente', 'personas.nombre')
+            ->orderByDesc('cantidadCompras')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['topClientes' => $topVendedores]);
+    }
+
+    public function topProductos(Request $request)
+    {
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+
+        $topProductos = DetalleVenta::join('articulos', 'detalle_ventas.idarticulo', '=', 'articulos.id')
+            ->select(
+                'detalle_ventas.idarticulo',
+                'articulos.nombre as nombreArticulo',
+                DB::raw('SUM(detalle_ventas.cantidad) as cantidadTotal'),
+                DB::raw('COUNT(*) as vecesVendido')
+            )
+            ->join('ventas', 'detalle_ventas.idventa', '=', 'ventas.id')
+            ->whereBetween('ventas.fecha_hora', [$fechaInicio, $fechaFin])
+            ->groupBy('detalle_ventas.idarticulo', 'articulos.nombre')
+            ->orderByDesc('cantidadTotal')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['topProductos' => $topProductos]);
+    }    public function topVendedores(Request $request)
+    {
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+
+        $topVendedores = Venta::join('personas', 'ventas.idusuario', '=', 'personas.id')
+            ->select(
+                'ventas.idusuario',
+                'personas.nombre as nombreUsuario',
+                DB::raw('COUNT(*) as cantidadVentas'),
+                DB::raw('SUM(ventas.total) as totalVentas')
+            )
+            ->whereBetween('ventas.fecha_hora', [$fechaInicio, $fechaFin])
+            ->groupBy('ventas.idusuario', 'personas.nombre')
+            ->orderByDesc('cantidadVentas')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['topVendedores' => $topVendedores]);
+    }
 
     /**
      * Registra las cuotas del crédito
