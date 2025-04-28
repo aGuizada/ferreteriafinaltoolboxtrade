@@ -179,45 +179,63 @@ class VentaController extends Controller
     /**
      * Registra una nueva venta
      */
-    public function store(Request $request)
-    {
-        if (!$request->ajax()) return redirect('/');
-    
-        try {
-            DB::beginTransaction();
-    
-            if (!$this->validarCajaAbierta()) {
-                return ['id' => -1, 'caja_validado' => 'Debe tener una caja abierta'];
-            }
-    
-            // Validar que data sea un array y no esté vacío (CORRECCIÓN: Paréntesis cerrado)
-            if (!is_array($request->data)) {  // <-- Se agregó ) para cerrar la condición
-                throw new \Exception("Los datos de los productos no son válidos");
-            }
-    
-            if (empty($request->data)) {
-                throw new \Exception("No se han proporcionado productos para la venta");
-            }
-    
-            if ($request->tipo_comprobante === "RESIVO") { // Nota: Corregí "RESIVO" a "RESIVO" si ese es el valor correcto
-                $venta = $this->crearVentaResivo($request);
-            } else {
-                $venta = $this->crearVenta($request);
-            }
-    
-            $this->actualizarCaja($request);
-            $this->registrarDetallesVenta($venta, $request->data, $request->idAlmacen);
-            $this->notificarAdministradores();
-    
-            DB::commit();
-            return ['id' => $venta->id];
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error al registrar venta: ' . $e->getMessage() . ' - Línea: ' . $e->getLine() . ' - Archivo: ' . $e->getFile());
-            return ['error' => $e->getMessage()];
-        }
-    }
+ 
+public function store(Request $request)
+{
+    if (!$request->ajax()) return redirect('/');
 
+    // Validar campos obligatorios
+    $request->validate([
+        'idcliente' => 'required|integer',
+        'idtipo_pago' => 'required|integer',
+        'idtipo_venta' => 'required|integer',
+        'tipo_comprobante' => 'required|string',
+        'serie_comprobante' => 'required|string',
+        'num_comprobante' => 'required|string',
+        'impuesto' => 'required|numeric',
+        'total' => 'required|numeric',
+        'idAlmacen' => 'required|integer',
+        'data' => 'required|array|min:1'
+    ], [
+        'tipo_comprobante.required' => 'El tipo de comprobante es obligatorio.',
+        'serie_comprobante.required' => 'La serie de comprobante es obligatoria.',
+        'num_comprobante.required' => 'El número de comprobante es obligatorio.',
+        // Puedes agregar más mensajes personalizados si lo deseas
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        if (!$this->validarCajaAbierta()) {
+            return ['id' => -1, 'caja_validado' => 'Debe tener una caja abierta'];
+        }
+
+        if (!is_array($request->data)) {
+            throw new \Exception("Los datos de los productos no son válidos");
+        }
+
+        if (empty($request->data)) {
+            throw new \Exception("No se han proporcionado productos para la venta");
+        }
+
+        if ($request->tipo_comprobante === "RESIVO") {
+            $venta = $this->crearVentaResivo($request);
+        } else {
+            $venta = $this->crearVenta($request);
+        }
+
+        $this->actualizarCaja($request);
+        $this->registrarDetallesVenta($venta, $request->data, $request->idAlmacen);
+        $this->notificarAdministradores();
+
+        DB::commit();
+        return ['id' => $venta->id];
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error al registrar venta: ' . $e->getMessage() . ' - Línea: ' . $e->getLine() . ' - Archivo: ' . $e->getFile());
+        return ['error' => $e->getMessage()];
+    }
+}
 
     /**
      * Valida si hay una caja abierta

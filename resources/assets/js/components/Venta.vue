@@ -964,6 +964,71 @@
                     </div>
                   </template>
                 </Card>
+              </div>
+              <div class="p-col-12 p-md-5">
+                <Card>
+                  <template #content>
+                    <h5>Detalles de Pago</h5>
+                    <div class="p-d-flex p-jc-between p-mb-2">
+                      <span
+                        ><i class="pi pi-dollar p-mr-2" /> Monto Total:</span
+                      >
+                      <span class="p-text-bold">
+                        {{ totalFormateado }} {{ monedaVenta[1] }}
+                      </span>
+                    </div>
+                    <div class="p-field p-mt-3">
+                      <label for="tipoPagoAdelantado" class="font-weight-bold">
+                        Método de Pago:
+                      </label>
+                      <Dropdown
+                        id="tipoPagoAdelantado"
+                        v-model="tipoPagoAdelantado"
+                        :options="opcionesPagoAdelantado"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccione método de pago"
+                        class="w-full"
+                      />
+                    </div>
+                    <div
+                      class="p-field"
+                      v-if="tipoPagoAdelantado === 'efectivo'"
+                    >
+                      <label for="montoAdelantado">
+                        <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
+                      </label>
+                      <div class="p-inputgroup">
+                        <span class="p-inputgroup-addon">{{
+                          monedaVenta[1]
+                        }}</span>
+                        <InputNumber
+                          id="montoAdelantado"
+                          v-model="montoAdelantado"
+                          placeholder="Ingrese el monto recibido"
+                          :class="{ 'p-invalid': montoAdelantadoInvalido }"
+                        />
+                      </div>
+                      <small class="p-error" v-if="montoAdelantadoInvalido">
+                        El monto recibido debe ser mayor o igual al total a
+                        pagar
+                      </small>
+                    </div>
+                    <div
+                      class="p-field"
+                      v-if="tipoPagoAdelantado === 'efectivo'"
+                    >
+                      <label for="cambioAdelantado">
+                        <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
+                      </label>
+                      <InputText
+                        id="cambioAdelantado"
+                        :value="calcularCambioAdelantado"
+                        readonly
+                      />
+                    </div>
+                  </template>
+                </Card>
                 <Button
                   label="Registrar Pedido"
                   icon="pi pi-check"
@@ -1461,7 +1526,7 @@ export default {
 
       // Comprobante
       tipo_comprobante: "RESIVO",
-      serie_comprobante: "",
+      serie_comprobante: "A001",
       num_comprobante: "",
       num_comprob: "",
       last_comprobante: 0,
@@ -1611,95 +1676,116 @@ export default {
     },
     async registrarVenta(idtipo_pago = 1) {
     try {
-        // Validar datos de venta a crédito
-        if (this.tipoVenta === 'credito') {
-            if (!this.numero_cuotas || !this.tiempo_diaz) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
-                });
-                return;
-            }
-
-            if (!this.cuotas || this.cuotas.length === 0) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
-                });
-                return;
-            }
-        }
-
-        this.mostrarSpinner = true;
-        await this.buscarOCrearCliente();
-        await this.obtenerDatosSesionYComprobante();
-
-        const ventaData = {
-            idcliente: this.idcliente,
-            tipo_comprobante: this.tipo_comprobante,
-            serie_comprobante: this.serie_comprobante,
-            num_comprobante: this.num_comprob,
-            impuesto: this.impuesto || 0.18,
-            total: this.calcularTotal,
-            idAlmacen: this.idAlmacen,
-            idtipo_pago: idtipo_pago,
-            idtipo_venta: this.idtipo_venta,
-            data: this.arrayDetalle
-        };
-
-        if (this.tipoVenta === 'credito') {
-            ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
-                numero_cuota: index + 1,
-                fecha_pago: cuota.fecha_pago,
-                precio_cuota: parseFloat(cuota.precio_cuota),
-                saldo_restante: parseFloat(cuota.saldo_restante),
-                estado: 'Pendiente'
-            }));
-
-            ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
-            ventaData.total = parseFloat(this.calcularTotal);
-            ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
-            ventaData.estado_credito = 'Pendiente';
-        }
-
-        const response = await axios.post("/venta/registrar", ventaData);
-
-        if (response.data.id) {
-            await this.obtenerDatosSesionYComprobante();
-            this.listado = 1;
-            this.cerrarModal2();
-            this.listarVenta(1, "", "num_comprob");
-
-            if (this.tipoVenta === 'adelantada') {
-                Swal.fire(
-                    "Pedido registrado",
-                    "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
-                    "success"
-                );
-            } else {
-                this.imprimirResivo(response.data.id);
-            }
-
-            this.reiniciarFormulario();
-        } else {
-            Swal.fire("Error", "No se pudo completar la venta", "error");
-        }
-    } catch (error) {
-        console.error("Error al registrar venta:", error);
-        let errorMessage = error.response && error.response.data && error.response.data.error 
-            ? error.response.data.error 
-            : 'Error al procesar la venta';
-        Swal.fire({
+      // Validar datos de venta a crédito
+      if (this.tipoVenta === 'credito') {
+        if (!this.numero_cuotas || !this.tiempo_diaz) {
+          Swal.fire({
             icon: 'error',
-            title: 'Error al registrar la venta',
-            text: errorMessage
-        });
+            title: 'Error',
+            text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
+          });
+          return;
+        }
+
+        if (!this.cuotas || this.cuotas.length === 0) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
+          });
+          return;
+        }
+      }
+
+      this.mostrarSpinner = true;
+      await this.buscarOCrearCliente();
+      await this.obtenerDatosSesionYComprobante();
+
+      const ventaData = {
+        idcliente: this.idcliente,
+        tipo_comprobante: this.tipo_comprobante,
+        serie_comprobante: this.serie_comprobante,
+        num_comprobante: this.num_comprob,
+        impuesto: this.impuesto || 0.18,
+        total: this.calcularTotal,
+        idAlmacen: this.idAlmacen,
+        idtipo_pago: idtipo_pago,
+        idtipo_venta: this.idtipo_venta,
+        data: this.arrayDetalle
+      };
+
+      // --- AQUI: AGREGAR CAMPOS DE VENTA ADELANTADA ---
+      if (this.tipoVenta === 'adelantada') {
+        ventaData.direccion_entrega = this.direccionEntrega;
+        ventaData.telefono_contacto = this.telefonoContacto;
+        ventaData.fecha_entrega = this.fechaEntrega
+          ? (typeof this.fechaEntrega === 'string'
+              ? this.fechaEntrega
+              : this.fechaEntrega.toISOString().split('T')[0])
+          : null;
+        ventaData.observaciones = this.observaciones;
+        ventaData.estado = "Pendiente"; // Estado inicial para ventas adelantadas
+
+        // Si quieres enviar el monto recibido y cambio para efectivo:
+        if (this.tipoPagoAdelantado === "efectivo") {
+          ventaData.monto_recibido = this.montoAdelantado;
+          ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+        }
+      }
+
+      // --- FIN MODIFICACIÓN ---
+
+      if (this.tipoVenta === 'credito') {
+        ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
+          numero_cuota: index + 1,
+          fecha_pago: cuota.fecha_pago,
+          precio_cuota: parseFloat(cuota.precio_cuota),
+          saldo_restante: parseFloat(cuota.saldo_restante),
+          estado: 'Pendiente'
+        }));
+
+        ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
+        ventaData.total = parseFloat(this.calcularTotal);
+        ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
+        ventaData.estado_credito = 'Pendiente';
+      }
+
+      const response = await axios.post("/venta/registrar", ventaData);
+
+      if (response.data.id) {
+        await this.obtenerDatosSesionYComprobante();
+        this.listado = 1;
+        this.cerrarModal2();
+        this.listarVenta(1, "", "num_comprob");
+
+        if (this.tipoVenta === 'adelantada') {
+          Swal.fire(
+            "Pedido registrado",
+            "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
+            "success"
+          );
+        } else {
+          this.imprimirResivo(response.data.id);
+        }
+
+        this.reiniciarFormulario();
+      } else {
+        Swal.fire("Error", "No se pudo completar la venta", "error");
+      }
+    } catch (error) {
+      console.error("Error al registrar venta:", error);
+      let errorMessage = error.response && error.response.data && error.response.data.error 
+        ? error.response.data.error 
+        : 'Error al procesar la venta';
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al registrar la venta',
+        text: errorMessage
+      });
     } finally {
-        this.mostrarSpinner = false;
+      this.mostrarSpinner = false;
     }
-},
+  },
     generarCuotas() {
         if (!this.numero_cuotas || !this.tiempo_diaz) {
             Swal.fire({
@@ -2152,10 +2238,11 @@ export default {
 
     // Gestión de ventas
     abrirTipoVenta() {
-      this.modal2 = true;
-      this.cliente = this.nombreCliente;
-      this.step = 1;
-    },
+  this.reiniciarFormulario(); // <-- Llama aquí también
+  this.modal2 = true;
+  this.cliente = this.nombreCliente;
+  this.step = 1;
+},
     seleccionarTipoVenta(tipo) {
       this.tipoVenta = tipo;
       this.tipoVentaSeleccionado = true;
@@ -2186,9 +2273,7 @@ export default {
       let page = event.page + 1; // PrimeVue pages are 0-based
       this.listarVenta(page, this.buscar);
     },
-    ocultarDetalle() {
-      this.listado = 1;
-    },
+
 
     // Gestión de comprobantes
     async obtenerDatosUsuario() {
@@ -2453,41 +2538,43 @@ export default {
       }
     },
     verVenta(id) {
-      this.listado = 2;
-      this.cargando = true;
-    
-      // Obtener cabecera de venta
-      axios.get(`/venta/obtenerCabecera?id=${id}`)
-        .then((response) => {
-          if (response.data.venta) {
-            // Combinar datos principales con datos adelantados si existen
-            this.ventaDetalle = {
-              ...response.data.venta,
-              ...(response.data.datosAdelantados || {})
-            };
-            
-            this.cliente = response.data.venta.nombre;
-            this.tipo_comprobante = response.data.venta.tipo_comprobante;
-            this.num_comprobante = response.data.venta.num_comprobante;
-            this.total = response.data.venta.total;
-          }
-          this.cargando = false;
-        })
-        .catch((error) => {
-          console.error("Error al obtener cabecera:", error);
-          Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
-          this.cargando = false;
-        });
-    
-      // Obtener detalles de productos
-      axios.get(`/venta/obtenerDetalles?id=${id}`)
-        .then((response) => {
-          this.arrayDetalle = response.data.detalles;
-        })
-        .catch((error) => {
-          console.error("Error al obtener detalles:", error);
-        });
-    },
+  this.listado = 2;
+  this.cargando = true;
+
+  // Obtener cabecera de venta
+  axios.get(`/venta/obtenerCabecera?id=${id}`)
+    .then((response) => {
+      if (response.data.venta) {
+        this.ventaDetalle = {
+          ...response.data.venta,
+          ...(response.data.datosAdelantados || {})
+        };
+        this.cliente = response.data.venta.nombre;
+        this.tipo_comprobante = response.data.venta.tipo_comprobante;
+        this.num_comprobante = response.data.venta.num_comprobante;
+        this.total = response.data.venta.total;
+
+        // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
+        this.creditoInfo = response.data.credito || null;
+        this.cuotasCredito = response.data.cuotas || [];
+      }
+      this.cargando = false;
+    })
+    .catch((error) => {
+      console.error("Error al obtener cabecera:", error);
+      Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
+      this.cargando = false;
+    });
+
+  // Obtener detalles de productos
+  axios.get(`/venta/obtenerDetalles?id=${id}`)
+    .then((response) => {
+      this.arrayDetalle = response.data.detalles;
+    })
+    .catch((error) => {
+      console.error("Error al obtener detalles:", error);
+    });
+},
     // Formato para fechas
     formatFecha(fecha) {
       if (!fecha) return "N/A";
@@ -2572,17 +2659,17 @@ export default {
 
     // Método para volver al listado desde la vista de detalle
     ocultarDetalle() {
-      this.listado = 1;
-      // Limpiar datos de detalle
-      this.ventaDetalle = null;
-      this.cliente = "";
-      this.tipo_comprobante = "";
-      this.num_comprobante = "";
-      this.total = 0;
-      this.creditoInfo = null;
-      this.cuotasCredito = [];
-      this.arrayDetalle = [];
-    },
+  this.listado = 1;
+  this.ventaDetalle = null;
+  this.cliente = "";
+  this.tipo_comprobante = "RESIVO";
+  this.num_comprobante = "";
+  this.total = 0;
+  this.creditoInfo = null;
+  this.cuotasCredito = [];
+  this.arrayDetalle = [];
+  this.reiniciarFormulario(); // <-- Asegúrate de llamar esto aquí
+},
 
     // Obtener información del crédito
     obtenerInfoCredito(id) {
@@ -2698,6 +2785,14 @@ export default {
         }
       });
     },
+    async cargarVentaDetalle(id) {
+  const res = await axios.post('/venta/obtenerCabecera', { id });
+  // ¿Qué haces aquí?
+  // Debes asignar así:
+  this.ventaDetalle = res.data.venta;
+  this.creditoInfo = res.data.credito || null;
+  this.cuotasCredito = res.data.cuotas || [];
+},
 
     // Utilidades
     datosConfiguracion() {
@@ -2721,7 +2816,7 @@ export default {
       this.nombreCliente = "";
       this.tipo_comprobante = "RESIVO";
       this.tipo_documento = "1";
-      this.serie_comprobante = "";
+      this.serie_comprobante = "A001";
       this.num_comprob = "";
       this.arrayDetalle = [];
       this.arraySeleccionado = null;
