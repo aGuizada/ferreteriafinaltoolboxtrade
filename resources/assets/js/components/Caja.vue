@@ -46,6 +46,11 @@
         {{ formatCurrency(slotProps.data.pagosQR || 0) }}
     </template>
 </Column>
+<Column field="ventasAdelantadas" header="Ventas Adelantadas">
+    <template #body="slotProps">
+        {{ formatCurrency(slotProps.data.ventasAdelantadas || 0) }}
+    </template>
+</Column>
                 <Column field="saldoFaltante" header="Saldo de faltante"></Column>
                 <Column field="depositos" header="Depósitos Extras"></Column>
                 <Column field="salidas" header="Salidas Extras"></Column>
@@ -578,560 +583,563 @@ export default {
         }
     },
     methods: {
-        generarPDF() {
-            axios({
-                url: `/caja/resumen-pdf/${this.resumenCaja.id}`,
-                method: 'GET',
-                responseType: 'blob', // Importante para manejar archivos binarios
-            }).then((response) => {
-                const url = window.URL.createObjectURL(new Blob([response.data]));
-                const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute('download', 'resumen_caja.pdf');
-                document.body.appendChild(link);
-                link.click();
-            });
-        },
+        generarPDF(id = null) {
+    // Si se pasa un id explícito, usarlo
+    if (id !== null && id !== undefined) {
+        this.descargarPDF(id);
+        return;
+    }
+    
+    // Si no, verificar si hay un resumen de caja activo
+    if (this.resumenCaja && this.resumenCaja.id) {
+        this.descargarPDF(this.resumenCaja.id);
+        return;
+    }
+    
+    // Si no hay ID válido, mostrar error
+    this.$toast.add({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'No se encontró la caja para generar PDF', 
+        life: 3000 
+    });
+},
+descargarPDF(cajaId) {
+    axios({
+        url: `/caja/resumen-pdf/${cajaId}`,
+        method: 'GET',
+        responseType: 'blob',
+    }).then((response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `resumen_caja_${cajaId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }).catch(error => {
+        this.$toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Error al generar el PDF: ' + error.message,
+            life: 3000
+        });
+    });
+},
 
-
-        abrirModalResumen() {
-            this.modalResumen = true;
-        },
-        cerrarDialog() {
-            console.log('Cerrando dialog, modalResumen antes:', this.modalResumen);
-            this.modalResumen = false;
-            console.log('modalResumen después:', this.modalResumen);
-        },
-        formatCurrency(value) {
-            return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(value);
-        },
-        onPage(event) {
-            this.listarCaja(event.page + 1, this.buscar, this.criterio);
-        },
-        mostrarError(mensaje) {
-            this.$toast.add({ severity: 'error', summary: 'Error', detail: mensaje, life: 3000 });
-        },
-        listarCaja(page, buscar, criterio) {
-            let me = this;
-            var url = '/caja?page=' + page + '&buscar=' + buscar + '&criterio=' + criterio;
-            axios.get(url).then(function (response) {
-                var respuesta = response.data;
-                me.arrayCaja = respuesta.cajas.data;
-                me.pagination = {
-                    total: respuesta.cajas.total,
-                    current_page: respuesta.cajas.current_page,
-                    per_page: respuesta.cajas.per_page,
-                    last_page: respuesta.cajas.last_page,
-                    from: respuesta.cajas.from,
-                    to: respuesta.cajas.to
-                };
-            })
-                .catch(function (error) {
-                    console.log(error);
-                });
-        },
-
-        cambiarPagina(page, buscar, criterio) {
-            let me = this;
-            //Actualiza la página actual
-            me.pagination.current_page = page;
-            //Envia la petición para visualizar la data de esa página
-            me.listarCaja(page, buscar, criterio);
-        },
-        registrarCaja() {
-            if (this.estaRegistrando) return;
-            this.estaRegistrando = true;
-
-            if (this.validarCaja()) {
-                this.estaRegistrando = false;
-                return;
-            }
-
-            let me = this;
-            let formData = new FormData();
-            formData.append('saldoInicial', this.saldoInicial);
-
-            axios.post('/caja/registrar', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            }).then(function (response) {
-                me.cerrarModal();
-                me.arqueoRealizado = false; // Reset the flag when opening a new register
-                me.listarCaja(1, '', 'id');
-                swal(
-                    'Aperturada!',
-                    'Caja aperturada de forma satisfactoria!',
-                    'success'
-                )
-            }).catch(function (error) {
+    abrirModalResumen() {
+        this.modalResumen = true;
+    },
+    cerrarDialog() {
+        this.modalResumen = false;
+    },
+    formatCurrency(value) {
+        return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(value);
+    },
+    onPage(event) {
+        this.listarCaja(event.page + 1, this.buscar, this.criterio);
+    },
+    mostrarError(mensaje) {
+        this.$toast.add({ severity: 'error', summary: 'Error', detail: mensaje, life: 3000 });
+    },
+    listarCaja(page, buscar, criterio) {
+        let me = this;
+        var url = '/caja?page=' + page + '&buscar=' + buscar + '&criterio=' + criterio;
+        axios.get(url).then(function (response) {
+            var respuesta = response.data;
+            me.arrayCaja = respuesta.cajas.data;
+            me.pagination = {
+                total: respuesta.cajas.total,
+                current_page: respuesta.cajas.current_page,
+                per_page: respuesta.cajas.per_page,
+                last_page: respuesta.cajas.last_page,
+                from: respuesta.cajas.from,
+                to: respuesta.cajas.to
+            };
+        })
+            .catch(function (error) {
                 console.log(error);
-            }).finally(function () {
-                me.estaRegistrando = false;
             });
-        },
-        async registrarArqueo() {
-            let me = this;
-            const totalArqueo = parseFloat(this.totalEfectivo.toFixed(2));
+    },
 
-            try {
-                const saldoCaja = parseFloat((await this.obtenerSaldoCaja()).toFixed(2));
+    cambiarPagina(page, buscar, criterio) {
+        let me = this;
+        me.pagination.current_page = page;
+        me.listarCaja(page, buscar, criterio);
+    },
+    registrarCaja() {
+        if (this.estaRegistrando) return;
+        this.estaRegistrando = true;
 
-                if (totalArqueo === 0) {
-                    this.$toast.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: 'Debe ingresar al menos un valor para el arqueo',
-                        life: 3000
-                    });
-                    return;
-                }
-
-                const diferencia = Math.abs(totalArqueo - saldoCaja);
-                if (diferencia > 0.01) {
-                    this.$toast.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: `El total del arqueo (${totalArqueo.toFixed(2)}) no coincide con el saldo de caja (${saldoCaja.toFixed(2)})`,
-                        life: 3000
-                    });
-                    return;
-                }
-
-                const response = await axios.post('/caja/arqueoCaja', {
-                    'idcaja': this.id,
-                    'billete200': this.billete200,
-                    'billete100': this.billete100,
-                    'billete50': this.billete50,
-                    'billete20': this.billete20,
-                    'billete10': this.billete10,
-                    'moneda5': this.moneda5,
-                    'moneda2': this.moneda2,
-                    'moneda1': this.moneda1,
-                    'moneda050': this.moneda050,
-                    'moneda020': this.moneda020,
-                    'moneda010': this.moneda010,
-                    'totalArqueo': totalArqueo
-                });
-
-                me.cerrarModal5();
-                me.arqueoRealizado = true; // Set the flag to true after successful arqueo
-                this.limpiarDatosArqueo();
-                me.$toast.add({
-                    severity: 'success',
-                    summary: 'Éxito',
-                    detail: 'Arqueo de caja registrado correctamente',
-                    life: 3000
-                });
-                this.listarCaja(1, this.buscar, this.criterio);
-            } catch (error) {
-                console.error('Error al registrar el arqueo:', error);
-                me.$toast.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'No se pudo registrar el arqueo de caja',
-                    life: 3000
-                });
-            }
-        },
-
-        limpiarDatosArqueo() {
-            // Limpia los datos del arqueo para que el modal comience fresco si se vuelve a abrir
-            this.billete200 = 0;
-            this.billete100 = 0;
-            this.billete50 = 0;
-            this.billete20 = 0;
-            this.billete10 = 0;
-            this.moneda5 = 0;
-            this.moneda2 = 0;
-            this.moneda1 = 0;
-            this.moneda050 = 0;
-            this.moneda020 = 0;
-            this.moneda010 = 0;
-            this.totalBilletes = 0;
-            this.totalMonedas = 0;
-        },
-
-        obtenerSaldoCaja() {
-            return new Promise((resolve, reject) => {
-                axios.get(`/caja/saldo/${this.id}`)
-                    .then(response => resolve(parseFloat(response.data.saldo)))
-                    .catch(error => {
-                        console.error('Error al obtener el saldo de caja:', error);
-                        reject(error);
-                    });
-            });
-        },
-
-        depositar() {
-            let me = this;
-
-            // Validar que el importe no sea negativo o nulo
-            if (!this.depositos || parseFloat(this.depositos) <= 0) {
-                swal(
-                    'Error!',
-                    'El importe del depósito debe ser mayor a 0.',
-                    'error'
-                );
-                return;
-            }
-
-            axios.put('/caja/depositar', {
-                'depositos': parseFloat(this.depositos),
-                'id': this.id,
-                'transaccion': `${this.Desdepositos} (movimiento de ingreso)`,
-            }).then(function (response) {
-                me.cerrarModal2();
-
-                // Actualizar saldo en el frontend
-                me.listarCaja(1, '', 'id');
-                swal(
-                    'Información!',
-                    'Depósito realizado con éxito.',
-                    'success'
-                );
-            }).catch(function (error) {
-                console.error('Error en el depósito:', error);
-                swal(
-                    'Error!',
-                    'No se pudo realizar el depósito.',
-                    'error'
-                );
-            });
-        },
-
-        retirar() {
-            let me = this;
-
-            // Validar que el importe no sea negativo o nulo
-            if (!this.salidas || parseFloat(this.salidas) <= 0) {
-                swal(
-                    'Error!',
-                    'El importe del retiro debe ser mayor a 0.',
-                    'error'
-                );
-                return;
-            }
-
-            axios.put('/caja/retirar', {
-                'salidas': parseFloat(this.salidas),
-                'id': this.id,
-                'transaccion': `${this.Dessalidas} (movimiento de egreso)`,
-            }).then(function (response) {
-                me.cerrarModal3();
-
-                // Actualizar saldo en el frontend
-                me.listarCaja(1, '', 'id');
-                swal(
-                    'Información!',
-                    'Retiro realizado con éxito.',
-                    'success'
-                );
-            }).catch(function (error) {
-                console.error('Error en el retiro:', error);
-                swal(
-                    'Error!',
-                    'No se pudo realizar el retiro.',
-                    'error'
-                );
-            });
-        },
-        calcularTotalBilletes() {
-            const billete200 = parseFloat(this.billete200) || 0;
-            const billete100 = parseFloat(this.billete100) || 0;
-            const billete50 = parseFloat(this.billete50) || 0;
-            const billete20 = parseFloat(this.billete20) || 0;
-            const billete10 = parseFloat(this.billete10) || 0;
-
-            this.totalBilletes = billete200 * 200 + billete100 * 100 + billete50 * 50 + billete20 * 20 + billete10 * 10;
-        },
-
-        calcularTotalMonedas() {
-            const moneda5 = parseFloat(this.moneda5) || 0;
-            const moneda2 = parseFloat(this.moneda2) || 0;
-            const moneda1 = parseFloat(this.moneda1) || 0;
-            const moneda050 = parseFloat(this.moneda050) || 0;
-            const moneda020 = parseFloat(this.moneda020) || 0;
-            const moneda010 = parseFloat(this.moneda010) || 0;
-
-            this.totalMonedas = moneda5 * 5 + moneda2 * 2 + moneda1 * 1 + moneda050 * 0.50 + moneda020 * 0.20 + moneda010 * 0.10;
-        },
-        async cerrarCaja(id) {
-            this.modalResumen = true;
-            console.log('cerrarCaja llamado con id:', id);
-            try {
-                const response = await axios.get(`/caja/resumen/${id}`);
-                console.log('Respuesta recibida:', response.data);
-                this.resumenCaja = response.data;
-                console.log('modalResumen establecido a true:', this.modalResumen);
-            } catch (error) {
-                console.error('Error al obtener el resumen de caja:', error);
-                this.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener el resumen de caja', life: 3000 });
-            }
-        },
-
-        async realizarCierreCaja() {
-    try {
-        // Verificar si se ha realizado el arqueo
-        if (!this.arqueoRealizado) {
-            this.$toast.add({
-                severity: 'error', 
-                summary: 'Error', 
-                detail: 'Debe realizar el arqueo de caja antes de cerrarla', 
-                life: 3000 
-            });
+        if (this.validarCaja()) {
+            this.estaRegistrando = false;
             return;
         }
 
-        // Obtener el saldo total de efectivo (resultado del arqueo)
-        const saldoArqueo = this.totalEfectivo;
+        let me = this;
+        let formData = new FormData();
+        formData.append('saldoInicial', this.saldoInicial);
 
-        // Obtener información detallada de la caja
-        const resumenCaja = await axios.get(`/caja/resumen/${this.resumenCaja.id}`);
-        const { 
-            saldoInicial,
-            pagosQR, 
-            ventasContado, 
-            totalIngresos,
-            saldoCaja
-        } = resumenCaja.data;
-
-        // Llamar al endpoint de cierre de caja
-        const response = await axios.put('/caja/cerrar', {
-            'id': this.resumenCaja.id,
-            'saldoFaltante': saldoArqueo
-        });
-
-        // Mostrar un mensaje detallado de cierre de caja
-        this.$toast.add({
-            severity: 'success', 
-            summary: 'Cierre de Caja', 
-            detail: `
-                Saldo Inicial: Bs. ${saldoInicial.toFixed(2)}
-                Ventas al Contado: Bs. ${ventasContado.toFixed(2)}
-                Pagos QR: Bs. ${pagosQR.toFixed(2)}
-                Saldo Total: Bs. ${saldoCaja.toFixed(2)}
-                Total Efectivo (Arqueo): Bs. ${saldoArqueo.toFixed(2)}
-            `, 
-            life: 5000 
-        });
-
-        // Refrescar la lista de cajas
-        await this.listarCaja(1, '', 'id');
-        
-        // Resetear estados
-        this.arqueoRealizado = false;
-        this.modalResumen = false;
-        this.resumenCaja = null;
-
-    } catch (error) {
-        console.error('Error al cerrar la caja:', error);
-        
-        // Manejo de errores específicos
-        const errorMessage = error.response && error.response.data && error.response.data.error 
-            ? error.response.data.error 
-            : 'No se pudo cerrar la caja';
-
-        this.$toast.add({ 
-            severity: 'error', 
-            summary: 'Error', 
-            detail: errorMessage, 
-            life: 3000 
-        });
-    }
-},
-        cajaAbierta() {
-            for (let i = 0; i < this.arrayCaja.length; i++) {
-                if (this.arrayCaja[i].estado) {
-                    return true;
-                }
+        axios.post('/caja/registrar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
             }
-            return false;
-        },
+        }).then(function (response) {
+            me.cerrarModal();
+            me.arqueoRealizado = false;
+            me.listarCaja(1, '', 'id');
+            swal(
+                'Aperturada!',
+                'Caja aperturada de forma satisfactoria!',
+                'success'
+            )
+        }).catch(function (error) {
+            console.log(error);
+        }).finally(function () {
+            me.estaRegistrando = false;
+        });
+    },
+    async registrarArqueo() {
+        let me = this;
+        const totalArqueo = parseFloat(this.totalEfectivo.toFixed(2));
 
-        validarCaja() {
-            this.errorCaja = 0;
-            this.errorMostrarMsjCaja = [];
+        try {
+            const saldoCaja = parseFloat((await this.obtenerSaldoCaja()).toFixed(2));
 
-            if (!this.saldoInicial) this.errorMostrarMsjCaja.push("El saldo inicial no puede estar vacío.");
+            if (totalArqueo === 0) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Debe ingresar al menos un valor para el arqueo',
+                    life: 3000
+                });
+                return;
+            }
 
-            if (this.errorMostrarMsjCaja.length) this.errorCaja = 1;
+            const diferencia = Math.abs(totalArqueo - saldoCaja);
+            if (diferencia > 0.01) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: `El total del arqueo (${totalArqueo.toFixed(2)}) no coincide con el saldo de caja (${saldoCaja.toFixed(2)})`,
+                    life: 3000
+                });
+                return;
+            }
 
-            return this.errorCaja;
-        },
-        cerrarModal() {
-            this.modal = false;
-            this.tituloModal = '';
-            this.idsucursal = 0;
-            this.sucursal = '';
-            this.saldoInicial = '';
-        },
+            const response = await axios.post('/caja/arqueoCaja', {
+                'idcaja': this.id,
+                'billete200': this.billete200,
+                'billete100': this.billete100,
+                'billete50': this.billete50,
+                'billete20': this.billete20,
+                'billete10': this.billete10,
+                'moneda5': this.moneda5,
+                'moneda2': this.moneda2,
+                'moneda1': this.moneda1,
+                'moneda050': this.moneda050,
+                'moneda020': this.moneda020,
+                'moneda010': this.moneda010,
+                'totalArqueo': totalArqueo
+            });
 
-        cerrarModal2() {
-            this.modal2 = false;
-            this.depositos = '';
-            this.Desdepositos = '';
-        },
-
-        cerrarModal3() {
-            this.modal3 = false;
-            this.salidas = '';
-            this.Dessalidas = '';
-        },
-
-        cerrarModal4() {
-            this.modal4 = false;
-        },
-
-        cerrarModal5() {
-            this.modal5 = false;
+            me.cerrarModal5();
+            me.arqueoRealizado = true;
             this.limpiarDatosArqueo();
-        },
+            me.$toast.add({
+                severity: 'success',
+                summary: 'Éxito',
+                detail: 'Arqueo de caja registrado correctamente',
+                life: 3000
+            });
+            this.listarCaja(1, this.buscar, this.criterio);
+        } catch (error) {
+            console.error('Error al registrar el arqueo:', error);
+            me.$toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo registrar el arqueo de caja',
+                life: 3000
+            });
+        }
+    },
 
-        abrirModal(modelo, accion, data = []) {
-            switch (modelo) {
-                case "caja":
-                    {
-                        switch (accion) {
-                            case 'registrar':
-                                {
-                                    if (this.cajaAbierta()) {
-                                        swal(
-                                            'Ya existe una caja abierta!',
-                                            'Por favor realice el cierre de la caja e intente de nuevo.',
-                                            'error'
-                                        )
-                                        return;
-                                    }
+    limpiarDatosArqueo() {
+        this.billete200 = 0;
+        this.billete100 = 0;
+        this.billete50 = 0;
+        this.billete20 = 0;
+        this.billete10 = 0;
+        this.moneda5 = 0;
+        this.moneda2 = 0;
+        this.moneda1 = 0;
+        this.moneda050 = 0;
+        this.moneda020 = 0;
+        this.moneda010 = 0;
+        this.totalBilletes = 0;
+        this.totalMonedas = 0;
+    },
 
-                                    this.modal = true;
-                                    this.tituloModal = 'Apertura de Caja Sucursal: ';
-                                    this.saldoInicial = '';
+    obtenerSaldoCaja() {
+        return new Promise((resolve, reject) => {
+            axios.get(`/caja/saldo/${this.id}`)
+                .then(response => resolve(parseFloat(response.data.saldo)))
+                .catch(error => {
+                    console.error('Error al obtener el saldo de caja:', error);
+                    reject(error);
+                });
+        });
+    },
 
-                                    this.tipoAccion = 1;
-                                    break;
-                                }
-                        }
-                    }
-            }
-        },
+    depositar() {
+        let me = this;
 
-        abrirModal2(modelo, accion, data = []) {
-            if (this.arqueoRealizado) {
+        if (!this.depositos || parseFloat(this.depositos) <= 0) {
+            swal(
+                'Error!',
+                'El importe del depósito debe ser mayor a 0.',
+                'error'
+            );
+            return;
+        }
+
+        axios.put('/caja/depositar', {
+            'depositos': parseFloat(this.depositos),
+            'id': this.id,
+            'transaccion': `${this.Desdepositos} (movimiento de ingreso)`,
+        }).then(function (response) {
+            me.cerrarModal2();
+            me.listarCaja(1, '', 'id');
+            swal(
+                'Información!',
+                'Depósito realizado con éxito.',
+                'success'
+            );
+        }).catch(function (error) {
+            console.error('Error en el depósito:', error);
+            swal(
+                'Error!',
+                'No se pudo realizar el depósito.',
+                'error'
+            );
+        });
+    },
+
+    retirar() {
+        let me = this;
+
+        if (!this.salidas || parseFloat(this.salidas) <= 0) {
+            swal(
+                'Error!',
+                'El importe del retiro debe ser mayor a 0.',
+                'error'
+            );
+            return;
+        }
+
+        axios.put('/caja/retirar', {
+            'salidas': parseFloat(this.salidas),
+            'id': this.id,
+            'transaccion': `${this.Dessalidas} (movimiento de egreso)`,
+        }).then(function (response) {
+            me.cerrarModal3();
+            me.listarCaja(1, '', 'id');
+            swal(
+                'Información!',
+                'Retiro realizado con éxito.',
+                'success'
+            );
+        }).catch(function (error) {
+            console.error('Error en el retiro:', error);
+            swal(
+                'Error!',
+                'No se pudo realizar el retiro.',
+                'error'
+            );
+        });
+    },
+
+    calcularTotalBilletes() {
+        const billete200 = parseFloat(this.billete200) || 0;
+        const billete100 = parseFloat(this.billete100) || 0;
+        const billete50 = parseFloat(this.billete50) || 0;
+        const billete20 = parseFloat(this.billete20) || 0;
+        const billete10 = parseFloat(this.billete10) || 0;
+
+        this.totalBilletes = billete200 * 200 + billete100 * 100 + billete50 * 50 + billete20 * 20 + billete10 * 10;
+    },
+
+    calcularTotalMonedas() {
+        const moneda5 = parseFloat(this.moneda5) || 0;
+        const moneda2 = parseFloat(this.moneda2) || 0;
+        const moneda1 = parseFloat(this.moneda1) || 0;
+        const moneda050 = parseFloat(this.moneda050) || 0;
+        const moneda020 = parseFloat(this.moneda020) || 0;
+        const moneda010 = parseFloat(this.moneda010) || 0;
+
+        this.totalMonedas = moneda5 * 5 + moneda2 * 2 + moneda1 * 1 + moneda050 * 0.50 + moneda020 * 0.20 + moneda010 * 0.10;
+    },
+
+    async cerrarCaja(id) {
+        this.modalResumen = true;
+        try {
+            const response = await axios.get(`/caja/resumen/${id}`);
+            this.resumenCaja = response.data;
+        } catch (error) {
+            console.error('Error al obtener el resumen de caja:', error);
+            this.$toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener el resumen de caja', life: 3000 });
+        }
+    },
+
+    async realizarCierreCaja() {
+        try {
+            if (!this.arqueoRealizado) {
                 this.$toast.add({
-                    severity: 'warn',
-                    summary: 'Advertencia',
-                    detail: 'No se pueden realizar depósitos después del arqueo de caja',
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Debe realizar el arqueo de caja antes de cerrarla',
                     life: 3000
                 });
                 return;
             }
-            switch (modelo) {
-                case "cajaDepositar": {
+
+            const saldoArqueo = this.totalEfectivo;
+            const resumenCaja = await axios.get(`/caja/resumen/${this.resumenCaja.id}`);
+            const {
+                saldoInicial,
+                pagosQR,
+                ventasContado,
+                ventasAdelantadas,
+                totalIngresos,
+                saldoCaja
+            } = resumenCaja.data;
+
+            const saldoFaltante = saldoCaja - saldoArqueo;
+
+            await axios.put('/caja/cerrar', {
+                'id': this.resumenCaja.id,
+                'saldoFaltante': saldoFaltante
+            });
+
+            this.$toast.add({
+                severity: 'success',
+                summary: 'Cierre de Caja',
+                detail: `
+Saldo Inicial: Bs. ${saldoInicial.toFixed(2)}
+Ventas al Contado: Bs. ${ventasContado.toFixed(2)}
+Pagos QR: Bs. ${pagosQR.toFixed(2)}
+Ventas Adelantadas: Bs. ${ventasAdelantadas.toFixed(2)}
+Saldo Total (Sistema): Bs. ${saldoCaja.toFixed(2)}
+Total Efectivo (Arqueo): Bs. ${saldoArqueo.toFixed(2)}
+Diferencia (Faltante/Sobrante): Bs. ${saldoFaltante.toFixed(2)}
+                `,
+                life: 5000
+            });
+
+            await this.listarCaja(1, '', 'id');
+            this.arqueoRealizado = false;
+            this.modalResumen = false;
+        } catch (error) {
+            console.error('Error al realizar el cierre de caja:', error);
+            this.$toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'No se pudo realizar el cierre de caja',
+                life: 3000
+            });
+        }
+    } ,
+
+
+    cajaAbierta() {
+        for (let i = 0; i < this.arrayCaja.length; i++) {
+            if (this.arrayCaja[i].estado) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    validarCaja() {
+        this.errorCaja = 0;
+        this.errorMostrarMsjCaja = [];
+
+        if (!this.saldoInicial) this.errorMostrarMsjCaja.push("El saldo inicial no puede estar vacío.");
+
+        if (this.errorMostrarMsjCaja.length) this.errorCaja = 1;
+
+        return this.errorCaja;
+    },
+    cerrarModal() {
+        this.modal = false;
+        this.tituloModal = '';
+        this.idsucursal = 0;
+        this.sucursal = '';
+        this.saldoInicial = '';
+    },
+
+    cerrarModal2() {
+        this.modal2 = false;
+        this.depositos = '';
+        this.Desdepositos = '';
+    },
+
+    cerrarModal3() {
+        this.modal3 = false;
+        this.salidas = '';
+        this.Dessalidas = '';
+    },
+
+    cerrarModal4() {
+        this.modal4 = false;
+    },
+
+    cerrarModal5() {
+        this.modal5 = false;
+        this.limpiarDatosArqueo();
+    },
+
+    abrirModal(modelo, accion, data = []) {
+        switch (modelo) {
+            case "caja":
+                {
                     switch (accion) {
-                        case 'depositar': {
-                            this.modal2 = true;
-                            this.tituloModal2 = 'Depositar Dinero';
-                            this.id = data['id'];
-                            this.tipoAccion = 2;
-                            break;
-                        }
-                    }
-                }
-            }
-        },
-
-        abrirModal3(modelo, accion, data = []) {
-            if (this.arqueoRealizado) {
-                this.$toast.add({
-                    severity: 'warn',
-                    summary: 'Advertencia',
-                    detail: 'No se pueden realizar retiros después del arqueo de caja',
-                    life: 3000
-                });
-                return;
-            }
-            switch (modelo) {
-                case "cajaRetirar": {
-                    switch (accion) {
-                        case 'retirar': {
-                            this.modal3 = true;
-                            this.tituloModal3 = 'Retirar Dinero';
-                            this.id = data['id'];
-                            this.tipoAccion = 3;
-                            break;
-                        }
-                    }
-                }
-            }
-        },
-        abrirModal4(modelo, accion, id) {
-            switch (modelo) {
-                case "cajaVer":
-                    {
-                        switch (accion) {
-                            case 'ver':
-                                {
-                                    this.modal4 = true;
-                                    this.tituloModal4 = 'Transacciones Caja';
-
-                                    let me = this;
-                                    var url = '/transacciones/' + id;
-                                    axios.get(url).then(function (response) {
-                                        var respuesta = response.data;
-
-                                        console.log(respuesta);
-                                        me.arrayTransacciones = respuesta.transacciones.data;
-                                        // me.pagination= respuesta.pagination;
-                                        me.ArrayEgresos = respuesta.ingresos;
-                                        me.ArrayIngresos = respuesta.ventas.data;
-
-                                        me.egreso = respuesta.ingresos;
-                                        me.ingreso = respuesta.ventas;
-                                        me.extra = respuesta.transacciones;
-                                    })
-                                        .catch(function (error) {
-                                            console.log(error);
-                                        });
-
-                                    break;
+                        case 'registrar':
+                            {
+                                if (this.cajaAbierta()) {
+                                    swal(
+                                        'Ya existe una caja abierta!',
+                                        'Por favor realice el cierre de la caja e intente de nuevo.',
+                                        'error'
+                                    )
+                                    return;
                                 }
-                        }
-                    }
-            }
-        },
 
-        async abrirModal5(modelo, accion, id) {
-            switch (modelo) {
-                case "arqueoCaja": {
-                    switch (accion) {
-                        case 'contar': {
-                            this.limpiarDatosArqueo();
-                            this.modal5 = true;
-                            this.tituloModal5 = 'Arqueo de Caja';
-                            this.id = id;
-                            this.tipoAccion = 5;
+                                this.modal = true;
+                                this.tituloModal = 'Apertura de Caja Sucursal: ';
+                                this.saldoInicial = '';
 
-                            // Obtener el saldo del sistema
-                            try {
-                                const response = await axios.get(`/caja/saldo/${id}`);
-                                this.saldoSistema = parseFloat(response.data.saldo).toFixed(2);
-                            } catch (error) {
-                                console.error('Error al obtener el saldo:', error);
-                                this.$toast.add({
-                                    severity: 'error',
-                                    summary: 'Error',
-                                    detail: 'No se pudo obtener el saldo de caja',
-                                    life: 3000
-                                });
+                                this.tipoAccion = 1;
+                                break;
                             }
-                            break;
-                        }
+                    }
+                }
+        }
+    },
+
+    abrirModal2(modelo, accion, data = []) {
+        if (this.arqueoRealizado) {
+            this.$toast.add({
+                severity: 'warn',
+                summary: 'Advertencia',
+                detail: 'No se pueden realizar depósitos después del arqueo de caja',
+                life: 3000
+            });
+            return;
+        }
+        switch (modelo) {
+            case "cajaDepositar": {
+                switch (accion) {
+                    case 'depositar': {
+                        this.modal2 = true;
+                        this.tituloModal2 = 'Depositar Dinero';
+                        this.id = data['id'];
+                        this.tipoAccion = 2;
+                        break;
                     }
                 }
             }
         }
     },
+
+    abrirModal3(modelo, accion, data = []) {
+        if (this.arqueoRealizado) {
+            this.$toast.add({
+                severity: 'warn',
+                summary: 'Advertencia',
+                detail: 'No se pueden realizar retiros después del arqueo de caja',
+                life: 3000
+            });
+            return;
+        }
+        switch (modelo) {
+            case "cajaRetirar": {
+                switch (accion) {
+                    case 'retirar': {
+                        this.modal3 = true;
+                        this.tituloModal3 = 'Retirar Dinero';
+                        this.id = data['id'];
+                        this.tipoAccion = 3;
+                        break;
+                    }
+                }
+            }
+        }
+    },
+    abrirModal4(modelo, accion, id) {
+        switch (modelo) {
+            case "cajaVer":
+                {
+                    switch (accion) {
+                        case 'ver':
+                            {
+                                this.modal4 = true;
+                                this.tituloModal4 = 'Transacciones Caja';
+
+                                let me = this;
+                                var url = '/transacciones/' + id;
+                                axios.get(url).then(function (response) {
+                                    var respuesta = response.data;
+
+                                    me.arrayTransacciones = respuesta.transacciones.data;
+                                    me.ArrayEgresos = respuesta.ingresos;
+                                    me.ArrayIngresos = respuesta.ventas.data;
+
+                                    me.egreso = respuesta.ingresos;
+                                    me.ingreso = respuesta.ventas;
+                                    me.extra = respuesta.transacciones;
+                                })
+                                    .catch(function (error) {
+                                        console.log(error);
+                                    });
+
+                                break;
+                            }
+                    }
+                }
+        }
+    },
+
+    async abrirModal5(modelo, accion, id) {
+        switch (modelo) {
+            case "arqueoCaja": {
+                switch (accion) {
+                    case 'contar': {
+                        this.limpiarDatosArqueo();
+                        this.modal5 = true;
+                        this.tituloModal5 = 'Arqueo de Caja';
+                        this.id = id;
+                        this.tipoAccion = 5;
+
+                        try {
+                            const response = await axios.get(`/caja/saldo/${id}`);
+                            this.saldoSistema = parseFloat(response.data.saldo).toFixed(2);
+                        } catch (error) {
+                            console.error('Error al obtener el saldo:', error);
+                            this.$toast.add({
+                                severity: 'error',
+                                summary: 'Error',
+                                detail: 'No se pudo obtener el saldo de caja',
+                                life: 3000
+                            });
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+},
 
     watch: {
         'billete200': 'calcularTotalBilletes',
