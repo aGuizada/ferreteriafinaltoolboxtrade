@@ -5,35 +5,7 @@
             <li class="breadcrumb-item"><a class="text-decoration-none" href="/">Escritorio</a></li>
         </ol> -->
         <div class="container-fluid">
-            <div class="row d-flex mt-2 mb-2 justify-content-end align-items-center">
-                <label class="col-auto text-primary">Periodo</label>
-                <div class="col-md-2 col-auto">
-                    <select class="form-select" v-model="tipoPeriodo">
-                        <option selected value="Mes">Este mes</option>
-                        <option value="Año">Este año</option>
-                        <option value="Personalizado">Personalizado</option>
-                    </select>
-                </div>
-                <template v-if="tipoPeriodo == 'Personalizado'">
-
-                    <div class="col-auto">
-                        <label for="fechaInicio">Fecha de Inicio:</label>
-
-                        <input type="date" class="form-control" id="fechaInicio" @change="fetchData()"
-                            v-model="fechaInicio">
-                    </div>
-
-                    <div class="col-auto">
-                        <label for="fechaFin">Fecha de Fin:</label>
-
-                        <input type="date" class="form-control" id="fechaFin" @change="fetchData()" v-model="fechaFin">
-                    </div>
-                    <!-- <div class="col-auto">
-        <button class="btn btn-primary" @click="obtenerTopVendedores">Obtener Top de Vendedores</button>
-    </div> -->
-                </template>
-
-            </div>
+       
 
             <div class="row d-flex justify-content-between">
                 <square-item :icono="'fa fa-usd'" :titulo="'Ventas'" :moneda="monedaPrincipal[1]"

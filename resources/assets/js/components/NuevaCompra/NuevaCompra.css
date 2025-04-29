@@ -121,6 +121,28 @@
     }
 }
 
+.calendar-container {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.calendar-container .p-calendar {
+    width: 100%;
+}
+
+.p-calendar-sm .p-calendar-w-btn .p-inputtext {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.p-calendar-sm .p-datepicker {
+    min-width: 250px;
+}
+
+.p-calendar-sm .p-datepicker-header {
+    padding: 0.3rem;
+}
+
 /* Tabla vacia */
 .imagen-tabla-vacia {
     display: flex;

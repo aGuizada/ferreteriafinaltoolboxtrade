@@ -479,4 +479,23 @@ class IngresoController extends Controller
         $ingreso->estado = 0;
         $ingreso->save();
     }
+    public function actualizarPrecios(Request $request)
+    {
+        try {
+            $articulo = Articulo::findOrFail($request->id);
+            $articulo->precio_costo_unid = $request->precio_costo_unid;
+            $articulo->precio_costo_paq = $request->precio_costo_paq;
+            $articulo->save();
+    
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Precios actualizados correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al actualizar precios: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

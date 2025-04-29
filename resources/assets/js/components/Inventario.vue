@@ -84,7 +84,7 @@
                 <div class="col-12 col-md-6">
                   <h4>Total Inversión:</h4>
                   <p class="fw-bold fs-4">
-                    ${{ totalInversion.toFixed(2) }}
+                    BS {{ totalInversion.toFixed(2) }}
                   </p>
                 </div>
                 <div class="col-12 col-md-6">

@@ -1151,21 +1151,30 @@
 
             <!-- Stock disponible -->
             <div class="alert mb-3" 
-                 :class="{
-                   'alert-success': arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad > arraySeleccionado.stock / (unidadPaquete || 1),
-                   'alert-warning': arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad <= arraySeleccionado.stock / (unidadPaquete || 1),
-                   'alert-danger': arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad <= 0
-                 }">
-              <div class="d-flex align-items-center">
-                <i class="bi bi-box-seam me-2"></i>
-                <span class="fw-bold">Stock disponible:</span>
-              </div>
-              <div class="ms-4">
-                {{ arraySeleccionado.saldo_stock / (unidadPaquete || 1) - cantidad }}
-                {{ unidadPaquete == 1 ? "Unidades" : "Paquetes" }}
-              </div>
-            </div>
-
+     :class="{
+       'alert-success': calcularStockDisponible > 5,
+       'alert-warning': calcularStockDisponible <= 5 && calcularStockDisponible > 0,
+       'alert-danger': calcularStockDisponible <= 0
+     }">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-box-seam me-2"></i>
+    <span class="fw-bold">Stock disponible:</span>
+    <span class="ms-2">
+      <span class="ms-2">
+        <span class="ms-2">
+          {{ calcularStockDisponible }} {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
+        </span>
+        <div class="ms-4 mt-1" v-if="calcularStockDisponible > 0">
+          <small>
+            Después de esta venta: 
+            <strong>{{ Math.max(0, calcularStockDisponible - cantidad) }}</strong>
+            {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
+          </small>
+        </div>
+      </span>
+    </span>
+  </div>
+</div>
             <!-- Descripción -->
             <div class="mb-3">
               <h6 class="fw-bold mb-2">
@@ -1180,33 +1189,50 @@
 
           <!-- Columna central: Precios -->
           <div class="col-md-4">
-            <div class="mb-4">
-              <h6 class="fw-bold mb-3">
-                <i class="bi bi-tag me-2"></i>
-                PRECIOS
-              </h6>
-              <div class="list-group">
-                <div v-for="(precio, key) in [
-                  { nombre: 'Precio Uno', valor: arraySeleccionado.precio_uno },
-                  { nombre: 'Precio Dos', valor: arraySeleccionado.precio_dos },
-                  { nombre: 'Precio Tres', valor: arraySeleccionado.precio_tres },
-                  { nombre: 'Precio Cuatro', valor: arraySeleccionado.precio_cuatro },
-                  { nombre: 'Precio Venta', valor: arraySeleccionado.precio_venta },
-                ]" :key="key" class="list-group-item border-0 px-0 py-1" v-if="precio.valor !== '0.0000'">
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" 
-                           :id="'precio_'+key" 
-                           :value="precio.valor" 
-                           v-model="precioSeleccionado"
-                           @change="seleccionarPrecio(precio.valor)">
-                    <label class="form-check-label" :for="'precio_'+key">
-                      {{ precio.nombre }}: {{ formatearPrecio(precio.valor) }}
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+  <div class="mb-4">
+    <h6 class="fw-bold mb-3">
+      <i class="bi bi-tag me-2"></i>
+      PRECIOS
+    </h6>
+    <div class="list-group">
+      <div
+        v-for="(precio, key) in [
+          { nombre: 'Precio Uno', valor: arraySeleccionado.precio_uno },
+          { nombre: 'Precio Dos', valor: arraySeleccionado.precio_dos },
+          { nombre: 'Precio Tres', valor: arraySeleccionado.precio_tres },
+          { nombre: 'Precio Cuatro', valor: arraySeleccionado.precio_cuatro },
+          { nombre: 'Precio Venta', valor: arraySeleccionado.precio_venta },
+          // Nuevo: Precio por Paquete
+          arraySeleccionado.precio_costo_paq && arraySeleccionado.precio_costo_paq !== '0.0000'
+            ? {
+                nombre: `Precio por Paquete`,
+                valor: arraySeleccionado.precio_costo_paq,
+                esPaquete: true
+              }
+            : null
+        ].filter(Boolean)"
+        :key="key"
+        class="list-group-item border-0 px-0 py-1"
+        v-if="precio.valor !== '0.0000'"
+      >
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="radio"
+            :id="'precio_'+key"
+            :value="precio.valor"
+            v-model="precioSeleccionado"
+            @change="seleccionarPrecio(precio)"
+          />
+          <label class="form-check-label" :for="'precio_'+key">
+            {{ precio.nombre }}: {{ formatearPrecio(precio.valor) }}
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
           <!-- Columna derecha: Detalles -->
           <div class="col-md-4">
@@ -1235,7 +1261,7 @@
                 <dd class="col-sm-7">{{ arraySeleccionado.nombre_medida || "No especificada" }}</dd>
 
                 <template v-if="arraySeleccionado.unidad_envase">
-                  <dt class="col-sm-5">cantidad bpaquete:</dt>
+                  <dt class="col-sm-5">Uds Paq:</dt>
                   <dd class="col-sm-7">{{ arraySeleccionado.unidad_envase }}</dd>
                 </template>
 
@@ -2215,9 +2241,23 @@ export default {
     },
 
     // Gestión de artículos
-    seleccionarPrecio(precio) {
-      this.precioSeleccionado = precio;
+    seleccionarPrecio(precioObj) {
+      // precioObj puede ser un string (valor) o un objeto {nombre, valor, esPaquete}
+      let valor = typeof precioObj === 'object' ? precioObj.valor : precioObj;
+      this.precioSeleccionado = valor;
+
+      // Si es el precio por paquete, cambiar a venta por paquete
+      if (
+        typeof precioObj === 'object' &&
+        precioObj.esPaquete
+      ) {
+        this.unidadPaquete = "paquete";
+      } else {
+        // Si selecciona cualquier otro precio, vuelve a unidad
+        this.unidadPaquete = "1";
+      }
     },
+  
     formatearPrecio(precio) {
       if (precio == null) return "N/A";
 
@@ -2312,7 +2352,7 @@ export default {
     },
     agregarDetalleModal(data) {
       this.codigo = data.codigo;
-      this.precioSeleccionado = data.precio_uno;
+      this.precioSeleccionado = data.precio_venta;
       this.unidadPaquete = "1";
       this.cerrarModal();
     },

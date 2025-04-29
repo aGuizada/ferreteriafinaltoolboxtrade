@@ -7,13 +7,7 @@
                   Cotizacion Venta
               </div>
               <div class="modal-body">
-                  <div class="row mx-2 flex justify-content-between">
-                      <!-- <p class="h4"> Cotizacion Venta:</p> -->
-                      <button type="button" class="btn btn-outline-success" @click="abrirVenta()">
-                              <i class="fa fa-shopping-cart"></i>
-                              Realizar Venta
-                      </button>
-                  </div>
+                 
                       <div>
                           <dl class="row">
                           <dt class="col-sm-3">ID:</dt>

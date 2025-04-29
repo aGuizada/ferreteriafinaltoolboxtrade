@@ -194,11 +194,6 @@ export const esquemaArticulos = yup.object().shape({
     .typeError("Debe ingresar un número válido")
     .min(0.01, "El stock minimo no puede ser menor o igual a 0"),
 
-  costo_compra: yup
-    .number()
-    .required("El costo de compra es obligatorio")
-    .typeError("Debe ingresar un número válido")
-    .min(0.01, "El costo de compra no puede ser menor o igual a 0"),
 
   codigo: yup.string().required("El código es obligatorio"),
   codigo_alfanumerico: yup.string(),

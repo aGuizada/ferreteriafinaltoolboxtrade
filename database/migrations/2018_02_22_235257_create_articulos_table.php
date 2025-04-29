@@ -45,7 +45,7 @@ class CreateArticulosTable extends Migration
             $table->foreign('idproveedor')->references('id')->on('proveedores');
 
             //new
-            $table->decimal('costo_compra', 10, 2);
+            $table->decimal('costo_compra', 10, 2)->nullable();
             $table->foreign('idmedida')->references('id')->on('medidas');
             $table->string('codigo_alfanumerico', 50)->nullable();// aumente el 23-01-2024
             $table->string('descripcion_fabrica', 50)->nullable();// aumente el 23-01-2024

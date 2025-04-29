@@ -227,10 +227,8 @@ Route::group(["middleware" => ["auth"]], function () {
         Route::post("/articulos/importar", "ArticuloController@importar")->name(
             "articulos.importar"
         );
-        Route::post(
-            "/articulo/actualizarPrecios",
-            "ArticuloController@editarCostoUnidadPaquete"
-        );
+        Route::post('/articulo/actualizarPrecios', 'ArticuloController@actualizarPrecios')->name('articulos.actualizarPrecios');
+
         Route::post(
             "/articulo/editarCostoUnidadPaquete",
             "ArticuloController@editarPrecioCompraVenta"

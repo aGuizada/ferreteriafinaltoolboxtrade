@@ -219,13 +219,7 @@
 
             <!-- Octava fila: Costos -->
             <div class="form-group row mb-4">
-                <div class="col-md-6">
-                    <label class="font-weight-bold" for="costocompra">Costo compra <span class="text-danger">*</span></label>
-                    <div class="p-inputgroup">
-                        <InputNumber id="costocompra" v-model="datosFormulario.costo_compra" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.costo_compra}" @input="validarCampo('costo_compra')"/>
-                    </div>
-                    <small class="p-error" v-if="errores.costo_compra"><strong>{{ errores.costo_compra }}</strong></small>
-                </div>
+              
                 <div class="col-md-6">
                     <label class="font-weight-bold" for="precioventa">Precio Venta <span class="text-danger">*</span></label>
                     <div class="p-inputgroup">
@@ -353,23 +347,7 @@
                         <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="p-inputgroup">
-                        <InputNumber 
-                            placeholder="Porcentaje" 
-                            v-model="precio.porcentage" 
-                            mode="decimal" 
-                            :minFractionDigits="2" 
-                            class="p-inputtext-sm"
-                        />
-                        <span class="p-inputgroup-addon">%</span>
-                        <Button 
-                            label="Calcular" 
-                            class="p-button-primary p-button-sm"
-                            @click="calcularPrecio(precio, index)" 
-                        />
-                    </div>
-                </div>
+               
             </div>
         </form>
 

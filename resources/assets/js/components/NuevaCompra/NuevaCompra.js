@@ -183,6 +183,13 @@ export default {
     },
 
     methods: {
+        toggleFechaVencimiento(articulo) {
+            if (articulo.fecha_vencimiento) {
+                articulo.fecha_vencimiento = null;
+            } else {
+                articulo.fecha_vencimiento = new Date().toISOString().split('T')[0];
+            }
+        },
 
         verificarCantidad(data) {
             return data.unidades <= 0;
@@ -547,11 +554,25 @@ export default {
         },
 
         onRowEditSave(event) {
-            //let { newData, index } = event;
-            //this.$set(this.array_articulos_seleccionados, index, newData);
-            this.listarPrecios();
+            const { newData, index } = event;
+            
+            // Validate prices
+            if (newData.precio_costo_unid <= 0 || newData.precio_costo_paq <= 0) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Los precios deben ser mayores a 0',
+                    life: 3000
+                });
+                return;
+            }
+        
+            // Show confirmation dialog
             this.displayConfirmation = true;
-            this.objeto_newData = event;
+            this.objeto_newData = {
+                newData: {...newData},
+                index: index
+            };
         },
 
         closeConfirmation() {
@@ -559,33 +580,50 @@ export default {
         },
 
         async actualizarCostosArticulo() {
-
             try {
                 let newData = this.objeto_newData.newData;
                 let index = this.objeto_newData.index;
-
-                const compraResponse = await axios.post('/articulo/actualizarPrecios', {
-                    newData
+        
+                const response = await axios.post('/articulo/actualizarPrecios', {
+                    id: newData.id,
+                    precio_costo_unid: parseFloat(newData.precio_costo_unid),
+                    precio_costo_paq: parseFloat(newData.precio_costo_paq)
                 });
-
-                if (compraResponse.data.status === 'success') {
-                    this.$set(this.array_articulos_seleccionados, index, newData);
-                    if (this.buscadorArticulos == null) {
-                        this.listarArticulo('');
-                    } else {
-                        this.listarArticulo(this.buscadorArticulos);
+        
+                if (response.data.status === 'success') {
+                    this.$toast.add({
+                        severity: 'success', 
+                        summary: 'Actualizado', 
+                        detail: 'Precios actualizados correctamente', 
+                        life: 3000
+                    });
+                    
+                    // Update prices in the selected items list
+                    this.array_articulos_seleccionados = this.array_articulos_seleccionados.map(item => 
+                        item.id === newData.id ? {...item, ...newData} : item
+                    );
+                    
+                    // Update prices in the complete list
+                    this.array_articulos_completo = this.array_articulos_completo.map(item => 
+                        item.id === newData.id ? {...item, ...newData} : item
+                    );
+        
+                    // Force update of subtotals
+                    const updatedItem = this.array_articulos_completo.find(item => item.id === newData.id);
+                    if (updatedItem) {
+                        this.updateSubtotal(updatedItem);
                     }
-                    this.$toast.add({severity:'success', summary: 'Actualizado', detail: compraResponse.data.message, life: 3000});
                 }
-
+            } catch (error) {
+                this.$toast.add({
+                    severity: 'error', 
+                    summary: 'Error', 
+                     life: 3000
+                });
+            } finally {
+                this.displayConfirmation = false;
                 this.objeto_newData = null;
             }
-            catch (error) {
-                let errorMessage = 'Error al actualizar los costos del articulo';
-                this.$toast.add({severity:'error', summary: 'Error', detail: errorMessage, life: 3000});
-            }
-
-            this.displayConfirmation = false;
         },
 
         onRowExpand(event) {
