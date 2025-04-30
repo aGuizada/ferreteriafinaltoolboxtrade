@@ -203,7 +203,7 @@
                     <label class="font-weight-bold" for="preciounitario">Costo compra por Unidad <span class="text-danger">*</span></label>
                     <div class="p-inputgroup">
                         <InputNumber id="preciounitario" v-model="datosFormulario.precio_costo_unid" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_costo_unid}" @input="validarCampo('precio_costo_unid')"/>
-                        <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoUnid" />
+                        <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
                     </div>
                     <small class="p-error" v-if="errores.precio_costo_unid"><strong>{{ errores.precio_costo_unid }}</strong></small>
                 </div>
@@ -211,22 +211,61 @@
                     <label class="font-weight-bold" for="preciopaquete">Costo compra por Paquete <span class="text-danger">*</span></label>
                     <div class="p-inputgroup">
                         <InputNumber id="preciopaquete" v-model="datosFormulario.precio_costo_paq" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_costo_paq}" @input="validarCampo('precio_costo_paq')"/>
-                        <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoPaq" />
+                        <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
                     </div>
                     <small class="p-error" v-if="errores.precio_costo_paq"><strong>{{ errores.precio_costo_paq }}</strong></small>
                 </div>
             </div>
 
-            <!-- Octava fila: Costos -->
             <div class="form-group row mb-4">
-              
-                <div class="col-md-6">
-                    <label class="font-weight-bold" for="precioventa">Precio Venta <span class="text-danger">*</span></label>
-                    <div class="p-inputgroup">
-                        <InputNumber id="precioventa" v-model="datosFormulario.precio_venta" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_venta}" @input="validarCampo('precio_venta')"/>
-                    </div><small class="p-error" v-if="errores.precio_venta"><strong>{{ errores.precio_venta }}</strong></small>
-                </div>
-            </div>
+    <!-- Columna 1: PRECIO VENTA -->
+    <div class="col-md-6">
+        <label class="font-weight-bold" for="precioventa">PRECIO VENTA <span class="text-danger">*</span></label>
+        <div class="p-inputgroup">
+            <InputNumber id="precioventa" v-model="datosFormulario.precio_venta" placeholder="Sin decimales" class="p-inputtext-sm w-full" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_venta}" @input="validarCampo('precio_venta')"/>
+            <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
+        </div>
+        <small class="p-error" v-if="errores.precio_venta"><strong>{{ errores.precio_venta }}</strong></small>
+    </div>
+    <!-- Columna 2: Primer precio dinámico -->
+    <div class="col-md-6" v-if="precios[0]">
+        <label class="font-weight-bold">{{ precios[0].nombre_precio }}:</label>
+        <div class="p-inputgroup">
+            <InputNumber v-model="precio_uno" placeholder="Precio" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm w-full"/>
+            <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
+        </div>
+    </div>
+</div>
+<div class="form-group row mb-4" v-if="precios[1] || precios[2]">
+    <!-- Columna 1: Segundo precio dinámico -->
+    <div class="col-md-6" v-if="precios[1]">
+        <label class="font-weight-bold">{{ precios[1].nombre_precio }}:</label>
+        <div class="p-inputgroup">
+            <InputNumber v-model="precio_dos" placeholder="Precio" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm w-full"/>
+            <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
+        </div>
+    </div>
+    <!-- Columna 2: Tercer precio dinámico -->
+    <div class="col-md-6" v-if="precios[2]">
+        <label class="font-weight-bold">{{ precios[2].nombre_precio }}:</label>
+        <div class="p-inputgroup">
+            <InputNumber v-model="precio_tres" placeholder="Precio" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm w-full"/>
+            <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
+        </div>
+    </div>
+</div>
+<div class="form-group row mb-4" v-if="precios[3]">
+    <!-- Columna 1: Cuarto precio dinámico -->
+    <div class="col-md-6">
+        <label class="font-weight-bold">{{ precios[3].nombre_precio }}:</label>
+        <div class="p-inputgroup">
+            <InputNumber v-model="precio_cuatro" placeholder="Precio" mode="decimal" :minFractionDigits="2" :maxFractionDigits="2" class="p-inputtext-sm w-full"/>
+            <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
+        </div>
+    </div>
+</div>
+
+          
 
             <!-- Novena fila: Switches de control -->
             <div class="form-group row mb-4">
@@ -302,53 +341,7 @@
             </div>
 
             <!-- Lista de precios -->
-            <div v-for="(precio, index) in precios" :key="precio.id" class="form-group row mb-4">
-                <div class="col-12">
-                    <label class="font-weight-bold">{{ precio.nombre_precio }}:</label>
-                </div>
-                <div class="col-md-6">
-                    <div class="p-inputgroup">
-                        <InputNumber 
-                            v-if="index === 0" 
-                            v-model="precio_uno" 
-                            placeholder="Precio" 
-                            mode="decimal" 
-                            :minFractionDigits="2" 
-                            :maxFractionDigits="2" 
-                            class="p-inputtext-sm w-full"
-                        />
-                        <InputNumber 
-                            v-if="index === 1" 
-                            v-model="precio_dos" 
-                            placeholder="Precio" 
-                            mode="decimal" 
-                            :minFractionDigits="2" 
-                            :maxFractionDigits="2" 
-                            class="p-inputtext-sm w-full"
-                        />
-                        <InputNumber 
-                            v-if="index === 2" 
-                            v-model="precio_tres" 
-                            placeholder="Precio" 
-                            mode="decimal" 
-                            :minFractionDigits="2" 
-                            :maxFractionDigits="2" 
-                            class="p-inputtext-sm w-full"
-                        />
-                        <InputNumber 
-                            v-if="index === 3" 
-                            v-model="precio_cuatro" 
-                            placeholder="Precio" 
-                            mode="decimal" 
-                            :minFractionDigits="2" 
-                            :maxFractionDigits="2" 
-                            class="p-inputtext-sm w-full"
-                        />
-                        <span class="p-inputgroup-addon">{{ monedaPrincipal[1] }}</span>
-                    </div>
-                </div>
-               
-            </div>
+          
         </form>
 
         <!-- Footer con botones de acción -->

@@ -36,50 +36,46 @@
             :containerStyle="{width: '700px'}"
             :closeOnEscape="false"
         >
-            <form @submit.prevent="enviarFormulario">
-            <div class="p-fluid p-formgrid p-grid">
-                <div class="p-field p-col-12 p-md-6">
-                <label for="name">Nombre del proveedor *</label>
-                <InputText id="name" v-model="datosFormulario.nombre" @input="validarCampo('nombre')" :class="{'p-invalid': errores.nombre}" required />
-                <small class="p-error" v-if="errores.nombre"><strong>{{ errores.nombre }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="address">Dirección *</label>
-                <InputText id="address" v-model="datosFormulario.direccion" @input="validarCampo('direccion')" :class="{'p-invalid': errores.direccion}" required />
-                <small class="p-error" v-if="errores.direccion"><strong>{{ errores.direccion }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="documentType">Tipo de documento *</label>
-                <Dropdown id="documentType" v-model="datosFormulario.tipo_documento" :options="tiposDocumentos" optionLabel="etiqueta" optionValue="valor" @change="validarCampo('tipo_documento')" :class="{'p-invalid': errores.tipo_documento}" required />
-                <small class="p-error" v-if="errores.tipo_documento"><strong>{{ errores.tipo_documento }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="documentNumber">Nro de documento *</label>
-                <InputText id="documentNumber" v-model="datosFormulario.num_documento" @input="validarCampo('num_documento')" :class="{'p-invalid': errores.num_documento}" required />
-                <small class="p-error" v-if="errores.num_documento"><strong>{{ errores.num_documento }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="email">Correo electrónico *</label>
-                <InputText id="email" v-model="datosFormulario.email" @input="validarCampo('email')" :class="{'p-invalid': errores.email}" required />
-                <small class="p-error" v-if="errores.email"><strong>{{ errores.email }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="phone">Teléfono *</label>
-                <InputNumber :useGrouping="false" id="phone" v-model="datosFormulario.telefono" @input="validarCampo('telefono')" :class="{'p-invalid': errores.telefono}" required />
-                <small class="p-error" v-if="errores.telefono"><strong>{{ errores.telefono }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="contact">Contacto *</label>
-                <InputText id="contact" v-model="datosFormulario.contacto" @input="validarCampo('contacto')" :class="{'p-invalid': errores.contacto}" required />
-                <small class="p-error" v-if="errores.contacto"><strong>{{ errores.contacto }}</strong></small>
-                </div>
-                <div class="p-field p-col-12 p-md-6">
-                <label for="contactPhone">Teléfono de contacto *</label>
-                <InputNumber :useGrouping="false" id="contactPhone" v-model="datosFormulario.telefono_contacto" @input="validarCampo('telefono_contacto')" :class="{'p-invalid': errores.telefono_contacto}" required />
-                <small class="p-error" v-if="errores.telefono_contacto"><strong>{{ errores.telefono_contacto }}</strong></small>
-                </div>
-            </div>
-            </form>
+        <form @submit.prevent="enviarFormulario">
+              <div class="p-fluid p-formgrid p-grid">
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="nombre">Nombre del proveedor</label>
+                      <InputText id="nombre" v-model="datosFormulario.nombre" :class="{'p-invalid': errores.nombre}" @input="validarCampo('nombre')" />
+                      <small class="p-error" v-if="errores.nombre">{{ errores.nombre }}</small>
+                  </div>
+
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="direccion">Dirección</label>
+                      <InputText id="direccion" v-model="datosFormulario.direccion" :class="{'p-invalid': errores.direccion}" @input="validarCampo('direccion')" />
+                      <small class="p-error" v-if="errores.direccion">{{ errores.direccion }}</small>
+                  </div>
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="contacto">Contacto</label>
+                      <InputText id="contacto" v-model="datosFormulario.contacto" :class="{'p-invalid': errores.contacto}" @input="validarCampo('contacto')" />
+                      <small class="p-error" v-if="errores.contacto">{{ errores.contacto }}</small>
+                  </div>
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="tipo_documento">Tipo de documento</label>
+                      <Dropdown id="tipo_documento" v-model="datosFormulario.tipo_documento" :options="tiposDocumentos" optionLabel="etiqueta" optionValue="valor" placeholder="Selecciona un tipo de documento" :class="{'p-invalid': errores.tipo_documento}" @change="validarCampo('tipo_documento')" />
+                      <small class="p-error" v-if="errores.tipo_documento">{{ errores.tipo_documento }}</small>
+                  </div>
+
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="num_documento">Nro de documento</label>
+                      <InputText id="num_documento" v-model="datosFormulario.num_documento" :class="{'p-invalid': errores.num_documento}" @input="validarCampo('num_documento')" />
+                      <small class="p-error" v-if="errores.num_documento">{{ errores.num_documento }}</small>
+                  </div>
+
+
+            
+
+                  <div class="p-field p-col-12 p-md-6">
+                      <label for="telefono_contacto">Teléfono de contacto</label>
+                      <InputText  id="telefono_contacto" v-model="datosFormulario.telefono_contacto" :class="{'p-invalid': errores.telefono_contacto}" @input="validarCampo('telefono_contacto')" />
+                      <small class="p-error" v-if="errores.telefono_contacto">{{ errores.telefono_contacto }}</small>
+                  </div>
+              </div>
+          </form>
             <template #footer>
             <Button label="Cerrar" icon="pi pi-times" class="p-button-danger p-button-sm" @click="cerrarModal" />
             <Button v-if="tipoAccion == 1" class="p-button-success p-button-sm" label="Guardar" icon="pi pi-check" @click="enviarFormulario" />
