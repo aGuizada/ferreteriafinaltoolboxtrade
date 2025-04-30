@@ -297,7 +297,7 @@ class IngresoController extends Controller
             $ingreso->idcaja = $ultimaCaja->id;
             $ingreso->descuento_global = $request->descuento_global ?? 0;
             $ingreso->num_cuotas = $request->form_cuotas["num_cuotas"] ?? 0;
-            $ingreso->cuota_inicial = $request->form_cuotas["cuota_inicial"] ?? 0;
+            $ingreso->cuota_inicial = $request->form_cuotas["cuota_inicial"] ?? 0; // Acepta null/0
             $ingreso->tipo_pago_cuota = $request->form_cuotas["tipoPagoCuotaSeleccionado"]["nombre"] ?? "Ninguna";
             $ingreso->save();
 

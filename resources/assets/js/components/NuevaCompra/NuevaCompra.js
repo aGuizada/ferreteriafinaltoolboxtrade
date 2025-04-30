@@ -139,10 +139,8 @@ export default {
                     required,
                     minValueValue: minValue(1),
                 },
-                cuota_inicial: {
-                    required,
-                    minValueValue: minValue(1),
-                },
+                cuota_inicial: {}, 
+
                 tipoPagoCuotaSeleccionado: {
                     required
                 },
@@ -372,63 +370,139 @@ export default {
         },
 
         generarCuotas() {
-            if (this.validarCompraCredito()) {
-                const numCuotas = this.form_cuotas.num_cuotas;
-                const frecuenciaPagos = this.form_cuotas.frecuencia_pagos;
-                const montoTotal = this.saldoTotalCompra;
-                const cuotaInicial = this.form_cuotas.cuota_inicial;
-                
-                const montoRestante = montoTotal - cuotaInicial;
-                const montoPorCuota = montoRestante / numCuotas;
-
-                let fechaActual = new Date();
-                let saldoRestante = montoTotal;
-
-                this.array_cuotas_calculadas = [];
-
-                this.array_cuotas_calculadas.push({
-                    id: 0,
-                    fecha_pago: fechaActual.toISOString().split('T')[0],
-                    precio_cuota: cuotaInicial.toFixed(2),
-                    total_cancelado: cuotaInicial.toFixed(2),
-                    saldo_restante: (saldoRestante - cuotaInicial).toFixed(2),
-                    fecha_cancelado: fechaActual.toISOString().split('T')[0],
-                    estado: 'Cuota Inicial'
-                });
-
-                saldoRestante -= cuotaInicial;
-
-                for (let i = 1; i <= numCuotas; i++) {
-                    let diasRestantes = frecuenciaPagos;
-                    do {
-                        fechaActual.setDate(fechaActual.getDate() + 1);
-                        if (fechaActual.getDay() !== 0) { // 0 es domingo
-                            diasRestantes--;
-                        }
-                    } while (diasRestantes > 0);
-
-                    saldoRestante -= montoPorCuota;
-
-                    this.array_cuotas_calculadas.push({
-                        id: i,
-                        fecha_pago: fechaActual.toISOString().split('T')[0],
-                        precio_cuota: montoPorCuota.toFixed(2),
-                        total_cancelado: '0.00',
-                        saldo_restante: saldoRestante > 0 ? saldoRestante.toFixed(2) : '0.00',
-                        fecha_cancelado: '',
-                        estado: 'Pendiente'
-                    });
-                }
+            // Validar campos primero
+            if (!this.validarCompraCredito()) return;
+          
+            // Obtener valores del formulario
+            const total = parseFloat(this.saldoTotalCompra);
+            const numCuotas = parseInt(this.form_cuotas.num_cuotas);
+            const frecuenciaDias = parseInt(this.form_cuotas.frecuencia_pagos);
+            const cuotaInicial = parseFloat(this.form_cuotas.cuota_inicial) || 0; // Si es vacío o null, será 0
+          
+            // Validación importante
+            if (cuotaInicial >= total) {
+              this.$toast.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'La cuota inicial debe ser menor al total',
+                life: 3000
+              });
+              return;
             }
-        },
-
+          
+            // Calcular el monto a distribuir
+            const montoDistribuir = total - cuotaInicial;
+            const montoPorCuota = montoDistribuir / numCuotas;
+          
+            // Generar el array de cuotas
+            this.array_cuotas_calculadas = [];
+            let fechaPago = new Date(); // Fecha actual
+          
+            // 1. Agregar cuota inicial (si existe)
+            if (cuotaInicial > 0) {
+              this.array_cuotas_calculadas.push({
+                id: 1,
+                fecha_pago: this.formatDate(fechaPago),
+                precio_cuota: cuotaInicial.toFixed(2),
+                total_cancelado: cuotaInicial.toFixed(2),
+                saldo_restante: montoDistribuir.toFixed(2),
+                fecha_cancelado: this.formatDate(fechaPago),
+                estado: 'Cuota Inicial',
+                tipo_pago_cuota: this.getTipoPago()
+              });
+            }
+          
+            // 2. Generar cuotas normales
+            for (let i = 1; i <= numCuotas; i++) {
+              // Calcular nueva fecha sumando los días (excluyendo domingos)
+              fechaPago = this.sumarDiasHabiles(fechaPago, frecuenciaDias);
+              
+              this.array_cuotas_calculadas.push({
+                id: cuotaInicial > 0 ? i + 1 : i, // Ajustar IDs si hay cuota inicial
+                fecha_pago: this.formatDate(fechaPago),
+                precio_cuota: montoPorCuota.toFixed(2),
+                total_cancelado: '0.00',
+                saldo_restante: Math.max(0, (montoDistribuir - (montoPorCuota * i))).toFixed(2),
+                fecha_cancelado: null,
+                estado: 'Pendiente',
+                tipo_pago_cuota: null
+              });
+            }
+          
+            // Notificación de éxito
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: `Generadas ${numCuotas} cuotas correctamente`,
+              life: 3000
+            });
+          },
+          
+          // Métodos auxiliares
+          formatDate(date) {
+            return date.toISOString().split('T')[0];
+          },
+          
+          sumarDiasHabiles(fecha, dias) {
+            const nuevaFecha = new Date(fecha);
+            let diasSumados = 0;
+            
+            while (diasSumados < dias) {
+              nuevaFecha.setDate(nuevaFecha.getDate() + 1);
+              // Si no es domingo (0 = Domingo)
+              if (nuevaFecha.getDay() !== 0) {
+                diasSumados++;
+              }
+            }
+            return nuevaFecha;
+          },
+          
+          getTipoPago() {
+            if (this.form_cuotas.tipoPagoCuotaSeleccionado && 
+                this.form_cuotas.tipoPagoCuotaSeleccionado.nombre) {
+              return this.form_cuotas.tipoPagoCuotaSeleccionado.nombre;
+            }
+            return 'Efectivo';
+          },
+          
+          // Métodos auxiliares (compatibles con ES5)
+          formatDate(date) {
+            return date.toISOString().split('T')[0];
+          },
+          
+          calcularFechaPago(fecha, dias) {
+            const nuevaFecha = new Date(fecha);
+            let diasRestantes = dias;
+            
+            while (diasRestantes > 0) {
+              nuevaFecha.setDate(nuevaFecha.getDate() + 1);
+              if (nuevaFecha.getDay() !== 0) { // Excluir domingos
+                diasRestantes--;
+              }
+            }
+            return nuevaFecha;
+          },
+          
+          getTipoPago() {
+            if (this.form_cuotas.tipoPagoCuotaSeleccionado && 
+                this.form_cuotas.tipoPagoCuotaSeleccionado.nombre) {
+              return this.form_cuotas.tipoPagoCuotaSeleccionado.nombre;
+            }
+            return 'Efectivo';
+          },
         validarCompraCredito() {
-            this.submitted = true;
-            if (this.v$.form_cuotas.$invalid) {
-                return false;
-            }
-            return true;
+          this.submitted = true;
+          this.v$.form_cuotas.$touch();
+
+          // Validar solo campos obligatorios (no cuota_inicial)
+          if (this.v$.form_cuotas.num_cuotas.$invalid || 
+              this.v$.form_cuotas.frecuencia_pagos.$invalid ||
+              this.v$.form_cuotas.tipoPagoCuotaSeleccionado.$invalid) {
+            return false;
+          }
+          return true;
         },
+
 
         async openComprasCredito() {
 

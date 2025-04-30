@@ -535,8 +535,7 @@
                                 :maxFractionDigits="2"
                                 :class="{'p-invalid': submitted && v$.form_cuotas.cuota_inicial.$invalid}"
                             />
-                            <small class="p-error" v-if="(submitted && v$.form_cuotas.cuota_inicial.required.$invalid)"><strong>Cuota Inicial es obligatorio.</strong></small>
-                            <small class="p-error" v-if="(submitted && v$.form_cuotas.cuota_inicial.minValueValue.$invalid)"><strong>No puede ser 0.</strong></small>
+                            
                         </div>
 
                         <div class="p-field p-col-12 p-md-4">

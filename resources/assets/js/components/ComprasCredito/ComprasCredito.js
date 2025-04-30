@@ -114,23 +114,37 @@ export default {
         const cuotasResponse = await axios.get(
           "/ingresoCuotas/cuotasPorIngreso?id=" + ingresoId,
         );
-
+    
         if (cuotasResponse.data.status === "success") {
-          let cuotas = cuotasResponse.data.cuotas.slice(1);
-
-          this.array_cuotas = cuotas.map((cuota, index) => ({
+          this.array_cuotas = cuotasResponse.data.cuotas.map((cuota, index) => ({
             ...cuota,
-
+            id: cuota.id,
             fecha_pago: cuota.fecha_pago.split(" ")[0],
-            enumeracion: index + 1,
-            fecha_cancelado: cuota.fecha_cancelado? cuota.fecha_cancelado.split(" ")[0]: null,
+            precio_cuota: parseFloat(cuota.precio_cuota).toFixed(2),
+            total_cancelado: parseFloat(cuota.total_cancelado).toFixed(2),
+            saldo_restante: parseFloat(cuota.saldo_restante).toFixed(2),
+            fecha_cancelado: cuota.fecha_cancelado ? cuota.fecha_cancelado.split(" ")[0] : null,
+            estado: cuota.estado === 'Cuota Inicial' ? 'Pagado' : cuota.estado,
+            tipo_pago_cuota: cuota.tipo_pago_cuota || (cuota.estado === 'Cuota Inicial' ? this.getTipoPagoInicial(ingresoId) : null),
+            enumeracion: index + 1
           }));
         }
       } catch (error) {
         console.error(error);
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al cargar las cuotas',
+          life: 3000
+        });
       }
     },
 
+    getTipoPagoInicial(ingresoId) {
+      const ingreso = this.array_ingresos.find(i => i.id === ingresoId);
+      return ingreso ? ingreso.tipo_pago_inicial : 'Efectivo';
+    },
+    
     cortarString(cadena) {
       return cadena.substring(0, 9);
     },
