@@ -916,6 +916,8 @@ Route::group(["middleware" => ["auth"]], function () {
             "/credito/recibo-general/{id}",
             "CreditoVentaController@generarReciboGeneral"
         );
+        Route::get('/venta/obtenerCuotas', 'VentaController@obtenerCuotas')->name('venta.obtenerCuotas');
+
         Route::delete('/proveedor/eliminar/{id}', 'ProveedorController@eliminarProveedor');
         Route::delete('/cliente/eliminar/{id}', 'ClienteController@eliminarCliente');
              route::delete('/almacen/eliminar/{id}', 'AlmacenController@destroy');
