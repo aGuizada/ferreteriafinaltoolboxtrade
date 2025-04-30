@@ -200,7 +200,7 @@
             <!-- Séptima fila: Precios -->
             <div class="form-group row mb-4">
                 <div class="col-md-6">
-                    <label class="font-weight-bold" for="preciounitario">Precio Unitario <span class="text-danger">*</span></label>
+                    <label class="font-weight-bold" for="preciounitario">Costo compra por Unidad <span class="text-danger">*</span></label>
                     <div class="p-inputgroup">
                         <InputNumber id="preciounitario" v-model="datosFormulario.precio_costo_unid" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_costo_unid}" @input="validarCampo('precio_costo_unid')"/>
                         <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoUnid" />
@@ -208,7 +208,7 @@
                     <small class="p-error" v-if="errores.precio_costo_unid"><strong>{{ errores.precio_costo_unid }}</strong></small>
                 </div>
                 <div class="col-md-6">
-                    <label class="font-weight-bold" for="preciopaquete">Precio Paquete <span class="text-danger">*</span></label>
+                    <label class="font-weight-bold" for="preciopaquete">Costo compra por Paquete <span class="text-danger">*</span></label>
                     <div class="p-inputgroup">
                         <InputNumber id="preciopaquete" v-model="datosFormulario.precio_costo_paq" placeholder="Sin decimales" class="p-inputtext-sm bold-input" mode="decimal" :minFractionDigits="2" :class="{'p-invalid' : errores.precio_costo_paq}" @input="validarCampo('precio_costo_paq')"/>
                         <Button label="Calcular" class="p-button-primary p-button-sm" @click="calcularPrecioCostoPaq" />
