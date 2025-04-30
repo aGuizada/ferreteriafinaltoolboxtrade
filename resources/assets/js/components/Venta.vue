@@ -2,10 +2,7 @@
   <main class="main">
     <!-- Breadcrumb -->
     <Panel>
-      <Toast
-        :breakpoints="{ '920px': { width: '100%', right: '0', left: '0' } }"
-        style="padding-top: 40px"
-      >
+      <Toast :breakpoints="{ '920px': { width: '100%', right: '0', left: '0' } }" style="padding-top: 40px">
       </Toast>
       <template #header>
         <div class="panel-header">
@@ -13,156 +10,104 @@
         </div>
       </template>
       <div class="p-d-flex p-ai-center p-mb-4" style="gap: 0.5rem;">
-  <!-- Botón Nueva Venta -->
-  <Button
-    @click="abrirTipoVenta"
-    label="Nueva Venta"
-    icon="pi pi-plus"
-    class="p-button-success p-button-sm p-mr-2"
-  />
+        <!-- Botón Nueva Venta -->
+        <Button @click="abrirTipoVenta" label="Nueva Venta" icon="pi pi-plus"
+          class="p-button-success p-button-sm p-mr-2" />
 
-  <!-- Buscador -->
-  <span class="p-input-icon-left p-input-icon-right p-w-100">
-    <i class="pi pi-search"></i>
-    <InputText
-      v-model="buscar"
-      @input="buscarVenta"
-      placeholder="Buscar venta..."
-      class="p-inputtext-sm moto-search p-w-100"
-    />
-    <i
-      class="pi pi-times"
-      v-if="buscar"
-      @click="
-        buscar = '';
-        buscarVenta();
-      "
-      style="cursor: pointer;"
-    ></i>
-  </span>
+        <!-- Buscador -->
+        <span class="p-input-icon-left p-input-icon-right p-w-100">
+          <i class="pi pi-search"></i>
+          <InputText v-model="buscar" @input="buscarVenta" placeholder="Buscar venta..."
+            class="p-inputtext-sm moto-search p-w-100" />
+          <i class="pi pi-times" v-if="buscar" @click="
+            buscar = '';
+          buscarVenta();
+          " style="cursor: pointer;"></i>
+        </span>
 
-  <!-- Botón Reporte usando PrimeVue -->
-  <Button
-    @click="mostrarModal = true"
-    label="Reporte"
-    icon="pi pi-file-pdf"
-    class="p-button-danger p-button-sm p-ml-2"
-  />
-</div>
-
-
-
-      
-      <div class="modal fade" :class="{ show: mostrarModal }" tabindex="-1" role="dialog" style="display: block;" v-if="mostrarModal">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fa fa-file-pdf-o"></i> Reporte de Ventas
-        </h5>
-        <button type="button" class="close" @click="cerrarModalReporte">
-  <span>&times;</span>
-</button>
+        <!-- Botón Reporte usando PrimeVue -->
+        <Button @click="mostrarModal = true" label="Reporte" icon="pi pi-file-pdf"
+          class="p-button-danger p-button-sm p-ml-2" />
       </div>
 
-      <div class="modal-body">
-        <!-- Formulario de fechas -->
-        <form @submit.prevent="generarReporte">
-          <div class="form-group">
-            <label for="fecha_inicio">Fecha Inicio:</label>
-            <input type="date" v-model="fecha_inicio" id="fecha_inicio" class="form-control">
+
+
+
+      <div class="modal fade" :class="{ show: mostrarModal }" tabindex="-1" role="dialog" style="display: block;"
+        v-if="mostrarModal">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="fa fa-file-pdf-o"></i> Reporte de Ventas
+              </h5>
+              <button type="button" class="close" @click="cerrarModalReporte">
+                <span>&times;</span>
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <!-- Formulario de fechas -->
+              <form @submit.prevent="generarReporte">
+                <div class="form-group">
+                  <label for="fecha_inicio">Fecha Inicio:</label>
+                  <input type="date" v-model="fecha_inicio" id="fecha_inicio" class="form-control">
+                </div>
+
+                <div class="form-group">
+                  <label for="fecha_fin">Fecha Fin:</label>
+                  <input type="date" v-model="fecha_fin" id="fecha_fin" class="form-control">
+                </div>
+
+                <div class="d-flex justify-content-between">
+                  <button type="submit" class="btn btn-primary" :disabled="cargando">
+                    <span v-if="cargando" class="spinner-border spinner-border-sm"></span>
+                    Generar PDF
+                  </button>
+
+                  <!-- BOTÓN para cerrar -->
+                  <button type="button" class="btn btn-secondary" @click="cerrarModalReporte">
+                    Cerrar
+                  </button>
+                </div>
+              </form>
+
+              <div v-if="error" class="alert alert-danger mt-2">{{ error }}</div>
+            </div>
+
           </div>
-
-          <div class="form-group">
-            <label for="fecha_fin">Fecha Fin:</label>
-            <input type="date" v-model="fecha_fin" id="fecha_fin" class="form-control">
-          </div>
-
-          <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-primary" :disabled="cargando">
-              <span v-if="cargando" class="spinner-border spinner-border-sm"></span>
-              Generar PDF
-            </button>
-
-            <!-- BOTÓN para cerrar -->
-            <button type="button" class="btn btn-secondary" @click="cerrarModalReporte">
-  Cerrar
-</button>
-          </div>
-        </form>
-
-        <div v-if="error" class="alert alert-danger mt-2">{{ error }}</div>
+        </div>
       </div>
-
-    </div>
-  </div>
-</div>
 
       <!-- Listado de Ventas -->
       <template v-if="listado == 1">
-        <DataTable
-          :value="arrayVenta"
-          :rows="10"
-          responsiveLayout="scroll"
-          class="p-datatable-gridlines p-datatable-sm moto-table"
-          :rowHover="true"
-          dataKey="id"
-        >
+        <DataTable :value="arrayVenta" :rows="10" responsiveLayout="scroll"
+          class="p-datatable-gridlines p-datatable-sm moto-table" :rowHover="true" dataKey="id">
           <Column header="Opciones">
             <template #body="slotProps">
-              <Button
-                icon="pi pi-eye"
-                @click="verVenta(slotProps.data.id)"
-                class="p-button-sm p-mr-1"
-                style="
-                  background-color: green;
-                  border-color: green;
-                  color: white;
-                "
-              />
-              <template
-                v-if="slotProps.data.estado === 'Registrado' && idrol !== 2"
-              >
-                <Button
-                  icon="pi pi-trash"
-                  @click="desactivarVenta(slotProps.data.id)"
-                  class="p-button-sm p-button-danger p-mr-1"
-                />
+              <Button icon="pi pi-eye" @click="verVenta(slotProps.data.id)" class="p-button-sm p-mr-1"
+                style="background-color: green; border-color: green; color: white;" />
+              <template v-if="slotProps.data.estado === 'Registrado' && idrol !== 2">
+                <Button icon="pi pi-trash" @click="desactivarVenta(slotProps.data.id)"
+                  class="p-button-sm p-button-danger p-mr-1" />
               </template>
-              <Button
-                icon="pi pi-print"
-                @click="
-                  imprimirResivo(slotProps.data.id, slotProps.data.correo)
-                "
-                class="p-button-sm p-button-primary p-mr-1"
-              />
-              <Button
-                v-if="slotProps.data.estado === 'Pendiente'"
-                icon="pi pi-check-circle"
-                @click="confirmarEntrega(slotProps.data.id)"
-                class="p-button-sm p-button-success p-mr-1"
-                tooltip="Confirmar Entrega"
-              />
+              <Button icon="pi pi-print" @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
+                class="p-button-sm p-button-primary p-mr-1" />
+              <Button v-if="slotProps.data.estado === 'Pendiente' && slotProps.data.idtipo_venta !== 2"
+                icon="pi pi-check-circle" @click="confirmarEntrega(slotProps.data.id)"
+                class="p-button-sm p-button-success p-mr-1" tooltip="Confirmar Entrega" />
+              <!-- NUEVO: Botón para ver plan de pagos si es venta a crédito -->
+              <Button v-if="slotProps.data.idtipo_venta === 2" icon="pi pi-calendar"
+                class="p-button-help p-button-info p-mr-1" @click="verPlanPagos(slotProps.data.id)"
+                tooltip="Ver plan de pagos" />
             </template>
           </Column>
           <Column field="usuario" header="Vendedor"></Column>
           <Column field="razonSocial" header="Cliente"></Column>
-          <Column
-            field="documentoid"
-            header="Documento"
-            class="d-none d-md-table-cell"
-          ></Column>
-          <Column
-            field="num_comprobante"
-            header="N° de Comprobante"
-            class="d-none d-md-table-cell"
-          ></Column>
-          <Column
-            field="fecha_hora"
-            header="Fecha y Hora"
-            class="d-none d-md-table-cell"
-          ></Column>
+          <Column field="documentoid" header="Documento" class="d-none d-md-table-cell"></Column>
+          <Column field="num_comprobante" header="N° de Comprobante" class="d-none d-md-table-cell"></Column>
+          <Column field="fecha_hora" header="Fecha y Hora" class="d-none d-md-table-cell"></Column>
           <Column header="Total">
             <template #body="slotProps">
               <span class="moto-price">
@@ -175,20 +120,13 @@
           </Column>
           <Column field="estado" header="Estado" class="d-none d-md-table-cell">
             <template #body="slotProps">
-              <Tag
-                :severity="getEstadoSeverity(slotProps.data.estado)"
-                :value="slotProps.data.estado"
-              />
+              <Tag :severity="getEstadoSeverity(slotProps.data.estado)" :value="slotProps.data.estado" />
             </template>
           </Column>
         </DataTable>
 
-        <Paginator
-          :rows="10"
-          :totalRecords="pagination.total"
-          :first="(pagination.current_page - 1) * 10"
-          @page="onPageChange"
-        />
+        <Paginator :rows="10" :totalRecords="pagination.total" :first="(pagination.current_page - 1) * 10"
+          @page="onPageChange" />
       </template>
 
       <!-- Ver Detalle de Venta -->
@@ -197,45 +135,30 @@
         <Card class="shadow">
           <template #content>
             <!-- Encabezado con tipo de venta -->
-            <div
-              class="encabezado-venta"
-              :class="{
-                'bg-green-light':
-                  ventaDetalle && ventaDetalle.idtipo_venta == 1,
-                'bg-yellow-light':
-                  ventaDetalle && ventaDetalle.idtipo_venta == 2,
-                'bg-blue-light': ventaDetalle && ventaDetalle.idtipo_venta == 3,
-              }"
-            >
+            <div class="encabezado-venta" :class="{
+              'bg-green-light':
+                ventaDetalle && ventaDetalle.idtipo_venta == 1,
+              'bg-yellow-light':
+                ventaDetalle && ventaDetalle.idtipo_venta == 2,
+              'bg-blue-light': ventaDetalle && ventaDetalle.idtipo_venta == 3,
+            }">
               <div class="tipo-venta">
-                <i
-                  class="pi mr-2"
-                  :class="{
-                    'pi-money-bill':
-                      ventaDetalle && ventaDetalle.idtipo_venta == 1,
-                    'pi-credit-card':
-                      ventaDetalle && ventaDetalle.idtipo_venta == 2,
-                    'pi-truck': ventaDetalle && ventaDetalle.idtipo_venta == 3,
-                  }"
-                ></i>
-                <span v-if="ventaDetalle && ventaDetalle.idtipo_venta == 1"
-                  >VENTA AL CONTADO</span
-                >
-                <span v-else-if="ventaDetalle && ventaDetalle.idtipo_venta == 2"
-                  >VENTA A CRÉDITO</span
-                >
-                <span v-else-if="ventaDetalle && ventaDetalle.idtipo_venta == 3"
-                  >VENTA ADELANTADA</span
-                >
+                <i class="pi mr-2" :class="{
+                  'pi-money-bill':
+                    ventaDetalle && ventaDetalle.idtipo_venta == 1,
+                  'pi-credit-card':
+                    ventaDetalle && ventaDetalle.idtipo_venta == 2,
+                  'pi-truck': ventaDetalle && ventaDetalle.idtipo_venta == 3,
+                }"></i>
+                <span v-if="ventaDetalle && ventaDetalle.idtipo_venta == 1">VENTA AL CONTADO</span>
+                <span v-else-if="ventaDetalle && ventaDetalle.idtipo_venta == 2">VENTA A CRÉDITO</span>
+                <span v-else-if="ventaDetalle && ventaDetalle.idtipo_venta == 3">VENTA ADELANTADA</span>
                 <span v-else>DETALLE DE VENTA</span>
               </div>
 
               <div class="estado-venta">
-                <Tag
-                  v-if="ventaDetalle"
-                  :severity="getEstadoSeverity(ventaDetalle.estado)"
-                  :value="ventaDetalle.estado"
-                ></Tag>
+                <Tag v-if="ventaDetalle" :severity="getEstadoSeverity(ventaDetalle.estado)"
+                  :value="ventaDetalle.estado"></Tag>
               </div>
             </div>
 
@@ -269,10 +192,7 @@
 
             <!-- Información específica según tipo de venta -->
             <!-- 1. Para ventas adelantadas -->
-            <div
-              v-if="ventaDetalle && ventaDetalle.idtipo_venta == 3"
-              class="datos-especificos datos-adelantada"
-            >
+            <div v-if="ventaDetalle && ventaDetalle.idtipo_venta == 3" class="datos-especificos datos-adelantada">
               <h4><i class="pi pi-truck"></i> Datos de entrega</h4>
               <div class="datos-adelantada-grid">
                 <div class="datos-item">
@@ -288,9 +208,7 @@
                   </div>
                 </div>
                 <div class="datos-item">
-                  <label
-                    ><i class="pi pi-calendar"></i> Fecha de entrega:</label
-                  >
+                  <label><i class="pi pi-calendar"></i> Fecha de entrega:</label>
                   <div>
                     {{
                       ventaDetalle.fecha_entrega
@@ -299,10 +217,7 @@
                     }}
                   </div>
                 </div>
-                <div
-                  class="datos-item full-width"
-                  v-if="ventaDetalle.observaciones"
-                >
+                <div class="datos-item full-width" v-if="ventaDetalle.observaciones">
                   <label><i class="pi pi-comment"></i> Observaciones:</label>
                   <div>{{ ventaDetalle.observaciones }}</div>
                 </div>
@@ -310,10 +225,7 @@
             </div>
 
             <!-- 2. Para ventas a crédito -->
-            <div
-              v-if="ventaDetalle && ventaDetalle.idtipo_venta == 2"
-              class="datos-especificos datos-credito"
-            >
+            <div v-if="ventaDetalle && ventaDetalle.idtipo_venta == 2" class="datos-especificos datos-credito">
               <h4><i class="pi pi-credit-card"></i> Plan de pagos</h4>
               <div class="plan-pagos-header">
                 <div class="datos-item">
@@ -341,11 +253,8 @@
               </div>
 
               <!-- Tabla de cuotas -->
-              <DataTable
-                :value="cuotasCredito"
-                class="plan-pagos-table"
-                v-if="cuotasCredito && cuotasCredito.length > 0"
-              >
+              <DataTable :value="cuotasCredito" class="plan-pagos-table"
+                v-if="cuotasCredito && cuotasCredito.length > 0">
                 <Column field="numero_cuota" header="N°"></Column>
                 <Column field="fecha_pago" header="Fecha pago">
                   <template #body="slotProps">
@@ -359,14 +268,10 @@
                 </Column>
                 <Column field="estado" header="Estado">
                   <template #body="slotProps">
-                    <Tag
-                      :severity="
-                        slotProps.data.estado === 'Pagado'
-                          ? 'success'
-                          : 'warning'
-                      "
-                      :value="slotProps.data.estado"
-                    >
+                    <Tag :severity="slotProps.data.estado === 'Pagado'
+                        ? 'success'
+                        : 'warning'
+                      " :value="slotProps.data.estado">
                     </Tag>
                   </template>
                 </Column>
@@ -377,10 +282,7 @@
             </div>
 
             <!-- 3. Para ventas al contado -->
-            <div
-              v-if="ventaDetalle && ventaDetalle.idtipo_venta == 1"
-              class="datos-especificos datos-contado"
-            >
+            <div v-if="ventaDetalle && ventaDetalle.idtipo_venta == 1" class="datos-especificos datos-contado">
               <h4><i class="pi pi-money-bill"></i> Detalles del pago</h4>
               <div class="datos-contado-grid">
                 <div class="datos-item">
@@ -402,11 +304,7 @@
             <h4 class="productos-titulo">
               <i class="pi pi-shopping-cart"></i> Productos
             </h4>
-            <DataTable
-              :value="arrayDetalle"
-              class="productos-tabla"
-              stripedRows
-            >
+            <DataTable :value="arrayDetalle" class="productos-tabla" stripedRows>
               <Column field="articulo" header="Artículo"></Column>
               <Column header="Precio Unitario">
                 <template #body="slotProps">
@@ -433,27 +331,13 @@
 
             <!-- Botones de acción -->
             <div class="botones-accion">
-              <Button
-                v-if="ventaDetalle && ventaDetalle.idtipo_venta == 2"
-                label="Ver plan completo"
-                icon="pi pi-eye"
-                class="p-button-info p-mr-2"
-                @click="verPlanPagos(ventaDetalle.id)"
-              >
+              <Button v-if="ventaDetalle && ventaDetalle.idtipo_venta == 2" label="Ver plan completo" icon="pi pi-eye"
+                class="p-button-info p-mr-2" @click="verPlanPagos(ventaDetalle.id)">
               </Button>
-              <Button
-                label="Imprimir"
-                icon="pi pi-print"
-                class="p-button-secondary p-mr-2"
-                @click="imprimirResivo(ventaDetalle ? ventaDetalle.id : 0)"
-              >
+              <Button label="Imprimir" icon="pi pi-print" class="p-button-secondary p-mr-2"
+                @click="imprimirResivo(ventaDetalle ? ventaDetalle.id : 0)">
               </Button>
-              <Button
-                label="Cerrar"
-                icon="pi pi-times"
-                class="p-button-danger"
-                @click="ocultarDetalle()"
-              >
+              <Button label="Cerrar" icon="pi pi-times" class="p-button-danger" @click="ocultarDetalle()">
               </Button>
             </div>
           </template>
@@ -462,14 +346,8 @@
     </Panel>
 
     <!-- Modal para crear nueva venta -->
-    <Dialog
-      :visible.sync="modal2"
-      :containerStyle="{ width: '300%', maxWidth: '850px' }"
-      :modal="true"
-      :closable="true"
-      :closeOnEscape="false"
-      @hide="cerrarModal2"
-    >
+    <Dialog :visible.sync="modal2" :containerStyle="{ width: '300%', maxWidth: '850px' }" :modal="true" :closable="true"
+      :closeOnEscape="false" @hide="cerrarModal2">
       <template #header>
         <h5 class="modal-title">DETALLE VENTAS</h5>
       </template>
@@ -477,27 +355,15 @@
         <div class="p-field">
           <div class="step-indicators">
             <div class="step-container">
-              <span
-                :class="['step', { active: step === 1, completed: step > 1 }]"
-                >1</span
-              >
+              <span :class="['step', { active: step === 1, completed: step > 1 }]">1</span>
               <div class="step-label">Cliente</div>
             </div>
-            <div
-              class="step-line"
-              :class="{ 'step-line-active': step >= 2 }"
-            ></div>
+            <div class="step-line" :class="{ 'step-line-active': step >= 2 }"></div>
             <div class="step-container">
-              <span
-                :class="['step', { active: step === 2, completed: step > 2 }]"
-                >2</span
-              >
+              <span :class="['step', { active: step === 2, completed: step > 2 }]">2</span>
               <div class="step-label">Productos</div>
             </div>
-            <div
-              class="step-line"
-              :class="{ 'step-line-active': step >= 3 }"
-            ></div>
+            <div class="step-line" :class="{ 'step-line-active': step >= 3 }"></div>
             <div class="step-container">
               <span :class="['step', { active: step === 3 }]">3</span>
               <div class="step-label">Pago</div>
@@ -515,13 +381,8 @@
                     <i class="pi pi-id-card"></i>
                   </span>
                   <span class="p-float-label">
-                    <InputText
-                      id="documento"
-                      v-model="documento"
-                      @input="checkDocumento"
-                      maxlength="7"
-                      class="w-full"
-                    />
+                    <InputText id="documento" v-model="documento" @input="checkDocumento" maxlength="7"
+                      class="w-full" />
                     <label for="documento">Numero de Documento</label>
                   </span>
                 </div>
@@ -533,12 +394,8 @@
                     <i class="pi pi-user"></i>
                   </span>
                   <span class="p-float-label">
-                    <InputText
-                      id="nombreCliente"
-                      v-model="nombreCliente"
-                      :disabled="!nombreClienteEditable"
-                      class="w-full"
-                    />
+                    <InputText id="nombreCliente" v-model="nombreCliente" :disabled="!nombreClienteEditable"
+                      class="w-full" />
                     <label for="nombreCliente">Nombre del cliente</label>
                   </span>
                 </div>
@@ -559,57 +416,34 @@
           <!-- Header Section -->
           <div class="p-fluid p-grid">
             <div class="p-col-12 p-md-6">
-              <label class="p-d-block"
-                >Almacen <span class="p-error">*</span></label
-              >
-              <Dropdown
-                v-model="selectedAlmacen"
-                :options="arrayAlmacenes"
-                optionLabel="nombre_almacen"
-                optionValue="id"
-                placeholder="Seleccione un almacén"
-                @change="getAlmacenProductos"
-              />
+              <label class="p-d-block">Almacen <span class="p-error">*</span></label>
+              <Dropdown v-model="selectedAlmacen" :options="arrayAlmacenes" optionLabel="nombre_almacen"
+                optionValue="id" placeholder="Seleccione un almacén" @change="getAlmacenProductos" />
             </div>
 
             <div class="p-col-12 p-md-6">
               <label class="p-d-block">Buscar articulo</label>
               <div class="p-inputgroup">
-                <InputText
-                  v-model="codigo"
-                  placeholder="Codigo del articulo"
-                  :disabled="!selectedAlmacen"
-                  @keyup="buscarArticulo()"
-                />
-                <Button
-                  icon="pi pi-search"
-                  :disabled="!selectedAlmacen"
-                  @click="abrirModal"
-                />
+                <InputText v-model="codigo" placeholder="Codigo del articulo" :disabled="!selectedAlmacen"
+                  @keyup="buscarArticulo()" />
+                <Button icon="pi pi-search" :disabled="!selectedAlmacen" @click="abrirModal" />
               </div>
             </div>
           </div>
 
-          
+
 
           <!-- Cart Table -->
           <div class="p-mt-4">
             <DataTable :value="arrayDetalle" class="p-mt-3">
               <Column header="Opciones" style="width: 10%">
                 <template #body="slotProps">
-                  <Button
-                    icon="pi pi-trash"
-                    class="p-button-danger p-button-sm"
-                    @click="eliminarDetalle(slotProps.data.id)"
-                  />
+                  <Button icon="pi pi-trash" class="p-button-danger p-button-sm"
+                    @click="eliminarDetalle(slotProps.data.id)" />
                 </template>
               </Column>
               <Column field="articulo" header="Artículo" style="width: 30%" />
-              <Column
-                field="precioUnidad"
-                header="Precio Unidad"
-                style="width: 15%"
-              >
+              <Column field="precioUnidad" header="Precio Unidad" style="width: 15%">
                 <template #body="slotProps">
                   {{
                     (
@@ -622,16 +456,10 @@
               </Column>
               <Column field="unidades" header="Unidades" style="width: 10%">
                 <template #body="slotProps">
-                  <InputNumber
-                    v-model="slotProps.data.cantidad"
-                    :min="1"
-                    showButtons
-                    buttonLayout="horizontal"
+                  <InputNumber v-model="slotProps.data.cantidad" :min="1" showButtons buttonLayout="horizontal"
                     decrementButtonClass="p-button-danger p-button-sm"
-                    incrementButtonClass="p-button-success p-button-sm"
-                    incrementButtonIcon="pi pi-plus"
-                    decrementButtonIcon="pi pi-minus"
-                  />
+                    incrementButtonClass="p-button-success p-button-sm" incrementButtonIcon="pi pi-plus"
+                    decrementButtonIcon="pi pi-minus" />
                 </template>
               </Column>
               <Column field="total" header="Total" style="width: 20%">
@@ -651,63 +479,45 @@
 
           <!-- Total Section -->
           <div class="p-grid p-mt-2 p-justify-end">
-  <div class="p-col-12 p-md-12 p-text-right" style="line-height: 1.2">
-    <span style="font-size: 1.5rem; font-weight: 500;">Total Neto: </span>
-    <strong style="font-size: 1.8rem; color: #2c3e50;">
-      {{ (calcularTotal * parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1] }}
-    </strong>
-  </div>
-</div>
+            <div class="p-col-12 p-md-12 p-text-right" style="line-height: 1.2">
+              <span style="font-size: 1.5rem; font-weight: 500;">Total Neto: </span>
+              <strong style="font-size: 1.8rem; color: #2c3e50;">
+                {{ (calcularTotal * parseFloat(monedaVenta[0])).toFixed(2) }} {{ monedaVenta[1] }}
+              </strong>
+            </div>
+          </div>
         </div>
 
         <!-- Step 3: Método de pago -->
         <div v-show="step === 3" class="step-content">
           <div class="p-d-flex p-jc-center p-mb-3">
             <div v-if="!tipoVentaSeleccionado" class="p-d-flex">
-              <Button
-                class="p-button-lg p-mr-3"
-                :class="{
-                  'p-button-primary': tipoVenta === 'contado',
-                  'p-button-outlined': tipoVenta !== 'contado',
-                }"
-                @click="seleccionarTipoVenta('contado')"
-              >
+              <Button class="p-button-lg p-mr-3" :class="{
+                'p-button-primary': tipoVenta === 'contado',
+                'p-button-outlined': tipoVenta !== 'contado',
+              }" @click="seleccionarTipoVenta('contado')">
                 <template #default>
                   <div class="p-d-flex p-flex-column p-ai-center">
-                    <i
-                      class="pi pi-money-bill p-mr-2"
-                      style="font-size: 2rem"
-                    ></i>
+                    <i class="pi pi-money-bill p-mr-2" style="font-size: 2rem"></i>
                   </div>
                   <span>Contado</span>
                 </template>
               </Button>
-              <Button
-                class="p-button-lg p-mr-3"
-                :class="{
-                  'p-button-primary': tipoVenta === 'credito',
-                  'p-button-outlined': tipoVenta !== 'credito',
-                }"
-                @click="seleccionarTipoVenta('credito')"
-              >
+              <Button class="p-button-lg p-mr-3" :class="{
+                'p-button-primary': tipoVenta === 'credito',
+                'p-button-outlined': tipoVenta !== 'credito',
+              }" @click="seleccionarTipoVenta('credito')">
                 <template #default>
                   <div class="p-d-flex p-flex-column p-ai-center">
-                    <i
-                      class="pi pi-credit-card p-mb-2"
-                      style="font-size: 2rem"
-                    ></i>
+                    <i class="pi pi-credit-card p-mb-2" style="font-size: 2rem"></i>
                   </div>
                   <span>Crédito</span>
                 </template>
               </Button>
-              <Button
-                class="p-button-lg"
-                :class="{
-                  'p-button-primary': tipoVenta === 'adelantada',
-                  'p-button-outlined': tipoVenta !== 'adelantada',
-                }"
-                @click="seleccionarTipoVenta('adelantada')"
-              >
+              <Button class="p-button-lg" :class="{
+                'p-button-primary': tipoVenta === 'adelantada',
+                'p-button-outlined': tipoVenta !== 'adelantada',
+              }" @click="seleccionarTipoVenta('adelantada')">
                 <template #default>
                   <div class="p-d-flex p-flex-column p-ai-center">
                     <i class="pi pi-truck p-mb-2" style="font-size: 2rem"></i>
@@ -718,175 +528,146 @@
             </div>
           </div>
 
-         <!-- Modificación para la sección de pago en efectivo -->
-<div v-if="tipoVenta === 'contado'" class="payment-options">
-  <TabView class="custom-tabview">
-    <TabPanel header="Efectivo">
-      <div class="p-grid p-fluid">
-        <div class="p-col-12 p-md-7">
-          <Card>
-            <template #content>
-              <div class="p-fluid">
-                <div class="p-field">
-                  <label for="montoEfectivo">
-                    <i class="pi pi-money-bill p-mr-2" /> Monto
-                    Recibido:
-                  </label>
-                  <div class="p-inputgroup">
-                    <span class="p-inputgroup-addon">{{
-                      monedaVenta[1]
-                    }}</span>
-                    <InputNumber
-                      id="montoEfectivo"
-                      v-model="recibido"
-                      placeholder="Ingrese el monto recibido"
-                      :class="{ 'p-invalid': montoInvalido }"
-                    />
+          <!-- Modificación para la sección de pago en efectivo -->
+          <div v-if="tipoVenta === 'contado'" class="payment-options">
+            <TabView class="custom-tabview">
+              <TabPanel header="Efectivo">
+                <div class="p-grid p-fluid">
+                  <div class="p-col-12 p-md-7">
+                    <Card>
+                      <template #content>
+                        <div class="p-fluid">
+                          <div class="p-field">
+                            <label for="montoEfectivo">
+                              <i class="pi pi-money-bill p-mr-2" /> Monto
+                              Recibido:
+                            </label>
+                            <div class="p-inputgroup">
+                              <span class="p-inputgroup-addon">{{
+                                monedaVenta[1]
+                                }}</span>
+                              <InputNumber id="montoEfectivo" v-model="recibido" placeholder="Ingrese el monto recibido"
+                                :class="{ 'p-invalid': montoInvalido }" />
+                            </div>
+                            <small class="p-error" v-if="montoInvalido">
+                              El monto recibido debe ser mayor o igual al total
+                              a pagar
+                            </small>
+                          </div>
+                          <div class="p-field">
+                            <label for="cambioRecibir">
+                              <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
+                            </label>
+                            <InputText id="cambioRecibir" :value="calcularCambio" readonly />
+                          </div>
+                        </div>
+                      </template>
+                    </Card>
                   </div>
-                  <small class="p-error" v-if="montoInvalido">
-                    El monto recibido debe ser mayor o igual al total
-                    a pagar
-                  </small>
-                </div>
-                <div class="p-field">
-                  <label for="cambioRecibir">
-                    <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
-                  </label>
-                  <InputText
-                    id="cambioRecibir"
-                    :value="calcularCambio"
-                    readonly
-                  />
-                </div>
-              </div>
-            </template>
-          </Card>
-        </div>
-        <div class="p-col-12 p-md-5">
-          <Card>
-            <template #content>
-              <h5>Detalle de Venta</h5>
-              <div class="p-d-flex p-jc-between p-mb-2">
-                <span
-                  ><i class="pi pi-dollar p-mr-2" /> Monto
-                  Total:</span
-                >
-                <span class="p-text-bold">
-                  {{ totalFormateado }} {{ monedaVenta[1] }}
-                </span>
-              </div>
-              <div class="p-d-flex p-jc-between">
-                <span
-                  ><i class="pi pi-money-bill p-mr-2" /> Total a
-                  Pagar:</span
-                >
-                <span class="p-text-bold p-text-xl">
-                  {{ totalFormateado }} {{ monedaVenta[1] }}
-                </span>
-              </div>
-            </template>
-          </Card>
-          <Button
-            label="Registrar Pago"
-            icon="pi pi-check"
-            class="p-button-success p-mt-2 p-button-lg p-button-raised"
-            @click="validarYRegistrarPago"
-            :disabled="!montoValido"
-          />
-        </div>
-      </div>
-    </TabPanel>
-    
-    <!-- Nueva tab para pago con QR -->
-    <TabPanel header="QR">
-      <div class="p-grid p-fluid">
-        <div class="p-col-12 p-md-7">
-          <Card>
-            <template #content>
-              <div class="p-fluid">
-                <div class="qr-payment-info p-mb-3">
-                  <h5><i class="pi pi-qrcode p-mr-2"></i> Pago con QR</h5>
-                  <p class="p-mt-2">
-                    1. Solicite al cliente que escanee el código QR para realizar el pago.
-                  </p>
-                  <p>
-                    2. Verifique en su banca móvil que el pago se haya realizado correctamente.
-                  </p>
-                  <p>
-                    3. Una vez confirmado el pago, presione "Confirmar Pago QR" para registrar la venta.
-                  </p>
-                </div>
-                <div class="qr-verification-panel p-mt-3">
-                  <div class="p-field">
-                    <label>
-                      <i class="pi pi-check-circle p-mr-2"></i> Verificación de Pago
-                    </label>
-                    <div class="p-formgroup-inline p-mt-2">
-                      <div class="p-field-checkbox">
-                        <Checkbox v-model="qrPagoVerificado" binary id="verificacion-qr" />
-                        <label for="verificacion-qr">He verificado que el pago QR se ha realizado correctamente</label>
-                      </div>
-                    </div>
+                  <div class="p-col-12 p-md-5">
+                    <Card>
+                      <template #content>
+                        <h5>Detalle de Venta</h5>
+                        <div class="p-d-flex p-jc-between p-mb-2">
+                          <span><i class="pi pi-dollar p-mr-2" /> Monto
+                            Total:</span>
+                          <span class="p-text-bold">
+                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                          </span>
+                        </div>
+                        <div class="p-d-flex p-jc-between">
+                          <span><i class="pi pi-money-bill p-mr-2" /> Total a
+                            Pagar:</span>
+                          <span class="p-text-bold p-text-xl">
+                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                          </span>
+                        </div>
+                      </template>
+                    </Card>
+                    <Button label="Registrar Pago" icon="pi pi-check"
+                      class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="validarYRegistrarPago"
+                      :disabled="!montoValido" />
                   </div>
                 </div>
-              </div>
-            </template>
-          </Card>
-        </div>
-        <div class="p-col-12 p-md-5">
-          <Card>
-            <template #content>
-              <h5>Detalle de Venta</h5>
-              <div class="p-d-flex p-jc-between p-mb-2">
-                <span><i class="pi pi-dollar p-mr-2"></i> Monto Total:</span>
-                <span class="p-text-bold">
-                  {{ totalFormateado }} {{ monedaVenta[1] }}
-                </span>
-              </div>
-              <div class="p-d-flex p-jc-between">
-                <span><i class="pi pi-mobile p-mr-2"></i> Total a Pagar QR:</span>
-                <span class="p-text-bold p-text-xl">
-                  {{ totalFormateado }} {{ monedaVenta[1] }}
-                </span>
-              </div>
-            </template>
-          </Card>
-          <Button
-            label="Confirmar Pago QR"
-            icon="pi pi-check"
-            class="p-button-success p-mt-2 p-button-lg p-button-raised"
-            @click="registrarVentaQR"
-            :disabled="!qrPagoVerificado"
-          />
-        </div>
-      </div>
-    </TabPanel>
-  </TabView>
-</div>
+              </TabPanel>
+
+              <!-- Nueva tab para pago con QR -->
+              <TabPanel header="QR">
+                <div class="p-grid p-fluid">
+                  <div class="p-col-12 p-md-7">
+                    <Card>
+                      <template #content>
+                        <div class="p-fluid">
+                          <div class="qr-payment-info p-mb-3">
+                            <h5><i class="pi pi-qrcode p-mr-2"></i> Pago con QR</h5>
+                            <p class="p-mt-2">
+                              1. Solicite al cliente que escanee el código QR para realizar el pago.
+                            </p>
+                            <p>
+                              2. Verifique en su banca móvil que el pago se haya realizado correctamente.
+                            </p>
+                            <p>
+                              3. Una vez confirmado el pago, presione "Confirmar Pago QR" para registrar la venta.
+                            </p>
+                          </div>
+                          <div class="qr-verification-panel p-mt-3">
+                            <div class="p-field">
+                              <label>
+                                <i class="pi pi-check-circle p-mr-2"></i> Verificación de Pago
+                              </label>
+                              <div class="p-formgroup-inline p-mt-2">
+                                <div class="p-field-checkbox">
+                                  <Checkbox v-model="qrPagoVerificado" binary id="verificacion-qr" />
+                                  <label for="verificacion-qr">He verificado que el pago QR se ha realizado
+                                    correctamente</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </Card>
+                  </div>
+                  <div class="p-col-12 p-md-5">
+                    <Card>
+                      <template #content>
+                        <h5>Detalle de Venta</h5>
+                        <div class="p-d-flex p-jc-between p-mb-2">
+                          <span><i class="pi pi-dollar p-mr-2"></i> Monto Total:</span>
+                          <span class="p-text-bold">
+                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                          </span>
+                        </div>
+                        <div class="p-d-flex p-jc-between">
+                          <span><i class="pi pi-mobile p-mr-2"></i> Total a Pagar QR:</span>
+                          <span class="p-text-bold p-text-xl">
+                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                          </span>
+                        </div>
+                      </template>
+                    </Card>
+                    <Button label="Confirmar Pago QR" icon="pi pi-check"
+                      class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="registrarVentaQR"
+                      :disabled="!qrPagoVerificado" />
+                  </div>
+                </div>
+              </TabPanel>
+            </TabView>
+          </div>
 
           <div v-if="tipoVenta === 'credito'">
             <div class="p-grid">
               <div class="p-col-4">
-                <label for="numeroCuotas" class="font-weight-bold"
-                  >Cantidad de cuotas <span class="p-error">*</span></label
-                >
-                <InputNumber
-                  id="numeroCuotas"
-                  v-model="numero_cuotas"
-                  :useGrouping="false"
-                />
+                <label for="numeroCuotas" class="font-weight-bold">Cantidad de cuotas <span
+                    class="p-error">*</span></label>
+                <InputNumber id="numeroCuotas" v-model="numero_cuotas" :useGrouping="false" />
               </div>
 
               <div class="p-col-4">
-                <label for="tiempoDias" class="font-weight-bold"
-                  >Frecuencia de Pagos <span class="p-error">*</span></label
-                >
+                <label for="tiempoDias" class="font-weight-bold">Frecuencia de Pagos <span
+                    class="p-error">*</span></label>
                 <div class="p-inputgroup">
-                  <InputNumber
-                    id="tiempoDias"
-                    v-model="tiempo_diaz"
-                    :useGrouping="false"
-                  />
+                  <InputNumber id="tiempoDias" v-model="tiempo_diaz" :useGrouping="false" />
                   <span class="p-inputgroup-addon">Dias</span>
                 </div>
               </div>
@@ -900,21 +681,11 @@
                     }}
                     {{ monedaVenta[1] }}
                   </div>
-                  <Button
-                    label="GENERAR CUOTAS"
-                    @click="generarCuotas"
-                    class="p-button-success"
-                  />
+                  <Button label="GENERAR CUOTAS" @click="generarCuotas" class="p-button-success" />
                 </div>
               </div>
             </div>
-            <DataTable
-              :value="cuotas"
-              class="p-mt-4"
-              :paginator="true"
-              :rows="10"
-              responsiveLayout="scroll"
-            >
+            <DataTable :value="cuotas" class="p-mt-4" :paginator="true" :rows="10" responsiveLayout="scroll">
               <Column field="index" header="#">
                 <template #body="slotProps">
                   {{ slotProps.index + 1 }}
@@ -953,14 +724,9 @@
             </DataTable>
 
             <div class="modal-footer">
-          
-              <Button
-    label="Registrar"
-    icon="pi pi-check"
-    class="p-button-success"
-    @click="registrarVenta()"
-    :disabled="tipoVenta === 'credito' && (!cuotas || cuotas.length === 0)"
-/>
+
+              <Button label="Registrar" icon="pi pi-check" class="p-button-success" @click="registrarVenta()"
+                :disabled="tipoVenta === 'credito' && (!cuotas || cuotas.length === 0)" />
             </div>
           </div>
 
@@ -977,48 +743,29 @@
                           <i class="pi pi-map-marker p-mr-2" /> Dirección de
                           Entrega:
                         </label>
-                        <InputText
-                          id="direccionEntrega"
-                          v-model="direccionEntrega"
-                          placeholder="Ingrese la dirección de entrega"
-                          class="w-full"
-                        />
+                        <InputText id="direccionEntrega" v-model="direccionEntrega"
+                          placeholder="Ingrese la dirección de entrega" class="w-full" />
                       </div>
                       <div class="p-field">
                         <label for="telefonoContacto">
                           <i class="pi pi-phone p-mr-2" /> Teléfono de Contacto:
                         </label>
-                        <InputText
-                          id="telefonoContacto"
-                          v-model="telefonoContacto"
-                          placeholder="Teléfono para coordinar entrega"
-                          class="w-full"
-                        />
+                        <InputText id="telefonoContacto" v-model="telefonoContacto"
+                          placeholder="Teléfono para coordinar entrega" class="w-full" />
                       </div>
                       <div class="p-field">
                         <label for="fechaEntrega">
                           <i class="pi pi-calendar p-mr-2" /> Fecha de Entrega:
                         </label>
-                        <Calendar
-                          id="fechaEntrega"
-                          v-model="fechaEntrega"
-                          :minDate="new Date()"
-                          dateFormat="dd/mm/yy"
-                          placeholder="Seleccione fecha"
-                          class="w-full"
-                        />
+                        <Calendar id="fechaEntrega" v-model="fechaEntrega" :minDate="new Date()" dateFormat="dd/mm/yy"
+                          placeholder="Seleccione fecha" class="w-full" />
                       </div>
                       <div class="p-field">
                         <label for="observaciones">
                           <i class="pi pi-comment p-mr-2" /> Observaciones:
                         </label>
-                        <Textarea
-                          id="observaciones"
-                          v-model="observaciones"
-                          placeholder="Instrucciones adicionales para la entrega"
-                          rows="3"
-                          class="w-full"
-                        />
+                        <Textarea id="observaciones" v-model="observaciones"
+                          placeholder="Instrucciones adicionales para la entrega" rows="3" class="w-full" />
                       </div>
                     </div>
                   </template>
@@ -1029,9 +776,7 @@
                   <template #content>
                     <h5>Detalles de Pago</h5>
                     <div class="p-d-flex p-jc-between p-mb-2">
-                      <span
-                        ><i class="pi pi-dollar p-mr-2" /> Monto Total:</span
-                      >
+                      <span><i class="pi pi-dollar p-mr-2" /> Monto Total:</span>
                       <span class="p-text-bold">
                         {{ totalFormateado }} {{ monedaVenta[1] }}
                       </span>
@@ -1040,61 +785,37 @@
                       <label for="tipoPagoAdelantado" class="font-weight-bold">
                         Método de Pago:
                       </label>
-                      <Dropdown
-                        id="tipoPagoAdelantado"
-                        v-model="tipoPagoAdelantado"
-                        :options="opcionesPagoAdelantado"
-                        optionLabel="label"
-                        optionValue="value"
-                        placeholder="Seleccione método de pago"
-                        class="w-full"
-                      />
+                      <Dropdown id="tipoPagoAdelantado" v-model="tipoPagoAdelantado" :options="opcionesPagoAdelantado"
+                        optionLabel="label" optionValue="value" placeholder="Seleccione método de pago"
+                        class="w-full" />
                     </div>
-                    <div
-                      class="p-field"
-                      v-if="tipoPagoAdelantado === 'efectivo'"
-                    >
+                    <div class="p-field" v-if="tipoPagoAdelantado === 'efectivo'">
                       <label for="montoAdelantado">
                         <i class="pi pi-money-bill p-mr-2" /> Monto Recibido:
                       </label>
                       <div class="p-inputgroup">
                         <span class="p-inputgroup-addon">{{
                           monedaVenta[1]
-                        }}</span>
-                        <InputNumber
-                          id="montoAdelantado"
-                          v-model="montoAdelantado"
-                          placeholder="Ingrese el monto recibido"
-                          :class="{ 'p-invalid': montoAdelantadoInvalido }"
-                        />
+                          }}</span>
+                        <InputNumber id="montoAdelantado" v-model="montoAdelantado"
+                          placeholder="Ingrese el monto recibido" :class="{ 'p-invalid': montoAdelantadoInvalido }" />
                       </div>
                       <small class="p-error" v-if="montoAdelantadoInvalido">
                         El monto recibido debe ser mayor o igual al total a
                         pagar
                       </small>
                     </div>
-                    <div
-                      class="p-field"
-                      v-if="tipoPagoAdelantado === 'efectivo'"
-                    >
+                    <div class="p-field" v-if="tipoPagoAdelantado === 'efectivo'">
                       <label for="cambioAdelantado">
                         <i class="pi pi-sync p-mr-2" /> Cambio a Entregar:
                       </label>
-                      <InputText
-                        id="cambioAdelantado"
-                        :value="calcularCambioAdelantado"
-                        readonly
-                      />
+                      <InputText id="cambioAdelantado" :value="calcularCambioAdelantado" readonly />
                     </div>
                   </template>
                 </Card>
-                <Button
-                  label="Registrar Pedido"
-                  icon="pi pi-check"
-                  class="p-button-success p-mt-2 p-button-lg p-button-raised"
-                  @click="validarYRegistrarVentaAdelantada"
-                  :disabled="!datosAdelantadosValidos"
-                />
+                <Button label="Registrar Pedido" icon="pi pi-check"
+                  class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="validarYRegistrarVentaAdelantada"
+                  :disabled="!datosAdelantadosValidos" />
               </div>
             </div>
           </div>
@@ -1102,229 +823,205 @@
         </div>
 
         <footer class="footer d-flex justify-content-center gap-2">
-          <Button
-            @click="prevStep"
-            :disabled="step === 1"
-            class="p-button-primary"
-            icon="pi pi-chevron-left"
-            iconPos="left"
-            label="Anterior"
-            :style="{ width: '150px' }"
-          />
-          <Button
-            @click="validarYAvanzar"
-            :disabled="step === 3"
-            class="p-button-primary"
-            icon="pi pi-chevron-right"
-            iconPos="right"
-            label="Siguiente"
-            :style="{ width: '150px' }"
-          />
+          <Button @click="prevStep" :disabled="step === 1" class="p-button-primary" icon="pi pi-chevron-left"
+            iconPos="left" label="Anterior" :style="{ width: '150px' }" />
+          <Button @click="validarYAvanzar" :disabled="step === 3" class="p-button-primary" icon="pi pi-chevron-right"
+            iconPos="right" label="Siguiente" :style="{ width: '150px' }" />
         </footer>
       </div>
     </Dialog>
-    <div class="modal" tabindex="-1" v-if="arraySeleccionado" 
-     :style="{display: isDetailModalVisible ? 'flex !important' : 'none'}" 
-     style="align-items: center; justify-content: center; background-color: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 3250;">
-  
-  <div class="modal-dialog modal-lg modal-dialog-centered" style="max-width: 850px; margin: auto;">
-    <div class="modal-content">
-      <!-- Header -->
-      <div class="modal-header justify-content-center">
-  <h5 class="modal-title fs-4 fw-bold text-center">{{ arraySeleccionado.nombre }}</h5>
-</div>
+    <div class="modal" tabindex="-1" v-if="arraySeleccionado"
+      :style="{ display: isDetailModalVisible ? 'flex !important' : 'none' }"
+      style="align-items: center; justify-content: center; background-color: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 3250;">
+
+      <div class="modal-dialog modal-lg modal-dialog-centered" style="max-width: 850px; margin: auto;">
+        <div class="modal-content">
+          <!-- Header -->
+          <div class="modal-header justify-content-center">
+            <h5 class="modal-title fs-4 fw-bold text-center">{{ arraySeleccionado.nombre }}</h5>
+          </div>
 
 
-      <!-- Body (mantener el contenido existente) -->
-      <div class="modal-body">
-        <div class="row g-3">
-          <!-- Columna izquierda: Imagen y stock -->
-          <div class="col-md-4">
-            <div class="mb-3 text-center">
-              <img
-                :src="arraySeleccionado.fotografia ? `img/articulo/${arraySeleccionado.fotografia}?t=${new Date().getTime()}` : 'img/productoSinImagen.png'"
-                :alt="arraySeleccionado.nombre"
-                class="img-fluid rounded"
-                style="max-height: 200px;"
-              />
-            </div>
+          <!-- Body (mantener el contenido existente) -->
+          <div class="modal-body">
+            <div class="row g-3">
+              <!-- Columna izquierda: Imagen y stock -->
+              <div class="col-md-4">
+                <div class="mb-3 text-center">
+                  <img
+                    :src="arraySeleccionado.fotografia ? `img/articulo/${arraySeleccionado.fotografia}?t=${new Date().getTime()}` : 'img/productoSinImagen.png'"
+                    :alt="arraySeleccionado.nombre" class="img-fluid rounded" style="max-height: 200px;" />
+                </div>
 
-            <!-- Stock disponible -->
-            <div class="alert mb-3" 
-     :class="{
-       'alert-success': calcularStockDisponible > 5,
-       'alert-warning': calcularStockDisponible <= 5 && calcularStockDisponible > 0,
-       'alert-danger': calcularStockDisponible <= 0
-     }">
-  <div class="d-flex align-items-center">
-    <i class="bi bi-box-seam me-2"></i>
-    <span class="fw-bold">Stock disponible:</span>
-    <span class="ms-2">
-      <span class="ms-2">
-        <span class="ms-2">
-          {{ calcularStockDisponible }} {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
-        </span>
-        <div class="ms-4 mt-1" v-if="calcularStockDisponible > 0">
-          <small>
-            Después de esta venta: 
-            <strong>{{ Math.max(0, calcularStockDisponible - cantidad) }}</strong>
-            {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
-          </small>
-        </div>
-      </span>
-    </span>
-  </div>
-</div>
-            <!-- Descripción -->
-            <div class="mb-3">
-              <h6 class="fw-bold mb-2">
-                <i class="bi bi-text-paragraph me-2"></i>
-                Descripción
-              </h6>
-              <p class="text-muted">
-                {{ arraySeleccionado.descripcion || "No hay descripción disponible para este producto." }}
-              </p>
+                <!-- Stock disponible -->
+                <div class="alert mb-3" :class="{
+                  'alert-success': calcularStockDisponible > 5,
+                  'alert-warning': calcularStockDisponible <= 5 && calcularStockDisponible > 0,
+                  'alert-danger': calcularStockDisponible <= 0
+                }">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-box-seam me-2"></i>
+                    <span class="fw-bold">Stock disponible:</span>
+                    <span class="ms-2">
+                      <span class="ms-2">
+                        <span class="ms-2">
+                          {{ calcularStockDisponible }} {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
+                        </span>
+                        <div class="ms-4 mt-1" v-if="calcularStockDisponible > 0">
+                          <small>
+                            Después de esta venta:
+                            <strong>{{ Math.max(0, calcularStockDisponible - cantidad) }}</strong>
+                            {{ unidadPaquete === 'paquete' ? 'Paquetes' : 'Unidades' }}
+                          </small>
+                        </div>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <!-- Descripción -->
+                <div class="mb-3">
+                  <h6 class="fw-bold mb-2">
+                    <i class="bi bi-text-paragraph me-2"></i>
+                    Descripción
+                  </h6>
+                  <p class="text-muted">
+                    {{ arraySeleccionado.descripcion || "No hay descripción disponible para este producto." }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Columna central: Precios -->
+              <div class="col-md-4">
+                <div class="mb-4">
+                  <!-- Sección de precios normales -->
+                  <h6 class="fw-bold mb-3">
+                    <i class="bi bi-tag me-2"></i>
+                    PRECIOS
+                  </h6>
+                  <div class="list-group">
+                    <div v-for="(precio, key) in [
+                      { nombre: 'Precio Uno', valor: arraySeleccionado.precio_uno },
+                      { nombre: 'Precio Dos', valor: arraySeleccionado.precio_dos },
+                      { nombre: 'Precio Tres', valor: arraySeleccionado.precio_tres },
+                      { nombre: 'Precio Cuatro', valor: arraySeleccionado.precio_cuatro },
+                      { nombre: 'Precio Venta', valor: arraySeleccionado.precio_venta }
+                    ].filter(p => p.valor && p.valor !== '0.0000')" :key="'normal_' + key"
+                      class="list-group-item border-0 px-0 py-1">
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" :id="'precio_' + key" :value="precio.valor"
+                          v-model="precioSeleccionado" @change="seleccionarPrecio({ ...precio, esPaquete: false })" />
+                        <label class="form-check-label" :for="'precio_' + key">
+                          {{ precio.nombre }}: {{ formatearPrecio(precio.valor) }}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Sección de precio por paquete -->
+                  <div v-if="arraySeleccionado.precio_costo_paq && arraySeleccionado.precio_costo_paq !== '0.0000'">
+                    <h6 class="fw-bold mb-3 mt-4">
+                      <i class="bi bi-tag me-2"></i>
+                      PRECIOS PAQUETE
+                    </h6>
+                    <div class="list-group">
+                      <div class="list-group-item border-0 px-0 py-1">
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" id="precio_paquete"
+                            :value="arraySeleccionado.precio_costo_paq" v-model="precioSeleccionado"
+                            @change="seleccionarPrecio({ nombre: 'Precio por Paquete', valor: arraySeleccionado.precio_costo_paq, esPaquete: true })" />
+                          <label class="form-check-label" for="precio_paquete">
+                            Precio por Paquete: {{ formatearPrecio(arraySeleccionado.precio_costo_paq) }}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna derecha: Detalles -->
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <h6 class="fw-bold mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    DETALLES DEL PRODUCTO
+                  </h6>
+                  <dl class="row">
+                    <dt class="col-sm-5">Código:</dt>
+                    <dd class="col-sm-7">{{ arraySeleccionado.codigo || "No especificado" }}</dd>
+
+                    <dt class="col-sm-5">Categoría:</dt>
+                    <dd class="col-sm-7">{{ arraySeleccionado.nombre_categoria || "No especificada" }}</dd>
+
+                    <dt class="col-sm-5">Marca:</dt>
+                    <dd class="col-sm-7">{{ arraySeleccionado.nombre_marca || "No especificada" }}</dd>
+
+                    <dt class="col-sm-5">Industria:</dt>
+                    <dd class="col-sm-7">{{ arraySeleccionado.nombre_industria || "No especificada" }}</dd>
+
+                    <dt class="col-sm-5">Grupo:</dt>
+                    <dd class="col-sm-7">{{ arraySeleccionado.nombre_grupo || "No especificado" }}</dd>
+
+                    <dt class="col-sm-5">Medida:</dt>
+                    <dd class="col-sm-7">{{ arraySeleccionado.nombre_medida || "No especificada" }}</dd>
+
+                    <template v-if="arraySeleccionado.unidad_envase">
+                      <dt class="col-sm-5">Uds Paq:</dt>
+                      <dd class="col-sm-7">{{ arraySeleccionado.unidad_envase }}</dd>
+                    </template>
+
+                    <template v-if="arraySeleccionado.fecha_vencimiento">
+                      <dt class="col-sm-5">Vencimiento:</dt>
+                      <dd class="col-sm-7">{{ new Date(arraySeleccionado.fecha_vencimiento).toLocaleDateString() }}</dd>
+                    </template>
+                  </dl>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Columna central: Precios -->
-          <div class="col-md-4">
-  <div class="mb-4">
-    <h6 class="fw-bold mb-3">
-      <i class="bi bi-tag me-2"></i>
-      PRECIOS
-    </h6>
-    <div class="list-group">
-      <div
-        v-for="(precio, key) in [
-          { nombre: 'Precio Uno', valor: arraySeleccionado.precio_uno },
-          { nombre: 'Precio Dos', valor: arraySeleccionado.precio_dos },
-          { nombre: 'Precio Tres', valor: arraySeleccionado.precio_tres },
-          { nombre: 'Precio Cuatro', valor: arraySeleccionado.precio_cuatro },
-          { nombre: 'Precio Venta', valor: arraySeleccionado.precio_venta },
-          // Nuevo: Precio por Paquete
-          arraySeleccionado.precio_costo_paq && arraySeleccionado.precio_costo_paq !== '0.0000'
-            ? {
-                nombre: `Precio por Paquete`,
-                valor: arraySeleccionado.precio_costo_paq,
-                esPaquete: true
-              }
-            : null
-        ].filter(Boolean)"
-        :key="key"
-        class="list-group-item border-0 px-0 py-1"
-        v-if="precio.valor !== '0.0000'"
-      >
-        <div class="form-check">
-          <input
-            class="form-check-input"
-            type="radio"
-            :id="'precio_'+key"
-            :value="precio.valor"
-            v-model="precioSeleccionado"
-            @change="seleccionarPrecio(precio)"
-          />
-          <label class="form-check-label" :for="'precio_'+key">
-            {{ precio.nombre }}: {{ formatearPrecio(precio.valor) }}
-          </label>
+          <!-- Footer -->
+          <div class="modal-footer d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <span class="text-muted me-2">Precio:</span>
+              <span :class="precioSeleccionado ? 'fw-bold text-success' : 'text-muted'">
+                {{ precioSeleccionado ? formatearPrecio(precioSeleccionado) : 'No seleccionado' }}
+              </span>
+            </div>
+
+            <div class="d-flex align-items-center">
+              <select class="form-select form-select-sm me-2" v-model="unidadPaquete" @change="actualizarVistaStock"
+                style="width: auto;">
+                <option v-for="option in tipoVentaOptions" :value="option.value" :key="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+
+              <div class="input-group me-2" style="width: 120px;">
+                <button class="btn btn-outline-danger" type="button" @click="cantidad > 1 ? cantidad-- : null">
+                  <i class="bi bi-dash"></i>
+                </button>
+                <input type="text" class="form-control text-center" v-model="cantidad" min="1">
+                <button class="btn btn-outline-success" type="button" @click="cantidad++">
+                  <i class="bi bi-plus"></i>
+                </button>
+              </div>
+
+              <button class="btn btn-success me-2" @click="agregarDetalleYCerrar()">
+                <i class="bi bi-cart-plus me-1"></i> Agregar
+              </button>
+              <button class="btn btn-danger" @click="limpiarSeleccion">
+                <i class="bi bi-trash me-1"></i> Eliminar
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-
-          <!-- Columna derecha: Detalles -->
-          <div class="col-md-4">
-            <div class="mb-3">
-              <h6 class="fw-bold mb-3">
-                <i class="bi bi-info-circle me-2"></i>
-                DETALLES DEL PRODUCTO
-              </h6>
-              <dl class="row">
-                <dt class="col-sm-5">Código:</dt>
-                <dd class="col-sm-7">{{ arraySeleccionado.codigo || "No especificado" }}</dd>
-
-                <dt class="col-sm-5">Categoría:</dt>
-                <dd class="col-sm-7">{{ arraySeleccionado.nombre_categoria || "No especificada" }}</dd>
-
-                <dt class="col-sm-5">Marca:</dt>
-                <dd class="col-sm-7">{{ arraySeleccionado.nombre_marca || "No especificada" }}</dd>
-
-                <dt class="col-sm-5">Industria:</dt>
-                <dd class="col-sm-7">{{ arraySeleccionado.nombre_industria || "No especificada" }}</dd>
-
-                <dt class="col-sm-5">Grupo:</dt>
-                <dd class="col-sm-7">{{ arraySeleccionado.nombre_grupo || "No especificado" }}</dd>
-
-                <dt class="col-sm-5">Medida:</dt>
-                <dd class="col-sm-7">{{ arraySeleccionado.nombre_medida || "No especificada" }}</dd>
-
-                <template v-if="arraySeleccionado.unidad_envase">
-                  <dt class="col-sm-5">Uds Paq:</dt>
-                  <dd class="col-sm-7">{{ arraySeleccionado.unidad_envase }}</dd>
-                </template>
-
-                <template v-if="arraySeleccionado.fecha_vencimiento">
-                  <dt class="col-sm-5">Vencimiento:</dt>
-                  <dd class="col-sm-7">{{ new Date(arraySeleccionado.fecha_vencimiento).toLocaleDateString() }}</dd>
-                </template>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="modal-footer d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center">
-          <span class="text-muted me-2">Precio:</span>
-          <span :class="precioSeleccionado ? 'fw-bold text-success' : 'text-muted'">
-            {{ precioSeleccionado ? formatearPrecio(precioSeleccionado) : 'No seleccionado' }}
-          </span>
-        </div>
-
-        <div class="d-flex align-items-center">
-          <select class="form-select form-select-sm me-2" 
-                  v-model="unidadPaquete" 
-                  @change="actualizarVistaStock"
-                  style="width: auto;">
-            <option v-for="option in tipoVentaOptions" 
-                    :value="option.value" 
-                    :key="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-
-          <div class="input-group me-2" style="width: 120px;">
-            <button class="btn btn-outline-danger" type="button" @click="cantidad > 1 ? cantidad-- : null">
-              <i class="bi bi-dash"></i>
-            </button>
-            <input type="text" class="form-control text-center" v-model="cantidad" min="1">
-            <button class="btn btn-outline-success" type="button" @click="cantidad++">
-              <i class="bi bi-plus"></i>
-            </button>
-          </div>
-
-          <button class="btn btn-success me-2" @click="agregarDetalleYCerrar()">
-            <i class="bi bi-cart-plus me-1"></i> Agregar
-          </button>
-          <button class="btn btn-danger" @click="limpiarSeleccion">
-            <i class="bi bi-trash me-1"></i> Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
     <!-- Modal de búsqueda de artículos -->
-    <Dialog
-      :visible.sync="modal"
-      :containerStyle="{ width: '100%', maxWidth: '800px', paddingTop: '35px' }"
-      modal
-      closable
-    >
+    <Dialog :visible.sync="modal" :containerStyle="{ width: '100%', maxWidth: '800px', paddingTop: '35px' }" modal
+      closable>
       <template #header>
         <h3>{{ tituloModal }}</h3>
       </template>
@@ -1335,73 +1032,41 @@
             <div class="col-12 md:col-6 lg:col-6">
               <span class="p-input-icon-left w-full">
                 <i class="pi pi-search" />
-                <InputText
-                  v-model="buscarA"
-                  placeholder="Buscar por código o nombre"
-                  @input="listarArticulo"
-                  class="w-full"
-                />
+                <InputText v-model="buscarA" placeholder="Buscar por código o nombre" @input="listarArticulo"
+                  class="w-full" />
               </span>
             </div>
           </div>
-          <DataTable
-    :value="arrayArticulo"
-    :paginator="true"
-    :rows="10"
-    class="p-datatable-sm moto-table"
-    @row-select="onRowSelect"
-    selectionMode="single"
-    responsiveLayout="scroll"
-    :selection="selectedArticulo"
-    breakpoint="960px"
->
-    <Column field="codigo" header="Código" :class="'sm:table-cell'" />
-    <Column field="nombre" header="Nombre" :class="'sm:table-cell'" />
-    <Column 
-        field="nombre_marca" 
-        header="Marca" 
-        :class="'hidden sm:table-cell'" 
-    />
-    <Column
-        field="nombre_categoria"
-        header="Categoría"
-        :class="'hidden sm:table-cell'"
-    />
-    <Column header="Precio Venta" :class="'hidden sm:table-cell'">
-        <template #body="slotProps">
-            {{
-                (
+          <DataTable :value="arrayArticulo" :paginator="true" :rows="10" class="p-datatable-sm moto-table"
+            @row-select="onRowSelect" selectionMode="single" responsiveLayout="scroll" :selection="selectedArticulo"
+            breakpoint="960px">
+            <Column field="codigo" header="Código" :class="'sm:table-cell'" />
+            <Column field="nombre" header="Nombre" :class="'sm:table-cell'" />
+            <Column field="nombre_marca" header="Marca" :class="'hidden sm:table-cell'" />
+            <Column field="nombre_categoria" header="Categoría" :class="'hidden sm:table-cell'" />
+            <Column header="Precio Venta" :class="'hidden sm:table-cell'">
+              <template #body="slotProps">
+                {{
+                  (
                     slotProps.data.precio_venta * parseFloat(monedaVenta[0])
-                ).toFixed(2)
-            }}
-            {{ monedaVenta[1] }}
-        </template>
-    </Column>
-    <Column
-        field="saldo_stock"
-        header="Stock"
-        :class="'sm:table-cell'"
-    />
-    <Column header="Estado" :class="'hidden sm:table-cell'">
-        <template #body="slotProps">
-            <Tag
-                :severity="slotProps.data.condicion ? 'success' : 'danger'"
-                :value="slotProps.data.condicion ? 'Activo' : 'Desactivado'"
-            />
-        </template>
-    </Column>
-</DataTable>
+                  ).toFixed(2)
+                }}
+                {{ monedaVenta[1] }}
+              </template>
+            </Column>
+            <Column field="saldo_stock" header="Stock" :class="'sm:table-cell'" />
+            <Column header="Estado" :class="'hidden sm:table-cell'">
+              <template #body="slotProps">
+                <Tag :severity="slotProps.data.condicion ? 'success' : 'danger'"
+                  :value="slotProps.data.condicion ? 'Activo' : 'Desactivado'" />
+              </template>
+            </Column>
+          </DataTable>
         </TabPanel>
       </TabView>
     </Dialog>
-    <Dialog
-      :visible.sync="mostrarDetalleCredito"
-      :style="{ width: '80%' }"
-      :modal="true"
-      :closable="true"
-      :closeOnEscape="true"
-      @hide="mostrarDetalleCredito = false"
-    >
+    <Dialog :visible.sync="mostrarDetalleCredito" :style="{ width: '80%' }" :modal="true" :closable="true"
+      :closeOnEscape="true" @hide="mostrarDetalleCredito = false">
       <template #header>
         <h4>Plan de Pagos Completo</h4>
       </template>
@@ -1426,22 +1091,14 @@
         <div class="info-credito-item">
           <label>Estado:</label>
           <div>
-            <Tag
-              :severity="
-                creditoInfo.estado === 'Completado' ? 'success' : 'warning'
-              "
-              :value="creditoInfo.estado"
-            >
+            <Tag :severity="creditoInfo.estado === 'Completado' ? 'success' : 'warning'
+              " :value="creditoInfo.estado">
             </Tag>
           </div>
         </div>
       </div>
 
-      <DataTable
-        :value="cuotasCredito"
-        class="plan-pagos-table"
-        v-if="cuotasCredito && cuotasCredito.length > 0"
-      >
+      <DataTable :value="cuotasCredito" class="plan-pagos-table" v-if="cuotasCredito && cuotasCredito.length > 0">
         <Column field="numero_cuota" header="N°"></Column>
         <Column field="fecha_pago" header="Fecha pago">
           <template #body="slotProps">
@@ -1474,12 +1131,8 @@
         </Column>
         <Column field="estado" header="Estado">
           <template #body="slotProps">
-            <Tag
-              :severity="
-                slotProps.data.estado === 'Pagado' ? 'success' : 'warning'
-              "
-              :value="slotProps.data.estado"
-            >
+            <Tag :severity="slotProps.data.estado === 'Pagado' ? 'success' : 'warning'
+              " :value="slotProps.data.estado">
             </Tag>
           </template>
         </Column>
@@ -1487,14 +1140,10 @@
       <div v-else class="no-data">No hay información de cuotas disponible</div>
 
       <template #footer>
-        <Button
-          label="Cerrar"
-          icon="pi pi-times"
-          @click="mostrarDetalleCredito = false"
-          class="p-button-danger"
-        ></Button>
+        <Button label="Cerrar" icon="pi pi-times" @click="mostrarDetalleCredito = false"
+          class="p-button-danger"></Button>
       </template>
-      
+
     </Dialog>
   </main>
 </template>
@@ -1747,12 +1396,12 @@ export default {
   },
   methods: {
     cerrarModalReporte() {
-  console.log("Método cerrarModalReporte ejecutado");
-  this.mostrarModal = false;
-  this.error = "";
-  this.fecha_inicio = "";
-  this.fecha_fin = "";
-},
+      console.log("Método cerrarModalReporte ejecutado");
+      this.mostrarModal = false;
+      this.error = "";
+      this.fecha_inicio = "";
+      this.fecha_fin = "";
+    },
     async generarReporte() {
       this.error = "";
       if (!this.fecha_inicio || !this.fecha_fin) {
@@ -1804,17 +1453,17 @@ export default {
       try {
         // Clear existing number
         this.num_comprob = '';
-        
+
         const response = await axios.get("/obtener-ultimo-comprobante");
         if (response.data.last_comprobante) {
           this.num_comprob = response.data.last_comprobante;
         } else {
           this.num_comprob = '00001';
         }
-        
+
         // Store the number for validation
         this.last_comprobante = parseInt(this.num_comprob);
-        
+
       } catch (error) {
         console.error("Error al obtener último comprobante:", error);
         this.num_comprob = '00001';
@@ -1822,157 +1471,163 @@ export default {
       }
     },
     async registrarVenta(idtipo_pago = 1) {
-    try {
-      // Validar datos de venta a crédito
-      if (this.tipoVenta === 'credito') {
-        if (!this.numero_cuotas || !this.tiempo_diaz) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
-          });
-          return;
-        }
-
-        if (!this.cuotas || this.cuotas.length === 0) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
-          });
-          return;
-        }
+  try {
+    // Validar datos de venta a crédito
+    if (this.tipoVenta === 'credito') {
+      if (!this.numero_cuotas || !this.tiempo_diaz) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
+        });
+        return;
       }
 
-      this.mostrarSpinner = true;
-      await this.buscarOCrearCliente();
-      await this.obtenerDatosSesionYComprobante();
-
-      const ventaData = {
-        idcliente: this.idcliente,
-        tipo_comprobante: this.tipo_comprobante,
-        serie_comprobante: this.serie_comprobante,
-        num_comprobante: this.num_comprob,
-        impuesto: this.impuesto || 0.18,
-        total: this.calcularTotal,
-        idAlmacen: this.idAlmacen,
-        idtipo_pago: idtipo_pago,
-        idtipo_venta: this.idtipo_venta,
-        data: this.arrayDetalle
-      };
-
-      // --- AQUI: AGREGAR CAMPOS DE VENTA ADELANTADA ---
-      if (this.tipoVenta === 'adelantada') {
-        ventaData.direccion_entrega = this.direccionEntrega;
-        ventaData.telefono_contacto = this.telefonoContacto;
-        ventaData.fecha_entrega = this.fechaEntrega
-          ? (typeof this.fechaEntrega === 'string'
-              ? this.fechaEntrega
-              : this.fechaEntrega.toISOString().split('T')[0])
-          : null;
-        ventaData.observaciones = this.observaciones;
-        ventaData.estado = "Pendiente"; // Estado inicial para ventas adelantadas
-
-        // Si quieres enviar el monto recibido y cambio para efectivo:
-        if (this.tipoPagoAdelantado === "efectivo") {
-          ventaData.monto_recibido = this.montoAdelantado;
-          ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
-        }
+      if (!this.cuotas || this.cuotas.length === 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
+        });
+        return;
       }
-
-      // --- FIN MODIFICACIÓN ---
-
-      if (this.tipoVenta === 'credito') {
-        ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
-          numero_cuota: index + 1,
-          fecha_pago: cuota.fecha_pago,
-          precio_cuota: parseFloat(cuota.precio_cuota),
-          saldo_restante: parseFloat(cuota.saldo_restante),
-          estado: 'Pendiente'
-        }));
-
-        ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
-        ventaData.total = parseFloat(this.calcularTotal);
-        ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
-        ventaData.estado_credito = 'Pendiente';
-      }
-
-      const response = await axios.post("/venta/registrar", ventaData);
-
-      if (response.data.id) {
-        await this.obtenerDatosSesionYComprobante();
-        this.listado = 1;
-        this.cerrarModal2();
-        this.listarVenta(1, "", "num_comprob");
-
-        if (this.tipoVenta === 'adelantada') {
-          Swal.fire(
-            "Pedido registrado",
-            "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
-            "success"
-          );
-        } else {
-          this.imprimirResivo(response.data.id);
-        }
-
-        this.reiniciarFormulario();
-      } else {
-        Swal.fire("Error", "No se pudo completar la venta", "error");
-      }
-    } catch (error) {
-      console.error("Error al registrar venta:", error);
-      let errorMessage = error.response && error.response.data && error.response.data.error 
-        ? error.response.data.error 
-        : 'Error al procesar la venta';
-      Swal.fire({
-        icon: 'error',
-        title: 'Error al registrar la venta',
-        text: errorMessage
-      });
-    } finally {
-      this.mostrarSpinner = false;
     }
-  },
+
+    this.mostrarSpinner = true;
+    await this.buscarOCrearCliente();
+    await this.obtenerDatosSesionYComprobante();
+
+    const ventaData = {
+      idcliente: this.idcliente,
+      tipo_comprobante: this.tipo_comprobante,
+      serie_comprobante: this.serie_comprobante,
+      num_comprobante: this.num_comprob,
+      impuesto: this.impuesto || 0.18,
+      total: this.calcularTotal,
+      idAlmacen: this.idAlmacen,
+      idtipo_pago: idtipo_pago,
+      idtipo_venta: this.idtipo_venta,
+      data: this.arrayDetalle
+    };
+
+    // Agregar campos específicos para venta adelantada
+    if (this.tipoVenta === 'adelantada') {
+      ventaData.direccion_entrega = this.direccionEntrega;
+      ventaData.telefono_contacto = this.telefonoContacto;
+      ventaData.fecha_entrega = this.fechaEntrega
+        ? (typeof this.fechaEntrega === 'string'
+          ? this.fechaEntrega
+          : this.fechaEntrega.toISOString().split('T')[0])
+        : null;
+      ventaData.observaciones = this.observaciones;
+      ventaData.estado = "Pendiente";
+      
+      if (this.tipoPagoAdelantado === "efectivo") {
+        ventaData.monto_recibido = this.montoAdelantado;
+        ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+      }
+    }
+
+    // Agregar campos específicos para venta a crédito
+    if (this.tipoVenta === 'credito') {
+      ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
+        numero_cuota: index + 1,
+        fecha_pago: cuota.fecha_pago,
+        precio_cuota: parseFloat(cuota.precio_cuota),
+        saldo_restante: parseFloat(cuota.saldo_restante),
+        estado: 'Pendiente'
+      }));
+
+      ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
+      ventaData.total = parseFloat(this.calcularTotal);
+      ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
+      ventaData.estado_credito = 'Pendiente';
+    }
+
+    const response = await axios.post("/venta/registrar", ventaData);
+
+    if (response.data.id) {
+      await this.obtenerDatosSesionYComprobante();
+      this.listado = 1;
+      this.cerrarModal2();
+      this.listarVenta(1, "", "num_comprob");
+
+      // Mostrar mensaje diferente según el tipo de venta
+      if (this.tipoVenta === 'adelantada') {
+        Swal.fire(
+          "Pedido registrado",
+          "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
+          "success"
+        );
+      } else if (this.tipoVenta === 'credito') {
+        Swal.fire(
+          "Venta a crédito registrada",
+          "La venta a crédito se ha registrado correctamente",
+          "success"
+        );
+      } else {
+        // Para venta al contado, mostrar el diálogo de selección de tamaño de comprobante
+        this.imprimirResivo(response.data.id);
+      }
+
+      this.reiniciarFormulario();
+    } else {
+      Swal.fire("Error", "No se pudo completar la venta", "error");
+    }
+  } catch (error) {
+    console.error("Error al registrar venta:", error);
+    let errorMessage = error.response && error.response.data && error.response.data.error
+      ? error.response.data.error
+      : 'Error al procesar la venta';
+    Swal.fire({
+      icon: 'error',
+      title: 'Error al registrar la venta',
+      text: errorMessage
+    });
+  } finally {
+    this.mostrarSpinner = false;
+  }
+},
     generarCuotas() {
-        if (!this.numero_cuotas || !this.tiempo_diaz) {
-            Swal.fire({
-                icon: "warning",
-                title: "Campos incompletos",
-                text: "Ingrese la cantidad de cuotas y frecuencia de pagos"
-            });
-            return;
-        }
+      if (!this.numero_cuotas || !this.tiempo_diaz) {
+        Swal.fire({
+          icon: "warning",
+          title: "Campos incompletos",
+          text: "Ingrese la cantidad de cuotas y frecuencia de pagos"
+        });
+        return;
+      }
 
-        // Validate numeric values
-        if (isNaN(this.numero_cuotas) || isNaN(this.tiempo_diaz)) {
-            Swal.fire({
-                icon: "error",
-                title: "Error en los datos",
-                text: "Los valores de cuotas y días deben ser números válidos"
-            });
-            return;
-        }
+      // Validate numeric values
+      if (isNaN(this.numero_cuotas) || isNaN(this.tiempo_diaz)) {
+        Swal.fire({
+          icon: "error",
+          title: "Error en los datos",
+          text: "Los valores de cuotas y días deben ser números válidos"
+        });
+        return;
+      }
 
-        this.cuotas = [];
-        const fechaHoy = new Date();
-        const montoTotal = this.calcularTotal;
-        const montoPorCuota = parseFloat((montoTotal / this.numero_cuotas).toFixed(2));
-        let saldoRestante = montoTotal;
+      this.cuotas = [];
+      const fechaHoy = new Date();
+      const montoTotal = this.calcularTotal;
+      const montoPorCuota = parseFloat((montoTotal / this.numero_cuotas).toFixed(2));
+      let saldoRestante = montoTotal;
 
-        for (let i = 0; i < this.numero_cuotas; i++) {
-            const fechaPago = new Date(fechaHoy);
-            fechaPago.setDate(fechaPago.getDate() + ((i + 1) * parseInt(this.tiempo_diaz)));
+      for (let i = 0; i < this.numero_cuotas; i++) {
+        const fechaPago = new Date(fechaHoy);
+        fechaPago.setDate(fechaPago.getDate() + ((i + 1) * parseInt(this.tiempo_diaz)));
 
-            const cuota = {
-                fecha_pago: fechaPago.toISOString().split('T')[0],
-                precio_cuota: montoPorCuota,
-                saldo_restante: parseFloat(saldoRestante.toFixed(2)),
-                estado: "Pendiente"
-            };
+        const cuota = {
+          fecha_pago: fechaPago.toISOString().split('T')[0],
+          precio_cuota: montoPorCuota,
+          saldo_restante: parseFloat(saldoRestante.toFixed(2)),
+          estado: "Pendiente"
+        };
 
-            saldoRestante -= montoPorCuota;
-            this.cuotas.push(cuota);
-        }
+        saldoRestante -= montoPorCuota;
+        this.cuotas.push(cuota);
+      }
     },
     registrarVentaQR() {
       if (!this.qrPagoVerificado) {
@@ -1983,7 +1638,7 @@ export default {
         });
         return;
       }
-      
+
       // El método llama al mismo registrarVenta pero con el ID de tipo de pago para QR (4)
       this.registrarVenta(4); // 4 es el ID para tipo de pago QR
     },
@@ -2257,7 +1912,7 @@ export default {
         this.unidadPaquete = "1";
       }
     },
-  
+
     formatearPrecio(precio) {
       if (precio == null) return "N/A";
 
@@ -2399,11 +2054,11 @@ export default {
 
     // Gestión de ventas
     abrirTipoVenta() {
-  this.reiniciarFormulario(); // <-- Llama aquí también
-  this.modal2 = true;
-  this.cliente = this.nombreCliente;
-  this.step = 1;
-},
+      this.reiniciarFormulario(); // <-- Llama aquí también
+      this.modal2 = true;
+      this.cliente = this.nombreCliente;
+      this.step = 1;
+    },
     seleccionarTipoVenta(tipo) {
       this.tipoVenta = tipo;
       this.tipoVentaSeleccionado = true;
@@ -2622,7 +2277,7 @@ export default {
         return (
           this.montoAdelantado &&
           this.montoAdelantado >=
-            this.calcularTotal * parseFloat(this.monedaVenta[0])
+          this.calcularTotal * parseFloat(this.monedaVenta[0])
         );
       }
 
@@ -2699,43 +2354,43 @@ export default {
       }
     },
     verVenta(id) {
-  this.listado = 2;
-  this.cargando = true;
+      this.listado = 2;
+      this.cargando = true;
 
-  // Obtener cabecera de venta
-  axios.get(`/venta/obtenerCabecera?id=${id}`)
-    .then((response) => {
-      if (response.data.venta) {
-        this.ventaDetalle = {
-          ...response.data.venta,
-          ...(response.data.datosAdelantados || {})
-        };
-        this.cliente = response.data.venta.nombre;
-        this.tipo_comprobante = response.data.venta.tipo_comprobante;
-        this.num_comprobante = response.data.venta.num_comprobante;
-        this.total = response.data.venta.total;
+      // Obtener cabecera de venta
+      axios.get(`/venta/obtenerCabecera?id=${id}`)
+        .then((response) => {
+          if (response.data.venta) {
+            this.ventaDetalle = {
+              ...response.data.venta,
+              ...(response.data.datosAdelantados || {})
+            };
+            this.cliente = response.data.venta.nombre;
+            this.tipo_comprobante = response.data.venta.tipo_comprobante;
+            this.num_comprobante = response.data.venta.num_comprobante;
+            this.total = response.data.venta.total;
 
-        // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
-        this.creditoInfo = response.data.credito || null;
-        this.cuotasCredito = response.data.cuotas || [];
-      }
-      this.cargando = false;
-    })
-    .catch((error) => {
-      console.error("Error al obtener cabecera:", error);
-      Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
-      this.cargando = false;
-    });
+            // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
+            this.creditoInfo = response.data.credito || null;
+            this.cuotasCredito = response.data.cuotas || [];
+          }
+          this.cargando = false;
+        })
+        .catch((error) => {
+          console.error("Error al obtener cabecera:", error);
+          Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
+          this.cargando = false;
+        });
 
-  // Obtener detalles de productos
-  axios.get(`/venta/obtenerDetalles?id=${id}`)
-    .then((response) => {
-      this.arrayDetalle = response.data.detalles;
-    })
-    .catch((error) => {
-      console.error("Error al obtener detalles:", error);
-    });
-},
+      // Obtener detalles de productos
+      axios.get(`/venta/obtenerDetalles?id=${id}`)
+        .then((response) => {
+          this.arrayDetalle = response.data.detalles;
+        })
+        .catch((error) => {
+          console.error("Error al obtener detalles:", error);
+        });
+    },
     // Formato para fechas
     formatFecha(fecha) {
       if (!fecha) return "N/A";
@@ -2820,17 +2475,17 @@ export default {
 
     // Método para volver al listado desde la vista de detalle
     ocultarDetalle() {
-  this.listado = 1;
-  this.ventaDetalle = null;
-  this.cliente = "";
-  this.tipo_comprobante = "RESIVO";
-  this.num_comprobante = "";
-  this.total = 0;
-  this.creditoInfo = null;
-  this.cuotasCredito = [];
-  this.arrayDetalle = [];
-  this.reiniciarFormulario(); // <-- Asegúrate de llamar esto aquí
-},
+      this.listado = 1;
+      this.ventaDetalle = null;
+      this.cliente = "";
+      this.tipo_comprobante = "RESIVO";
+      this.num_comprobante = "";
+      this.total = 0;
+      this.creditoInfo = null;
+      this.cuotasCredito = [];
+      this.arrayDetalle = [];
+      this.reiniciarFormulario(); // <-- Asegúrate de llamar esto aquí
+    },
 
     // Obtener información del crédito
     obtenerInfoCredito(id) {
@@ -2947,13 +2602,13 @@ export default {
       });
     },
     async cargarVentaDetalle(id) {
-  const res = await axios.post('/venta/obtenerCabecera', { id });
-  // ¿Qué haces aquí?
-  // Debes asignar así:
-  this.ventaDetalle = res.data.venta;
-  this.creditoInfo = res.data.credito || null;
-  this.cuotasCredito = res.data.cuotas || [];
-},
+      const res = await axios.post('/venta/obtenerCabecera', { id });
+      // ¿Qué haces aquí?
+      // Debes asignar así:
+      this.ventaDetalle = res.data.venta;
+      this.creditoInfo = res.data.credito || null;
+      this.cuotasCredito = res.data.cuotas || [];
+    },
 
     // Utilidades
     datosConfiguracion() {
@@ -3083,6 +2738,7 @@ export default {
     width: 0%;
     opacity: 0;
   }
+
   100% {
     width: 100%;
     opacity: 1;
@@ -3399,6 +3055,7 @@ export default {
   .form-row {
     flex-wrap: nowrap;
   }
+
   .form-group {
     flex: 1;
   }
@@ -3414,6 +3071,7 @@ export default {
     margin-top: 4px;
   }
 }
+
 /* Estilos para el modal de detalle de producto */
 .product-header {
   display: flex;
@@ -3633,6 +3291,7 @@ export default {
 .mr-2 {
   margin-right: 0.5rem;
 }
+
 /* Estructura general del layout */
 .product-layout {
   display: flex;
@@ -3727,5 +3386,4 @@ export default {
 :deep(.p-button-sm) {
   padding: 0.25rem 0.5rem;
 }
-
 </style>
