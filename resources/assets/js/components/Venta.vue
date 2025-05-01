@@ -1471,123 +1471,133 @@ export default {
       }
     },
     async registrarVenta(idtipo_pago = 1) {
-  try {
-    // Validar datos de venta a crédito
-    if (this.tipoVenta === 'credito') {
-      if (!this.numero_cuotas || !this.tiempo_diaz) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
-        });
-        return;
-      }
-
-      if (!this.cuotas || this.cuotas.length === 0) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
-        });
-        return;
-      }
-    }
-
-    this.mostrarSpinner = true;
-    await this.buscarOCrearCliente();
-    await this.obtenerDatosSesionYComprobante();
-
-    const ventaData = {
-      idcliente: this.idcliente,
-      tipo_comprobante: this.tipo_comprobante,
-      serie_comprobante: this.serie_comprobante,
-      num_comprobante: this.num_comprob,
-      impuesto: this.impuesto || 0.18,
-      total: this.calcularTotal,
-      idAlmacen: this.idAlmacen,
-      idtipo_pago: idtipo_pago,
-      idtipo_venta: this.idtipo_venta,
-      data: this.arrayDetalle
-    };
-
-    // Agregar campos específicos para venta adelantada
-    if (this.tipoVenta === 'adelantada') {
-      ventaData.direccion_entrega = this.direccionEntrega;
-      ventaData.telefono_contacto = this.telefonoContacto;
-      ventaData.fecha_entrega = this.fechaEntrega
-        ? (typeof this.fechaEntrega === 'string'
-          ? this.fechaEntrega
-          : this.fechaEntrega.toISOString().split('T')[0])
-        : null;
-      ventaData.observaciones = this.observaciones;
-      ventaData.estado = "Pendiente";
+    try {
+      console.log('Tipo de venta detectado:', this.tipoVenta);
       
-      if (this.tipoPagoAdelantado === "efectivo") {
-        ventaData.monto_recibido = this.montoAdelantado;
-        ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+      // Validaciones previas (se mantienen igual)
+      if (this.tipoVenta === 'credito') {
+        if (!this.numero_cuotas || !this.tiempo_diaz) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
+          });
+          return;
+        }
+
+        if (!this.cuotas || this.cuotas.length === 0) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
+          });
+          return;
+        }
       }
-    }
 
-    // Agregar campos específicos para venta a crédito
-    if (this.tipoVenta === 'credito') {
-      ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
-        numero_cuota: index + 1,
-        fecha_pago: cuota.fecha_pago,
-        precio_cuota: parseFloat(cuota.precio_cuota),
-        saldo_restante: parseFloat(cuota.saldo_restante),
-        estado: 'Pendiente'
-      }));
-
-      ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
-      ventaData.total = parseFloat(this.calcularTotal);
-      ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
-      ventaData.estado_credito = 'Pendiente';
-    }
-
-    const response = await axios.post("/venta/registrar", ventaData);
-
-    if (response.data.id) {
+      this.mostrarSpinner = true;
+      await this.buscarOCrearCliente();
       await this.obtenerDatosSesionYComprobante();
-      this.listado = 1;
-      this.cerrarModal2();
-      this.listarVenta(1, "", "num_comprob");
 
-      // Mostrar mensaje diferente según el tipo de venta
+      // Preparación de datos (se mantiene igual)
+      const ventaData = {
+        idcliente: this.idcliente,
+        tipo_comprobante: this.tipo_comprobante,
+        serie_comprobante: this.serie_comprobante,
+        num_comprobante: this.num_comprob,
+        impuesto: this.impuesto || 0.18,
+        total: this.calcularTotal,
+        idAlmacen: this.idAlmacen,
+        idtipo_pago: idtipo_pago,
+        idtipo_venta: this.idtipo_venta,
+        data: this.arrayDetalle
+      };
+
+      // Datos específicos para venta adelantada (se mantiene igual)
       if (this.tipoVenta === 'adelantada') {
-        Swal.fire(
-          "Pedido registrado",
-          "La venta adelantada se ha registrado correctamente y quedará en estado Pendiente hasta la entrega",
-          "success"
-        );
-      } else if (this.tipoVenta === 'credito') {
-        Swal.fire(
-          "Venta a crédito registrada",
-          "La venta a crédito se ha registrado correctamente",
-          "success"
-        );
-      } else {
-        // Para venta al contado, mostrar el diálogo de selección de tamaño de comprobante
-        this.imprimirResivo(response.data.id);
+        ventaData.direccion_entrega = this.direccionEntrega;
+        ventaData.telefono_contacto = this.telefonoContacto;
+        ventaData.fecha_entrega = this.fechaEntrega
+          ? (typeof this.fechaEntrega === 'string'
+            ? this.fechaEntrega
+            : this.fechaEntrega.toISOString().split('T')[0])
+          : null;
+        ventaData.observaciones = this.observaciones;
+        ventaData.estado = "Pendiente";
+        
+        if (this.tipoPagoAdelantado === "efectivo") {
+          ventaData.monto_recibido = this.montoAdelantado;
+          ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+        }
       }
 
-      this.reiniciarFormulario();
-    } else {
-      Swal.fire("Error", "No se pudo completar la venta", "error");
+      // Datos específicos para venta a crédito (se mantiene igual)
+      if (this.tipoVenta === 'credito') {
+        ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
+          numero_cuota: index + 1,
+          fecha_pago: cuota.fecha_pago,
+          precio_cuota: parseFloat(cuota.precio_cuota),
+          saldo_restante: parseFloat(cuota.saldo_restante),
+          estado: 'Pendiente'
+        }));
+
+        ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
+        ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
+        ventaData.estado_credito = 'Pendiente';
+      }
+
+      const response = await axios.post("/venta/registrar", ventaData);
+
+      if (response.data && response.data.id) {
+        await this.obtenerDatosSesionYComprobante();
+        this.listado = 1;
+        this.cerrarModal2();
+        this.listarVenta(1, "", "num_comprob");
+
+        /* COMPORTAMIENTOS DIFERENCIADOS EXACTAMENTE COMO LO PIDES */
+        if (this.idtipo_venta === 1) { // Venta al contado
+          // Solo muestra el diálogo carta/rollo
+          this.imprimirResivo(response.data.id);
+        } 
+        else if (this.idtipo_venta === 2) { // Venta a crédito
+          // Solo muestra mensaje de éxito específico
+          Swal.fire({
+            title: 'Venta a Crédito Registrada',
+            text: 'El crédito se ha registrado exitosamente',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        }
+        else if (this.idtipo_venta === 3) { // Venta adelantada
+          // Solo muestra mensaje de éxito específico
+          Swal.fire({
+            title: 'Pedido Adelantado Registrado',
+            text: 'La venta adelantada se ha registrado correctamente',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        }
+
+        this.reiniciarFormulario();
+        return;
+      }
+
+      const errorMessage = (response.data && response.data.message) || 'Respuesta inesperada del servidor';
+      throw new Error(errorMessage);
+
+    } catch (error) {
+      console.error("Error al registrar venta:", error);
+      Swal.fire(
+        "Error",
+        "Ocurrió un error al procesar la venta",
+        "error"
+      );
+    } finally {
+      this.mostrarSpinner = false;
     }
-  } catch (error) {
-    console.error("Error al registrar venta:", error);
-    let errorMessage = error.response && error.response.data && error.response.data.error
-      ? error.response.data.error
-      : 'Error al procesar la venta';
-    Swal.fire({
-      icon: 'error',
-      title: 'Error al registrar la venta',
-      text: errorMessage
-    });
-  } finally {
-    this.mostrarSpinner = false;
-  }
-},
+  },
     generarCuotas() {
       if (!this.numero_cuotas || !this.tiempo_diaz) {
         Swal.fire({
@@ -2547,34 +2557,62 @@ export default {
           return "info";
       }
     },
-    imprimirResivo(id) {
-      Swal.fire({
-        title: "Selecciona un tamaño para imprimir el recibo",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "CARTA",
-        cancelButtonText: "ROLLO",
-        reverseButtons: true,
-      }).then((result) => {
-        const endpoint = result.value ? "imprimirCarta" : "imprimirRollo";
-        const filename = result.value ? "recibo_carta.pdf" : "recibo_rollo.pdf";
+    imprimirResivo(id, correo = null) {
+    // Este método SOLO se llama para ventas al contado (idtipo_venta === 1)
+    Swal.fire({
+      title: "Seleccione formato de recibo",
+      text: "Elija el tamaño para imprimir el comprobante",
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: "Formato CARTA",
+      cancelButtonText: "Formato ROLLO",
+      reverseButtons: true,
+    }).then((result) => {
+      const endpoint = result.value ? "imprimirCarta" : "imprimirRollo";
+      const filename = result.value ? "recibo_carta.pdf" : "recibo_rollo.pdf";
 
-        axios
-          .get(`/resivo/${endpoint}/${id}`, { responseType: "blob" })
-          .then((response) => {
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          })
-          .catch((error) => {
-            console.error("Error al imprimir recibo:", error);
-          });
+      axios.get(`/resivo/${endpoint}/${id}`, { 
+        responseType: "blob",
+        timeout: 10000
+      })
+      .then((response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+      })
+      .catch((error) => {
+        console.error("Error al generar recibo:", error);
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo generar el documento',
+          life: 3000
+        });
       });
-    },
+    });
+  },
+
+
+  verVenta(id) {
+    axios.get(`/venta/obtenerCabecera?id=${id}`).then(response => {
+      this.ventaDetalle = response.data.venta;
+    
+    // Verificación directa sin usar esVentaEspecial()
+    if (!(this.ventaDetalle.idtipo_venta === 2 || this.ventaDetalle.idtipo_venta === 3)) {
+      this.imprimirResivo(id);
+    }
+  });
+},
+
     desactivarVenta(id) {
       Swal.fire({
         title: "¿Está seguro de anular esta venta?",
