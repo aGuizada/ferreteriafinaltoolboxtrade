@@ -502,8 +502,8 @@ Route::group(["middleware" => ["auth"]], function () {
         Route::get('/caja/resumen/{id}', 'CajaController@resumen');
         Route::get('/caja/resumen-pdf/{id}', 'CajaController@generarPDF');
         Route::get('/caja/saldo/{id}', 'CajaController@obtenerSaldoCaja');
-        Route::get('/caja/historial-pdf/{id}', 'CajaController@descargarHistorial');
-
+        //Route::get('/caja/historial-pdf/{id}', 'CajaController@descargarHistorial');
+        Route::get('/caja/resumen-pdf/{id}', 'CajaController@generarPDF');
         //TRANSACCIONES CAJA
         Route::get("/transacciones/{id}", "TransaccionesCajaController@index");
 

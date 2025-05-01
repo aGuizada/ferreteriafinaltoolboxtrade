@@ -71,8 +71,8 @@
                             v-if="slotProps.data.estado && !arqueoRealizado" />
                         <Button icon="pi pi-lock" class="p-button-danger p-button-sm"
                             @click="cerrarCaja(slotProps.data.id)" v-if="slotProps.data.estado && arqueoRealizado" />
-                        <Button icon="pi pi-print" class="p-button-success p-button-sm"
-                            @click="generarPDF(slotProps.data.id)" v-if="!slotProps.data.estado" />
+                            <Button icon="pi pi-file-pdf" class="p-button-success p-button-sm" 
+                            @click="generarPDF(slotProps.data.id)" v-if="!slotProps.data.estado" v-tooltip.top="'Descargar PDF'"/>
                     </template>
                 </Column>
             </DataTable>
@@ -398,7 +398,9 @@
                                     @click="modalResumen = false">Cancelar</button>
                                 <button type="button" class="btn btn-primary" @click="realizarCierreCaja">Cerrar
                                     Caja</button>
-                                <button @click="generarPDF" class="btn btn-success">Generar PDF</button>
+                                    <button @click="generarPDF(resumenCaja.id)" class="btn btn-success">
+                                        <i class="pi pi-file-pdf"></i> Generar PDF
+                                    </button>
                             </div>
                         </div>
                     </div>
@@ -583,30 +585,43 @@ export default {
         }
     },
     methods: {
-        generarPDF(id = null) {
-    // Si se pasa un id explícito, usarlo
-    if (id !== null && id !== undefined) {
-        this.descargarPDF(id);
-        return;
-    }
-    
-    // Si no, verificar si hay un resumen de caja activo
-    if (this.resumenCaja && this.resumenCaja.id) {
-        this.descargarPDF(this.resumenCaja.id);
-        return;
-    }
-    
-    // Si no hay ID válido, mostrar error
-    this.$toast.add({ 
-        severity: 'error', 
-        summary: 'Error', 
-        detail: 'No se encontró la caja para generar PDF', 
-        life: 3000 
+
+        
+        generarPDF(id) {
+    axios({
+        url: `/caja/resumen-pdf/${id}`,  // Cambiado a la ruta correcta
+        method: 'GET',
+        responseType: 'blob',
+    }).then((response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `resumen_caja_${id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }).catch(error => {
+        this.$toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Error al generar el PDF: ' + error.message,
+            life: 3000
+        });
     });
 },
 descargarPDF(cajaId) {
+    if (!cajaId) {
+        this.$toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se encontró el ID de la caja para generar el PDF',
+            life: 3000
+        });
+        return;
+    }
+
     axios({
-        url: `/caja/resumen-pdf/${cajaId}`,
+        url: `/caja/generar-pdf/${cajaId}`,
         method: 'GET',
         responseType: 'blob',
     }).then((response) => {

@@ -406,27 +406,79 @@ class CajaController extends Controller
     }
 
     public function generarPDF($id)
-    {
-        try {
-            $resumen = $this->resumen($id);
-            
-            if ($resumen instanceof JsonResponse) {
-                $data = $resumen->getData();
-                if (isset($data->error)) {
-                    abort(404, $data->error);
-                }
-                $resumenCaja = (array)$data;
-            } else {
-                $resumenCaja = $resumen;
-            }
-    
-            $pdf = PDF::loadView('pdf.resumen_caja', ['resumenCaja' => $resumenCaja]);
-            return $pdf->download('resumen_caja_'.$id.'.pdf');
-    
-        } catch (\Exception $e) {
-            abort(404, 'No se encontró la caja o hubo un error al generar el PDF: '.$e->getMessage());
-        }
+{
+    try {
+        // Obtener los datos del resumen
+        $caja = Caja::findOrFail($id);
+        
+        // Calcular todos los valores necesarios (igual que en el método resumen)
+        $ventasContado = Venta::where('idcaja', $caja->id)
+            ->where('idtipo_pago', 1)
+            ->where('idtipo_venta', '!=', 3)
+            ->sum('total');
+        
+        $pagosQR = Venta::where('idcaja', $caja->id)
+            ->where('idtipo_pago', 4)
+            ->sum('total');
+        
+        $ventasAdelantadas = Venta::where('idcaja', $caja->id)
+            ->where('idtipo_venta', 3)
+            ->sum('total');
+        
+        $ventasTotales = Venta::where('idcaja', $caja->id)->sum('total');
+        $pagosCuotas = $caja->PagoCuotaEfectivo;
+        
+        $totalIngresos = (float)$caja->saldoInicial 
+                       + (float)$caja->depositos 
+                       + (float)$ventasContado 
+                       + (float)$pagosQR 
+                       + (float)$ventasAdelantadas
+                       + (float)$pagosCuotas;
+        
+        $totalEgresos = (float)$caja->salidas + (float)$caja->compras;
+        $saldoCaja = $totalIngresos - $totalEgresos;
+        
+        $ventas = Venta::where('idcaja', $caja->id)
+            ->select('id', 'created_at as fecha', 'total', 'idtipo_pago', 'idtipo_venta')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Preparar los datos para la vista
+        $resumenCaja = [
+            'id' => $caja->id,
+            'fechaApertura' => $caja->fechaApertura,
+            'fechaCierre' => $caja->fechaCierre,
+            'saldoInicial' => (float)$caja->saldoInicial,
+            'ventasTotales' => $ventasTotales,
+            'ventas' => $ventas,
+            'ventasContado' => (float)$ventasContado,
+            'pagosQR' => (float)$pagosQR,
+            'ventasAdelantadas' => (float)$ventasAdelantadas,
+            'pagosCuotas' => (float)$pagosCuotas,
+            'totalIngresos' => $totalIngresos,
+            'totalEgresos' => $totalEgresos,
+            'saldoCaja' => $saldoCaja,
+            'esCajaCerrada' => !$caja->estado,
+            'movimientos' => [
+                ['concepto' => 'Saldo Inicial', 'monto' => (float)$caja->saldoInicial],
+                ['concepto' => 'Ventas al Contado', 'monto' => (float)$ventasContado],
+                ['concepto' => 'Pagos con QR', 'monto' => (float)$pagosQR],
+                ['concepto' => 'Ventas Adelantadas', 'monto' => (float)$ventasAdelantadas],
+                ['concepto' => 'Pagos de Cuotas', 'monto' => (float)$pagosCuotas],
+                ['concepto' => 'Depósitos', 'monto' => (float)$caja->depositos],
+                ['concepto' => 'Compras', 'monto' => (float)$caja->compras],
+                ['concepto' => 'Salidas', 'monto' => (float)$caja->salidas],
+            ]
+        ];
+
+        // Generar el PDF
+        $pdf = PDF::loadView('pdf.resumen_caja', ['resumenCaja' => $resumenCaja]);
+        return $pdf->download('resumen_caja_'.$id.'.pdf');
+
+    } catch (\Exception $e) {
+        abort(404, 'No se encontró la caja o hubo un error al generar el PDF: '.$e->getMessage());
     }
+}
 
     public function obtenerResumenCaja($id)
     {
