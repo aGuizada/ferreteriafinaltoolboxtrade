@@ -12,7 +12,9 @@ class CreditoVenta extends Model
         'idpersona',
         'numero_cuotas',
         'tiempo_dias_cuota',
-        'estado'
+        'monto', 'estado',
+        'fecha_pago',
+        'venta_id', 'numero_cuota', 'fecha_vencimiento'
     ];
     public $timestamps = false;
 

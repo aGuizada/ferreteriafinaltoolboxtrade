@@ -22,6 +22,7 @@ use FPDF;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+
 class VentaController extends Controller
 {
     public function __construct()
@@ -189,7 +190,7 @@ public function store(Request $request)
     $request->validate([
         'idcliente' => 'required|integer',
         'idtipo_pago' => 'required|integer',
-        'idtipo_venta' => 'required|integer',
+        'idtipo_venta' => 'required|integer|in:1,2,3',
         'tipo_comprobante' => 'required|string',
         'serie_comprobante' => 'required|string',
         'num_comprobante' => 'required|string',
@@ -230,7 +231,21 @@ public function store(Request $request)
         $this->notificarAdministradores();
 
         DB::commit();
-        return ['id' => $venta->id];
+       // Respuesta diferenciada según tipo de venta
+       if ($venta->idtipo_venta == 2) { // Si es venta a crédito
+        return response()->json([
+            'id' => $venta->id,
+            'tipo' => 'credito',
+            'pdf_url' => url("/venta/descargarPlanPagos/{$venta->id}"),
+            'message' => 'Venta a crédito registrada correctamente'
+        ]);
+    }else { // Venta al contado
+            return response()->json([
+                'id' => $venta->id,
+                'tipo' => 'contado',
+                'message' => 'Venta registrada correctamente'
+            ]);
+        }
     } catch (\Exception $e) {
         DB::rollBack();
         \Log::error('Error al registrar venta: ' . $e->getMessage() . ' - Línea: ' . $e->getLine() . ' - Archivo: ' . $e->getFile());
@@ -366,10 +381,101 @@ public function store(Request $request)
             throw $e;
         }
     }
+    protected function crearVentaSegunTipo(Request $request)
+{
+    $venta = new Venta();
+    $venta->idcliente = $request->idcliente;
+    $venta->idusuario = Auth::id();
+    $venta->idcaja = Caja::where('estado', 1)->first()->id;
+    $venta->tipo_comprobante = $request->tipo_comprobante ?? 'RECIBO';
+    $venta->serie_comprobante = $request->serie_comprobante ?? '001';
+    $venta->num_comprobante = $this->generarNumeroComprobante();
+    $venta->fecha_hora = now();
+    $venta->impuesto = $request->impuesto ?? 0;
+    $venta->total = $this->calcularTotal($request->data);
+    $venta->idtipo_venta = $request->idtipo_venta;
+    $venta->idtipo_pago = $request->idtipo_pago;
+    $venta->estado = $request->idtipo_venta == 1 ? 'Registrado' : 'Pendiente';
+    
+    // Campos específicos para venta adelantada
+    if ($request->idtipo_venta == 3) {
+        $venta->direccion_entrega = $request->direccion_entrega;
+        $venta->telefono_contacto = $request->telefono_contacto;
+        $venta->fecha_entrega = $request->fecha_entrega;
+        $venta->observaciones = $request->observaciones;
+    }
+    
+    $venta->save();
+
+    // Si es venta a crédito, crear el crédito
+    if ($request->idtipo_venta == 2) {
+        $this->crearCreditoVenta($venta, $request);
+    }
+
+    return $venta;
+}
+public function descargarPlanPagos($id)
+{
+    try {
+        $venta = Venta::with(['cliente', 'credito.cuotas'])->findOrFail($id);
+        
+        if ($venta->idtipo_venta != 2) {
+            return response()->json(['error' => 'Esta venta no es a crédito'], 400);
+        }
+
+        $pdf = PDF::loadView('pdf.plan_pagos', [
+            'venta' => $venta,
+            'cuotas' => $venta->credito->cuotas,
+            'credito' => $venta->credito
+        ]);
+
+        return $pdf->download("plan_pagos_{$id}.pdf");
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
     /**
      * Crea una venta con recibo
      */
-    private function crearVentaResivo($request)
+    
+
+    
+     public function planPagosPDF($id)
+{
+    try {
+        $venta = \App\Venta::with('cliente')->findOrFail($id);
+        $credito = \App\CreditoVenta::where('idventa', $id)->firstOrFail();
+
+        // Solución: Convertir fechas a Carbon
+        $cuotas = $credito->cuotas()
+            ->orderBy('numero_cuota')
+            ->get()
+            ->map(function ($cuota) {
+                $cuota->fecha_pago = \Carbon\Carbon::parse($cuota->fecha_pago);
+                return $cuota;
+            });
+
+        $pdf = \Barryvdh\DomPDF\Facade::loadView('pdf.venta_plan_pagos', [
+            'venta' => $venta,
+            'credito' => $credito,
+            'cuotas' => $cuotas
+        ]);
+
+        return $pdf->download("plan_pagos_{$id}.pdf");
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al generar el PDF',
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+}
+
+         private function crearVentaResivo($request)
     {
         $ventaResivo = new Venta();
         

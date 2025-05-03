@@ -92,7 +92,9 @@
                 <Button icon="pi pi-trash" @click="desactivarVenta(slotProps.data.id)"
                   class="p-button-sm p-button-danger p-mr-1" />
               </template>
-              <Button icon="pi pi-print" @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
+              <Button
+              v-if="slotProps.data.idtipo_venta !== 2 || !slotProps.data.idtipo_venta"
+              icon="pi pi-print" @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
                 class="p-button-sm p-button-primary p-mr-1" />
               <Button v-if="slotProps.data.estado === 'Pendiente' && slotProps.data.idtipo_venta !== 2"
                 icon="pi pi-check-circle" @click="confirmarEntrega(slotProps.data.id)"
@@ -101,6 +103,7 @@
               <Button v-if="slotProps.data.idtipo_venta === 2" icon="pi pi-calendar"
                 class="p-button-help p-button-info p-mr-1" @click="verPlanPagos(slotProps.data.id)"
                 tooltip="Ver plan de pagos" />
+              
             </template>
           </Column>
           <Column field="usuario" header="Vendedor"></Column>
@@ -990,12 +993,7 @@
             </div>
 
             <div class="d-flex align-items-center">
-              <select class="form-select form-select-sm me-2" v-model="unidadPaquete" @change="actualizarVistaStock"
-                style="width: auto;">
-                <option v-for="option in tipoVentaOptions" :value="option.value" :key="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
+              
 
               <div class="input-group me-2" style="width: 120px;">
                 <button class="btn btn-outline-danger" type="button" @click="cantidad > 1 ? cantidad-- : null">
@@ -1476,25 +1474,24 @@ export default {
       
       // Validaciones previas (se mantienen igual)
       if (this.tipoVenta === 'credito') {
-        if (!this.numero_cuotas || !this.tiempo_diaz) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
-          });
-          return;
-        }
-
-        if (!this.cuotas || this.cuotas.length === 0) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
-          });
-          return;
-        }
+      if (!this.numero_cuotas || !this.tiempo_diaz) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
+        });
+        return;
       }
 
+      if (!this.cuotas || this.cuotas.length === 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
+        });
+        return;
+      }
+    }
       this.mostrarSpinner = true;
       await this.buscarOCrearCliente();
       await this.obtenerDatosSesionYComprobante();
@@ -1554,22 +1551,19 @@ export default {
         this.cerrarModal2();
         this.listarVenta(1, "", "num_comprob");
 
-        /* COMPORTAMIENTOS DIFERENCIADOS EXACTAMENTE COMO LO PIDES */
-        if (this.idtipo_venta === 1) { // Venta al contado
-          // Solo muestra el diálogo carta/rollo
-          this.imprimirResivo(response.data.id);
-        } 
-        else if (this.idtipo_venta === 2) { // Venta a crédito
-          // Solo muestra mensaje de éxito específico
-          Swal.fire({
-            title: 'Venta a Crédito Registrada',
-            text: 'El crédito se ha registrado exitosamente',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        }
-        else if (this.idtipo_venta === 3) { // Venta adelantada
+        if (response.data.tipo === 'credito') {
+                // Para ventas a crédito - descargar plan de pagos
+                this.descargarPlanPagos(response.data.id);
+                
+                // Opcional: Mostrar mensaje de éxito
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Éxito',
+                    detail: response.data.message,
+                    life: 3000
+                });
+
+         }else if (this.idtipo_venta === 3) { // Venta adelantada
           // Solo muestra mensaje de éxito específico
           Swal.fire({
             title: 'Pedido Adelantado Registrado',
@@ -1598,6 +1592,112 @@ export default {
       this.mostrarSpinner = false;
     }
   },
+  async descargarPlanPagos(idVenta) {
+        try {
+            // Usar window.location para forzar la descarga
+            window.open(`/venta/planPagosPDF/${idVenta}`, '_blank');
+            
+            // Mostrar mensaje de éxito aunque no podamos verificar
+            this.$toast.add({
+                severity: 'success',
+                summary: 'Descarga iniciada',
+                detail: 'El plan de pagos se está descargando',
+                life: 3000
+            });
+            
+        } catch (error) {
+            console.error("Error:", error);ss
+            // Mostrar mensaje genérico
+            this.$toast.add({
+                severity: 'info',
+                summary: 'Descarga',
+                detail: 'Por favor revise su carpeta de descargas',
+                life: 3000
+            });
+        }
+    },
+  mostrarSelectorRecibo(id) {
+    Swal.fire({
+      title: 'Formato de recibo',
+      text: 'Seleccione el tamaño de impresión',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'CARTA',
+      cancelButtonText: 'ROLLO'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.descargarRecibo(id, 'carta');
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        this.descargarRecibo(id, 'rollo');
+      }
+    });
+  },
+
+  async imprimirPlanPagos(idVenta) {
+    try {
+        this.loading = true;
+        
+        // Verificar que el ID sea válido
+        if (!idVenta || isNaN(idVenta)) {
+            throw new Error("ID de venta inválido");
+        }
+
+        // Mostrar confirmación
+        const confirm = await Swal.fire({
+            title: 'Generar Plan de Pagos',
+            text: '¿Desea generar el plan de pagos para esta venta?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Generar PDF',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        });
+
+        if (!confirm.isConfirmed) {
+            return;
+        }
+
+        // Crear un enlace temporal
+        const link = document.createElement('a');
+        link.href = `/venta/planPagosPDF/${idVenta}`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+    } catch (error) {
+        console.error("Error al imprimir plan de pagos:", error);
+        this.$toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo generar el plan de pagos: ' + error.message,
+            life: 5000
+        });
+    } finally {
+        this.loading = false;
+    }
+},
+
+  descargarRecibo(id, tipo) {
+    const endpoint = tipo === 'carta' ? "imprimirCarta" : "imprimirRollo";
+    axios.get(`/resivo/${endpoint}/${id}`, { 
+      responseType: "blob"
+    }).then(response => {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${tipo}_${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }).catch(error => {
+      console.error("Error al descargar:", error);
+      Swal.fire('Error', 'No se pudo generar el recibo', 'error');
+    });
+  },
+
+
     generarCuotas() {
       if (!this.numero_cuotas || !this.tiempo_diaz) {
         Swal.fire({
@@ -2365,42 +2465,43 @@ export default {
     },
     verVenta(id) {
       this.listado = 2;
-      this.cargando = true;
+   this.cargando = true;
+ 
+   // Obtener cabecera de venta
+   axios.get(`/venta/obtenerCabecera?id=${id}`)
+     .then((response) => {
+       if (response.data.venta) {
+         this.ventaDetalle = {
+           ...response.data.venta,
+           ...(response.data.datosAdelantados || {})
+         };
+         this.cliente = response.data.venta.nombre;
+         this.tipo_comprobante = response.data.venta.tipo_comprobante;
+         this.num_comprobante = response.data.venta.num_comprobante;
+         this.total = response.data.venta.total;
+ 
+         // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
+         this.creditoInfo = response.data.credito || null;
+         this.cuotasCredito = response.data.cuotas || [];
+       }
+       this.cargando = false;
+     })
+     .catch((error) => {
+       console.error("Error al obtener cabecera:", error);
+       Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
+       this.cargando = false;
+     });
+ 
+   // Obtener detalles de productos
+   axios.get(`/venta/obtenerDetalles?id=${id}`)
+     .then((response) => {
+       this.arrayDetalle = response.data.detalles;
+     })
+     .catch((error) => {
+       console.error("Error al obtener detalles:", error);
+     });
+ },
 
-      // Obtener cabecera de venta
-      axios.get(`/venta/obtenerCabecera?id=${id}`)
-        .then((response) => {
-          if (response.data.venta) {
-            this.ventaDetalle = {
-              ...response.data.venta,
-              ...(response.data.datosAdelantados || {})
-            };
-            this.cliente = response.data.venta.nombre;
-            this.tipo_comprobante = response.data.venta.tipo_comprobante;
-            this.num_comprobante = response.data.venta.num_comprobante;
-            this.total = response.data.venta.total;
-
-            // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
-            this.creditoInfo = response.data.credito || null;
-            this.cuotasCredito = response.data.cuotas || [];
-          }
-          this.cargando = false;
-        })
-        .catch((error) => {
-          console.error("Error al obtener cabecera:", error);
-          Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
-          this.cargando = false;
-        });
-
-      // Obtener detalles de productos
-      axios.get(`/venta/obtenerDetalles?id=${id}`)
-        .then((response) => {
-          this.arrayDetalle = response.data.detalles;
-        })
-        .catch((error) => {
-          console.error("Error al obtener detalles:", error);
-        });
-    },
     // Formato para fechas
     formatFecha(fecha) {
       if (!fecha) return "N/A";
@@ -2566,8 +2667,8 @@ export default {
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: "Formato CARTA",
-      cancelButtonText: "Formato ROLLO",
+      confirmButtonText: "CARTA",
+      cancelButtonText: "ROLLO",
       reverseButtons: true,
     }).then((result) => {
       const endpoint = result.value ? "imprimirCarta" : "imprimirRollo";
@@ -2602,16 +2703,6 @@ export default {
   },
 
 
-  verVenta(id) {
-    axios.get(`/venta/obtenerCabecera?id=${id}`).then(response => {
-      this.ventaDetalle = response.data.venta;
-    
-    // Verificación directa sin usar esVentaEspecial()
-    if (!(this.ventaDetalle.idtipo_venta === 2 || this.ventaDetalle.idtipo_venta === 3)) {
-      this.imprimirResivo(id);
-    }
-  });
-},
 
     desactivarVenta(id) {
       Swal.fire({
@@ -2701,6 +2792,8 @@ export default {
     this.listarVenta(1, this.buscar);
     this.ejecutarFlujoCompleto();
   },
+
+  
 };
 </script>
 
@@ -3423,5 +3516,34 @@ export default {
 
 :deep(.p-button-sm) {
   padding: 0.25rem 0.5rem;
+}
+
+/* SOLUCIÓN DEFINITIVA PARA BOTONES DE SELECCIÓN DE PAGO */
+@media (max-width: 768px) {
+  /* Contenedor principal */
+  .p-d-flex.p-jc-center.p-mb-3 > .p-d-flex {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Botones individuales */
+  .step-content .p-button-lg {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+  }
+
+  /* Ajuste de iconos y texto */
+  .p-button-lg .p-d-flex.p-flex-column {
+    flex-direction: row !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Elimina márgenes entre botones */
+  .p-button-lg.p-mr-3 {
+    margin-right: 0 !important;
+  }
 }
 </style>
