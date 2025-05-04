@@ -1469,11 +1469,22 @@ export default {
       }
     },
     async registrarVenta(idtipo_pago = 1) {
-    try {
-      console.log('Tipo de venta detectado:', this.tipoVenta);
-      
-      // Validaciones previas (se mantienen igual)
-      if (this.tipoVenta === 'credito') {
+  try {
+    // 1. Validar si la caja está abierta antes de continuar
+    const cajaResponse = await axios.get('/caja/estado-actual');
+    if (!cajaResponse.data.abierta) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Caja no abierta',
+        text: 'Debe abrir una caja antes de registrar una venta.'
+      });
+      return; // Detener el flujo
+    }
+
+    console.log('Tipo de venta detectado:', this.tipoVenta);
+
+    // Validaciones previas (se mantienen igual)
+    if (this.tipoVenta === 'credito') {
       if (!this.numero_cuotas || !this.tiempo_diaz) {
         Swal.fire({
           icon: 'error',
@@ -1492,106 +1503,116 @@ export default {
         return;
       }
     }
-      this.mostrarSpinner = true;
-      await this.buscarOCrearCliente();
-      await this.obtenerDatosSesionYComprobante();
+    this.mostrarSpinner = true;
+    await this.buscarOCrearCliente();
+    await this.obtenerDatosSesionYComprobante();
 
-      // Preparación de datos (se mantiene igual)
-      const ventaData = {
-        idcliente: this.idcliente,
-        tipo_comprobante: this.tipo_comprobante,
-        serie_comprobante: this.serie_comprobante,
-        num_comprobante: this.num_comprob,
-        impuesto: this.impuesto || 0.18,
-        total: this.calcularTotal,
-        idAlmacen: this.idAlmacen,
-        idtipo_pago: idtipo_pago,
-        idtipo_venta: this.idtipo_venta,
-        data: this.arrayDetalle
-      };
+    // Preparación de datos (se mantiene igual)
+    const ventaData = {
+      idcliente: this.idcliente,
+      tipo_comprobante: this.tipo_comprobante,
+      serie_comprobante: this.serie_comprobante,
+      num_comprobante: this.num_comprob,
+      impuesto: this.impuesto || 0.18,
+      total: this.calcularTotal,
+      idAlmacen: this.idAlmacen,
+      idtipo_pago: idtipo_pago,
+      idtipo_venta: this.idtipo_venta,
+      data: this.arrayDetalle
+    };
 
-      // Datos específicos para venta adelantada (se mantiene igual)
-      if (this.tipoVenta === 'adelantada') {
-        ventaData.direccion_entrega = this.direccionEntrega;
-        ventaData.telefono_contacto = this.telefonoContacto;
-        ventaData.fecha_entrega = this.fechaEntrega
-          ? (typeof this.fechaEntrega === 'string'
-            ? this.fechaEntrega
-            : this.fechaEntrega.toISOString().split('T')[0])
-          : null;
-        ventaData.observaciones = this.observaciones;
-        ventaData.estado = "Pendiente";
-        
-        if (this.tipoPagoAdelantado === "efectivo") {
-          ventaData.monto_recibido = this.montoAdelantado;
-          ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
-        }
+    // Datos específicos para venta adelantada (se mantiene igual)
+    if (this.tipoVenta === 'adelantada') {
+      ventaData.direccion_entrega = this.direccionEntrega;
+      ventaData.telefono_contacto = this.telefonoContacto;
+      ventaData.fecha_entrega = this.fechaEntrega
+        ? (typeof this.fechaEntrega === 'string'
+          ? this.fechaEntrega
+          : this.fechaEntrega.toISOString().split('T')[0])
+        : null;
+      ventaData.observaciones = this.observaciones;
+      ventaData.estado = "Pendiente";
+
+      if (this.tipoPagoAdelantado === "efectivo") {
+        ventaData.monto_recibido = this.montoAdelantado;
+        ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
       }
-
-      // Datos específicos para venta a crédito (se mantiene igual)
-      if (this.tipoVenta === 'credito') {
-        ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
-          numero_cuota: index + 1,
-          fecha_pago: cuota.fecha_pago,
-          precio_cuota: parseFloat(cuota.precio_cuota),
-          saldo_restante: parseFloat(cuota.saldo_restante),
-          estado: 'Pendiente'
-        }));
-
-        ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
-        ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
-        ventaData.estado_credito = 'Pendiente';
-      }
-
-      const response = await axios.post("/venta/registrar", ventaData);
-
-      if (response.data && response.data.id) {
-        await this.obtenerDatosSesionYComprobante();
-        this.listado = 1;
-        this.cerrarModal2();
-        this.listarVenta(1, "", "num_comprob");
-
-        if (response.data.tipo === 'credito') {
-                // Para ventas a crédito - descargar plan de pagos
-                this.descargarPlanPagos(response.data.id);
-                
-                // Opcional: Mostrar mensaje de éxito
-                this.$toast.add({
-                    severity: 'success',
-                    summary: 'Éxito',
-                    detail: response.data.message,
-                    life: 3000
-                });
-
-         }else if (this.idtipo_venta === 3) { // Venta adelantada
-          // Solo muestra mensaje de éxito específico
-          Swal.fire({
-            title: 'Pedido Adelantado Registrado',
-            text: 'La venta adelantada se ha registrado correctamente',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        }
-
-        this.reiniciarFormulario();
-        return;
-      }
-
-      const errorMessage = (response.data && response.data.message) || 'Respuesta inesperada del servidor';
-      throw new Error(errorMessage);
-
-    } catch (error) {
-      console.error("Error al registrar venta:", error);
-      Swal.fire(
-        "Error",
-        "Ocurrió un error al procesar la venta",
-        "error"
-      );
-    } finally {
-      this.mostrarSpinner = false;
     }
-  },
+
+    // Datos específicos para venta a crédito (se mantiene igual)
+    if (this.tipoVenta === 'credito') {
+      ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
+        numero_cuota: index + 1,
+        fecha_pago: cuota.fecha_pago,
+        precio_cuota: parseFloat(cuota.precio_cuota),
+        saldo_restante: parseFloat(cuota.saldo_restante),
+        estado: 'Pendiente'
+      }));
+
+      ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
+      ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
+      ventaData.estado_credito = 'Pendiente';
+    }
+
+    const response = await axios.post("/venta/registrar", ventaData);
+
+    if (response.data && response.data.id) {
+      await this.obtenerDatosSesionYComprobante();
+      this.listado = 1;
+      this.cerrarModal2();
+      this.listarVenta(1, "", "num_comprob");
+
+      if (response.data.tipo === 'credito') {
+        // Para ventas a crédito - descargar plan de pagos
+        this.descargarPlanPagos(response.data.id);
+
+        // Opcional: Mostrar mensaje de éxito
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: response.data.message,
+          life: 3000
+        });
+
+      } else if (this.idtipo_venta === 3) { // Venta adelantada
+        // Solo muestra mensaje de éxito específico
+        Swal.fire({
+          title: 'Pedido Adelantado Registrado',
+          text: 'La venta adelantada se ha registrado correctamente',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+
+      this.reiniciarFormulario();
+      return;
+    }
+
+    const errorMessage = (response.data && response.data.message) || 'Respuesta inesperada del servidor';
+    throw new Error(errorMessage);
+
+  } catch (error) {
+  console.error("Error al registrar venta:", error);
+
+  // Intenta obtener el mensaje del backend
+  let mensaje = "Ocurrió un error al procesar la venta";
+  if (error.response && error.response.data && error.response.data.error) {
+    mensaje = error.response.data.error;
+  } else if (error.message) {
+    mensaje = error.message;
+  }
+
+  Swal.fire(
+    "Error",
+    mensaje,
+    "error"
+  );
+} finally {
+    this.mostrarSpinner = false;
+  }
+},
+
   async descargarPlanPagos(idVenta) {
         try {
             // Usar window.location para forzar la descarga
