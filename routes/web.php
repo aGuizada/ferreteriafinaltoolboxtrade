@@ -936,7 +936,7 @@ Route::get('/venta/obtenerDetalles', 'VentaController@obtenerDetalles');
 Route::get('/resivo/imprimirRollo/{id}', 'VentaController@imprimirResivoRollo');
 Route::get('/resivo/imprimirCarta/{id}', 'VentaController@imprimirResivoCarta');
     });
-
+    Route::get('/caja/estado-actual', 'CajaController@estadoActual');
     //RUTA PARA RECUPERAR LA SESSION CON EL ID DE LA PERSONA LOGUEADA
     Route::get("/api/session", function () {
         return response()->json([
