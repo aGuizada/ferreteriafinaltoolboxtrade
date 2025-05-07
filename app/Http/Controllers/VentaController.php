@@ -458,48 +458,6 @@ public function descargarPlanPagos($id)
 }
 
 
-
-
-    /**
-     * Crea una venta con recibo
-     */
-    
-
-    
-     public function planPagosPDF($id)
-{
-    try {
-        $venta = \App\Venta::with('cliente')->findOrFail($id);
-        $credito = \App\CreditoVenta::where('idventa', $id)->firstOrFail();
-
-        // Solución: Convertir fechas a Carbon
-        $cuotas = $credito->cuotas()
-            ->orderBy('numero_cuota')
-            ->get()
-            ->map(function ($cuota) {
-                $cuota->fecha_pago = \Carbon\Carbon::parse($cuota->fecha_pago);
-                return $cuota;
-            });
-
-        $pdf = \Barryvdh\DomPDF\Facade::loadView('pdf.venta_plan_pagos', [
-            'venta' => $venta,
-            'credito' => $credito,
-            'cuotas' => $cuotas
-        ]);
-
-        return $pdf->download("plan_pagos_{$id}.pdf");
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al generar el PDF',
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ], 500);
-    }
-}
-
          private function crearVentaResivo($request)
     {
         $ventaResivo = new Venta();
@@ -673,50 +631,56 @@ public function confirmarEntrega(Request $request)
     /**
      * Actualiza la caja con la nueva venta
      */
-    private function actualizarCaja($request)
-    {
-        $ultimaCaja = Caja::latest()->first();
+   
 
-        // Si el pago es en efectivo (tipo 1)
-        if ($request->idtipo_pago == 1) {
-            // Si es venta a crédito
-            if ($request->idtipo_venta == 2) {
-                // Sumar a ventas crédito
-                $ultimaCaja->ventas += $request->primer_precio_cuota ?? 0;
-                $ultimaCaja->pagosEfectivoVentas += $request->primer_precio_cuota ?? 0;
-                $ultimaCaja->ventasCredito += $request->primer_precio_cuota ?? 0;
-                $ultimaCaja->saldoCaja += $request->primer_precio_cuota ?? 0;
-            } 
-            // Si es venta adelantada (pago en efectivo)
-            else if ($request->idtipo_venta == 3) {
-                // Sumar a ventas (pagos en efectivo)
-                $ultimaCaja->ventasContado += $request->total;
-                $ultimaCaja->ventas += $request->total;
-                $ultimaCaja->pagosEfectivoVentas += $request->total;
-                $ultimaCaja->saldoCaja += $request->total;
-            } 
-            // Si es venta al contado
-            else {
-                // Sumar a ventas contado
-                $ultimaCaja->ventasContado += $request->total;
-                $ultimaCaja->ventas += $request->total;
-                $ultimaCaja->pagosEfectivoVentas += $request->total;
-                $ultimaCaja->saldoCaja += $request->total;
-            }
-        } 
-        // Si es otro medio de pago (no efectivo)
-        else {
-            if ($request->idtipo_venta == 1 || $request->idtipo_venta == 3) {
-                // Actualizar solo el total de ventas para ventas al contado o adelantadas no efectivo
-                $ultimaCaja->ventas += $request->total;
-            } else {
-                // Para créditos con otro medio de pago
-                $ultimaCaja->ventas += $request->primer_precio_cuota ?? 0;
-            }
-        }
+     private function actualizarCaja($request)
+     {
+         $ultimaCaja = Caja::latest()->first();
+     
+         // Si es venta a crédito, NO sumar nada a caja (a menos que haya abono inicial)
+         if ($request->idtipo_venta == 2) {
+             // Si hay abono inicial (primer_precio_cuota), solo sumar ese monto
+             $abonoInicial = $request->primer_precio_cuota ?? 0;
+             if ($abonoInicial > 0) {
+                 $ultimaCaja->ventasCredito += $abonoInicial;
+                 $ultimaCaja->ventas += $abonoInicial;
+                 if ($request->idtipo_pago == 1) {
+                     $ultimaCaja->pagosEfectivoVentas += $abonoInicial;
+                     $ultimaCaja->saldoCaja += $abonoInicial;
+                 }
+                 // Si el abono inicial es por otro medio de pago, puedes agregar lógica aquí si lo necesitas
+             }
+             // Si no hay abono inicial, no sumar nada a caja
+             $ultimaCaja->save();
+             return;
+         }
+     
+         // Si el pago es en efectivo (tipo 1)
+         if ($request->idtipo_pago == 1) {
+             if ($request->idtipo_venta == 3) { // Venta adelantada
+                 $ultimaCaja->ventasContado += $request->total;
+                 $ultimaCaja->ventas += $request->total;
+                 $ultimaCaja->pagosEfectivoVentas += $request->total;
+                 $ultimaCaja->saldoCaja += $request->total;
+             } else { // Venta al contado
+                 $ultimaCaja->ventasContado += $request->total;
+                 $ultimaCaja->ventas += $request->total;
+                 $ultimaCaja->pagosEfectivoVentas += $request->total;
+                 $ultimaCaja->saldoCaja += $request->total;
+             }
+         } 
+         // Si es otro medio de pago (no efectivo)
+         else {
+             if ($request->idtipo_venta == 1 || $request->idtipo_venta == 3) {
+                 // Actualizar solo el total de ventas para ventas al contado o adelantadas no efectivo
+                 $ultimaCaja->ventas += $request->total;
+             }
+             // Para créditos con otro medio de pago, ya está cubierto arriba (no sumar nada)
+         }
+     
+         $ultimaCaja->save();
+     }
 
-        $ultimaCaja->save();
-    }
     
 public function obtenerCuotas(Request $request)
 {
@@ -793,22 +757,7 @@ public function obtenerCuotas(Request $request)
         }
     }
 
-    /**
-     * Revierte el inventario en caso de anulación
-     */
-    private function revertirInventario()
-    {
-        $idAlmacen = $_SESSION['sidAlmacen'];
-        $detalles = $_SESSION['sdetalle'];
 
-        foreach ($detalles as $detalle) {
-            $inventario = Inventario::where('idalmacen', $idAlmacen)
-                ->where('idarticulo', $detalle['idarticulo'])
-                ->firstOrFail();
-            $inventario->saldo_stock += $detalle['cantidad'];
-            $inventario->save();
-        }
-    }
 
     /**
      * Notifica a los administradores sobre la venta
@@ -834,165 +783,240 @@ public function obtenerCuotas(Request $request)
     /**
      * Anula una venta
      */
-    public function desactivar(Request $request)
-    {
-        if (!$request->ajax()) {
-            return redirect('/');
-        }
 
-        try {
-            // Obtener el rol del usuario autenticado
-            $usuario = Auth::user();
-            
-            // Verificar si el usuario tiene permiso (no es rol 2)
-            if ($usuario->idrol === 2) {
-                return response()->json([
-                    'error' => 'No tiene permisos para anular ventas'
-                ], 403);
-            }
-
-            // Buscar la venta a anular
-            $venta = Venta::findOrFail($request->id);
-
-            // Anular la venta
-            $venta->estado = 'Anulado';
-            $venta->save();
-
-            return response()->json([
-                'mensaje' => 'Venta anulada correctamente'
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error al anular la venta: ' . $e->getMessage()
-            ], 500);
-        }
-    }
+     public function desactivar(Request $request)
+     {
+         if (!$request->ajax()) {
+             return redirect('/');
+         }
+ 
+         try {
+             DB::beginTransaction();
+ 
+             // Obtener el rol del usuario autenticado
+             $usuario = Auth::user();
+ 
+             // Verificar si el usuario tiene permiso (no es rol 2)
+             if ($usuario->idrol === 2) {
+                 return response()->json([
+                     'error' => 'No tiene permisos para anular ventas'
+                 ], 403);
+             }
+ 
+             // Buscar la venta a anular
+             $venta = Venta::findOrFail($request->id);
+ 
+             // Si ya está anulada, no hacer nada
+             if ($venta->estado === 'Anulado') {
+                 return response()->json([
+                     'mensaje' => 'La venta ya está anulada'
+                 ]);
+             }
+ 
+             // Revertir movimientos en caja
+             $this->revertirCaja($venta);
+ 
+             // Revertir inventario
+             $this->revertirInventarioVenta($venta);
+ 
+             // Anular la venta
+             $venta->estado = 'Anulado';
+             $venta->save();
+ 
+             DB::commit();
+ 
+             return response()->json([
+                 'mensaje' => 'Venta anulada correctamente y movimientos revertidos'
+             ]);
+ 
+         } catch (\Exception $e) {
+             DB::rollBack();
+             return response()->json([
+                 'error' => 'Error al anular la venta: ' . $e->getMessage()
+             ], 500);
+         }
+     }
+ 
+   
+  
+     private function revertirCaja($venta)
+     {
+         \Log::info("Iniciando reversión de caja para venta ID: {$venta->id}, idcaja: {$venta->idcaja}");
+     
+         $caja = Caja::find($venta->idcaja);
+         if (!$caja) {
+             \Log::error("No se encontró la caja con id: {$venta->idcaja} para la venta: {$venta->id}");
+             return;
+         }
+     
+         \Log::info("Caja encontrada: {$caja->id}. tipo_pago: {$venta->idtipo_pago}, tipo_venta: {$venta->idtipo_venta}, total: {$venta->total}");
+     
+         // Efectivo
+         if ($venta->idtipo_pago == 1) {
+             if ($venta->idtipo_venta == 2) { // Crédito
+                 $primerCuota = CreditoVenta::where('idventa', $venta->id)->first();
+                 $primerMonto = 0;
+                 if ($primerCuota) {
+                     $cuota = CuotasCredito::where('idcredito', $primerCuota->id)
+                         ->orderBy('numero_cuota')
+                         ->first();
+                     $primerMonto = $cuota ? $cuota->precio_cuota : 0;
+                 }
+                 $caja->ventas -= $primerMonto;
+                 $caja->pagosEfectivoVentas -= $primerMonto;
+                 $caja->ventasCredito -= $primerMonto;
+                 $caja->saldoCaja -= $primerMonto;
+                 \Log::info("Revertido crédito efectivo: -{$primerMonto} en ventas, pagosEfectivoVentas, ventasCredito, saldoCaja");
+             } else if ($venta->idtipo_venta == 3) { // Adelantada
+                 $caja->ventasContado -= $venta->total;
+                 $caja->ventas -= $venta->total;
+                 $caja->pagosEfectivoVentas -= $venta->total;
+                 $caja->saldoCaja -= $venta->total;
+                 \Log::info("Revertido adelantada efectivo: -{$venta->total} en ventasContado, ventas, pagosEfectivoVentas, saldoCaja");
+             } else { // Contado
+                 $caja->ventasContado -= $venta->total;
+                 $caja->ventas -= $venta->total;
+                 $caja->pagosEfectivoVentas -= $venta->total;
+                 $caja->saldoCaja -= $venta->total;
+                 \Log::info("Revertido contado efectivo: -{$venta->total} en ventasContado, ventas, pagosEfectivoVentas, saldoCaja");
+             }
+         }
+         // Otros medios de pago (ejemplo: QR, tarjeta, transferencia, etc.)
+         else {
+             if ($venta->idtipo_pago == 4) { // QR
+                 $caja->pagosQR -= $venta->total;
+                 $caja->saldoCaja -= $venta->total;
+                 $caja->ventas -= $venta->total;
+                 \Log::info("Revertido QR: -{$venta->total} en pagosQR, saldoCaja, ventas");
+             } else if ($venta->idtipo_pago == 2) { // Tarjeta
+                 $caja->pagosTarjeta -= $venta->total;
+                 $caja->saldoCaja -= $venta->total;
+                 $caja->ventas -= $venta->total;
+                 \Log::info("Revertido tarjeta: -{$venta->total} en pagosTarjeta, saldoCaja, ventas");
+             } else if ($venta->idtipo_pago == 3) { // Transferencia
+                 $caja->pagosTransferencia -= $venta->total;
+                 $caja->saldoCaja -= $venta->total;
+                 $caja->ventas -= $venta->total;
+                 \Log::info("Revertido transferencia: -{$venta->total} en pagosTransferencia, saldoCaja, ventas");
+             } else {
+                 // Otros medios de pago no especificados
+                 if ($venta->idtipo_venta == 1 || $venta->idtipo_venta == 3) {
+                     $caja->ventas -= $venta->total;
+                     \Log::info("Revertido otro medio de pago: -{$venta->total} en ventas");
+                 } else { // Crédito con otro medio de pago
+                     $primerCuota = CreditoVenta::where('idventa', $venta->id)->first();
+                     $primerMonto = 0;
+                     if ($primerCuota) {
+                         $cuota = CuotasCredito::where('idcredito', $primerCuota->id)
+                             ->orderBy('numero_cuota')
+                             ->first();
+                         $primerMonto = $cuota ? $cuota->precio_cuota : 0;
+                     }
+                     $caja->ventas -= $primerMonto;
+                     \Log::info("Revertido crédito otro medio de pago: -{$primerMonto} en ventas");
+                 }
+             }
+         }
+     
+         // Evitar negativos
+         $campos = ['ventas', 'ventasContado', 'pagosEfectivoVentas', 'ventasCredito', 'saldoCaja', 'pagosQR', 'pagosTarjeta', 'pagosTransferencia'];
+         foreach ($campos as $campo) {
+             if (isset($caja->$campo) && $caja->$campo < 0) {
+                 \Log::warning("El campo {$campo} quedó negativo ({$caja->$campo}), se ajusta a 0");
+                 $caja->$campo = 0;
+             }
+         }
+     
+         $caja->save();
+         \Log::info("Caja actualizada tras reversión de venta {$venta->id}: " . json_encode($caja->toArray()));
+     }
+     
+ 
+ 
+     /**
+      * Revierte el inventario de una venta anulada
+      */
+     private function revertirInventarioVenta($venta)
+     {
+         // Obtener detalles de la venta
+         $detalles = DetalleVenta::where('idventa', $venta->id)->get();
+ 
+         // Si la venta tiene almacén asociado
+         $idAlmacen = $venta->idAlmacen ?? ($_SESSION['sidAlmacen'] ?? null);
+ 
+         foreach ($detalles as $detalle) {
+             // Buscar inventario por almacén y artículo
+             $inventario = Inventario::where('idalmacen', $idAlmacen)
+                 ->where('idarticulo', $detalle->idarticulo)
+                 ->first();
+ 
+             if ($inventario) {
+                 $inventario->saldo_stock += $detalle->cantidad;
+                 $inventario->save();
+             }
+         }
+     }
 
     /**
      * Imprime un recibo en formato de rollo térmico
      */
-    public function imprimirResivoRollo($id) {
+    public function imprimirResivoRollo($id)
+    {
         try {
+            \Log::info("Iniciando generación de recibo en rollo para venta ID: $id");
+            
             $venta = Venta::with('detalles.producto')->find($id);
             if (!$venta) {
+                \Log::error("Venta no encontrada: $id");
                 return response()->json(['error' => 'NO SE ENCONTRÓ LA VENTA'], 404);
             }
-
+            \Log::info("Venta encontrada", ['venta_id' => $venta->id]);
+    
             $persona = Persona::find($venta->idcliente);
             if (!$persona) {
+                \Log::error("Cliente no encontrado para venta: $id");
                 return response()->json(['error' => 'NO SE ENCONTRÓ EL CLIENTE'], 404);
             }
-
+    
             $empresa = Empresa::first();
             if (!$empresa) {
+                \Log::error("No hay empresa configurada");
                 return response()->json(['error' => 'NO SE ENCONTRÓ LA EMPRESA'], 404);
             }
-
-            if ($venta->detalles->isNotEmpty()) {
-                // Configuración para recibo de rollo
-                $pdf = new FPDF('P', 'mm', array(80, 297)); // Ancho de 80mm, alto variable
-                $pdf->SetAutoPageBreak(true, 10);
-                $pdf->SetMargins(5, 10, 5);
-                $pdf->AddPage();
-
-                if ($empresa->logo) {
-                    $logoPath = storage_path('app/public/logos/' . $empresa->logo);
-                    if (file_exists($logoPath)) {
-                        $logoWidth = 30; // Ancho del logo en mm
-                        $xPosition = (80 - $logoWidth) / 2; // Calcular posición X para centrar
-                        $pdf->Image($logoPath, $xPosition, 2, $logoWidth);
-                        $pdf->Ln(20);
-                    }
-                }
-
-                // Establecer fuente monoespaciada
-                $pdf->SetFont('Courier', 'B', 12);
-
-                // Encabezado
-                $pdf->Cell(0, 10, utf8_decode(strtoupper('RECIBO DE VENTA')), 0, 1, 'C');
-                $pdf->SetFont('Courier', '', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('No. ' . $id)), 0, 1, 'C');
-
-                // Información de la empresa
-                $pdf->SetFont('Courier', 'B', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper($empresa->nombre)), 0, 1, 'C');
-                $pdf->SetFont('Courier', '', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper($empresa->direccion)), 0, 1, 'C');
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('TELÉFONO: ' . $empresa->telefono)), 0, 1, 'C');
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('EMAIL: ' . $empresa->email)), 0, 1, 'C');
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('NIT: ' . $empresa->nit)), 0, 1, 'C');
-               
-                $pdf->Ln(5);
-
-                // Fecha y hora
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('FECHA: ' . date('d/m/Y', strtotime($venta->created_at)))), 0, 1);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('HORA: ' . date('H:i:s', strtotime($venta->created_at)))), 0, 1);
-
-                // Detalles del cliente
-                $pdf->Ln(2);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('CLIENTE: ' . $persona->nombre)), 0, 1);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('DOC: ' . $persona->num_documento)), 0, 1);
-
-                // Línea separadora
-                $pdf->Cell(0, 2, '', 'T', 1);
-
-                // Encabezados de la tabla
-                $pdf->SetFont('Courier', 'B', 8);
-                $pdf->Cell(40, 5, utf8_decode(strtoupper('PRODUCTO')), 0, 0);
-                $pdf->Cell(10, 5, utf8_decode(strtoupper('CANT')), 0, 0, 'R');
-                $pdf->Cell(20, 5, utf8_decode(strtoupper('PRECIO')), 0, 1, 'R');
-
-                $pdf->SetFont('Courier', '', 8);
-
-                // Detalles de los productos
-                $total = 0;
-                foreach ($venta->detalles as $detalle) {
-                    $precioVenta = $detalle->cantidad * $detalle->precio;
-                    $total += $precioVenta;
-
-                    $pdf->Cell(40, 5, utf8_decode(strtoupper(substr($detalle->producto->nombre, 0, 20))), 0, 0);
-                    $pdf->Cell(10, 5, utf8_decode($detalle->cantidad), 0, 0, 'R');
-                    $pdf->Cell(20, 5, utf8_decode(number_format($precioVenta, 2)), 0, 1, 'R');
-                }
-
-                // Línea separadora
-                $pdf->Cell(0, 2, '', 'T', 1);
-
-                // Total
-                $pdf->SetFont('Courier', 'B', 10);
-                $pdf->Cell(50, 6, utf8_decode(strtoupper('TOTAL')), 0, 0);
-                $pdf->Cell(20, 6, utf8_decode(number_format($total, 2)), 0, 1, 'R');
-
-                $formatter = new NumberFormatter("es", NumberFormatter::SPELLOUT);
-                $totalTexto = strtoupper($formatter->format($total)) . ' BOLIVIANOS';
-                $pdf->SetFont('Courier', 'B', 8);
-                $pdf->Cell(0, 5, 'SON: ' . $totalTexto, 0, 1);
-                
-                // Tipo de pago
-                $tipoPago = $venta->tipoPago;
-                $nombreTipoPago = $tipoPago ? $tipoPago->nombre_tipo_pago : 'N/A';
-                $pdf->SetFont('Courier', '', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('TIPO DE PAGO: ' . $nombreTipoPago)), 0, 1);
-
-                // Mensaje de agradecimiento
-                $pdf->Ln(5);
-                $pdf->SetFont('Courier', 'I', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('¡GRACIAS POR SU COMPRA!')), 0, 1, 'C');
-
-                // Guardar el archivo PDF generado
-                $nombreLimpio = preg_replace('/[^A-Za-z0-9\-]/', '_', $persona->nombre);
-                $pdfPath = public_path('docs/recibo_rollo_' . $nombreLimpio . '_' . $id . '.pdf');
-                $pdf->Output($pdfPath, 'F');
-
-                // Descargar el archivo PDF generado
-                return response()->download($pdfPath);
-            } else {
+    
+            if ($venta->detalles->isEmpty()) {
+                \Log::error("Venta sin detalles", ['venta_id' => $venta->id]);
                 return response()->json(['error' => 'NO HAY DETALLES PARA ESTA VENTA'], 404);
             }
+    
+            // Verifica el logo
+            $logoPath = null;
+            if ($empresa->logo) {
+                $logoPath = storage_path('app/public/logos/' . $empresa->logo);
+                if (!file_exists($logoPath)) {
+                    \Log::warning("Logo no encontrado en: $logoPath");
+                    $logoPath = null;
+                }
+            }
+    
+            \Log::info("Generando PDF...");
+            $pdf = \PDF::loadView('pdf.recibo_venta_rollo', [
+                'venta' => $venta,
+                'persona' => $persona,
+                'empresa' => $empresa,
+                'logoPath' => $logoPath
+            ])->setPaper([0, 0, 226.77, 600], 'portrait');
+    
+            \Log::info("PDF generado correctamente");
+            
+            $nombreLimpio = preg_replace('/[^A-Za-z0-9\-]/', '_', $persona->nombre);
+            return $pdf->download("recibo_rollo_{$nombreLimpio}_{$id}.pdf");
+    
         } catch (\Exception $e) {
-            \Log::error('Error al imprimir el recibo en rollo: ' . $e->getMessage());
-            return response()->json(['error' => 'OCURRIÓ UN ERROR AL IMPRIMIR EL RECIBO EN ROLLO'], 500);
+            \Log::error('Error al imprimir el recibo en rollo: ' . $e->getMessage() . 
+                       ' - Line: ' . $e->getLine() . 
+                       ' - File: ' . $e->getFile());
+            return response()->json(['error' => 'OCURRIÓ UN ERROR AL IMPRIMIR EL RECIBO EN ROLLO: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1004,140 +1028,34 @@ public function obtenerCuotas(Request $request)
         try {
             $venta = Venta::with('detalles.producto')->find($id);
             if (!$venta) {
-                return response()->json(['error' => 'NO SE ENCONTRÓ LA VENTA'], 500);
+                return response()->json(['error' => 'NO SE ENCONTRÓ LA VENTA'], 404);
             }
-
+    
             $persona = Persona::find($venta->idcliente);
             if (!$persona) {
-                return response()->json(['error' => 'NO SE ENCONTRÓ EL CLIENTE'], 500);
+                return response()->json(['error' => 'NO SE ENCONTRÓ EL CLIENTE'], 404);
             }
-
+    
             $empresa = Empresa::first();
             if (!$empresa) {
                 return response()->json(['error' => 'NO SE ENCONTRÓ LA EMPRESA'], 404);
             }
-
-            if ($venta->detalles->isNotEmpty()) {
-                $pdf = new FPDF('P', 'mm', 'Letter');
-                $pdf->SetMargins(20, 10, 20);
-                $pdf->SetAutoPageBreak(true, 20);
-                $pdf->AddPage();
-
-                // Logo
-                if ($empresa->logo) {
-                    $logoPath = storage_path('app/public/logos/' . $empresa->logo);
-                    if (file_exists($logoPath)) {
-                        $logoWidth = 40; // Ancho del logo en mm
-                        $pdf->Image($logoPath, 160, 10, $logoWidth);
-                    }
-                }
-
-                // Título RECIBO DE VENTA
-                $pdf->SetFont('Courier', 'B', 14);
-                $pdf->Cell(0, 10, 'RECIBO DE VENTA', 0, 1, 'C');
-                $pdf->SetFont('Courier', '', 10);
-                $pdf->Cell(0, 5, utf8_decode('No. ' . $id), 0, 1, 'C');
-
-                // Información de la empresa
-                $pdf->SetFont('Courier', 'B', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper($empresa->nombre)), 0, 1, 'C');
-                $pdf->SetFont('Courier', '', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper($empresa->direccion)), 0, 1, 'C');
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('TELÉFONO: ' . $empresa->telefono)), 0, 1, 'C');
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('EMAIL: ' . $empresa->email)), 0, 1, 'C');
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('NIT: ' . $empresa->nit)), 0, 1, 'C');
-               
-                $pdf->Ln(5);
-
-                $fecha = date('d/m/Y', strtotime($venta->created_at));
-                $hora = date('H:i:s', strtotime($venta->created_at));
-                $pdf->Cell(50, 6, utf8_decode('FECHA: ' . strtoupper($fecha)), 0, 0, 'L');
-                $pdf->Cell(50, 6, utf8_decode('HORA: ' . strtoupper($hora)), 0, 1, 'L');
-
-                $clienteInfo = utf8_decode('CLIENTE: ' . strtoupper($persona->nombre) . '                 DOCUMENTO: ' . strtoupper($persona->num_documento));
-                $pdf->Cell(0, 6, $clienteInfo, 0, 1, 'L');
-
-                // Tabla de productos
-                $pdf->SetFont('Courier', 'B', 10);
-                $pdf->SetFillColor(230, 230, 230);
-                $pdf->Cell(90, 7, utf8_decode('PRODUCTO'), 1, 0, 'C', true);
-                $pdf->Cell(25, 7, utf8_decode('CANTIDAD'), 1, 0, 'C', true);
-                $pdf->Cell(35, 7, utf8_decode('PRECIO UNIT.'), 1, 0, 'C', true);
-                $pdf->Cell(35, 7, utf8_decode('SUBTOTAL'), 1, 1, 'C', true);
-
-                $pdf->SetFont('Courier', '', 9);
-                $total = 0;
-                foreach ($venta->detalles as $detalle) {
-                    $producto = $detalle->producto;
-                    $subtotal = $detalle->cantidad * $detalle->precio;
-                    $total += $subtotal;
-                    
-                    $pdf->Cell(90, 6, utf8_decode(strtoupper(substr($producto->nombre, 0, 30))), 1, 0);
-                    $pdf->Cell(25, 6, utf8_decode(strtoupper($detalle->cantidad)), 1, 0, 'C');
-                    $pdf->Cell(35, 6, utf8_decode(strtoupper(number_format($detalle->precio, 2))), 1, 0, 'R');
-                    $pdf->Cell(35, 6, utf8_decode(strtoupper(number_format($subtotal, 2))), 1, 1, 'R');
-                }
-
-                $pdf->SetFont('Courier', 'B', 10);
-                $pdf->Cell(150, 7, utf8_decode('TOTAL'), 1, 0, 'R');
-                $pdf->Cell(35, 7, utf8_decode(strtoupper(number_format($total, 2))), 1, 1, 'R');
-
-                $formatter = new NumberFormatter("es", NumberFormatter::SPELLOUT);
-                $totalTexto = strtoupper($formatter->format($total)) . ' BOLIVIANOS';
-                $pdf->SetFont('Courier', 'B', 8);
-                
-                // Dividir el texto en dos líneas si es muy largo
-                if (strlen($totalTexto) > 90) {
-                    $primeraParte = substr($totalTexto, 0, 90);
-                    $ultimoEspacio = strrpos($primeraParte, ' ');
-                    if ($ultimoEspacio !== false) {
-                        $primeraParte = substr($totalTexto, 0, $ultimoEspacio);
-                        $segundaParte = substr($totalTexto, $ultimoEspacio + 1);
-                        $pdf->Cell(0, 5, 'SON:', 0, 1);
-                        $pdf->MultiCell(0, 5, $primeraParte . "\n" . $segundaParte, 0, 'L');
-                    } else {
-                        $pdf->MultiCell(0, 5, 'SON: ' . $totalTexto, 0, 'L');
-                    }
-                } else {
-                    $pdf->Cell(0, 5, 'SON: ' . $totalTexto, 0, 1);
-                }
-
-                // Tipo de pago
-                $tipoPago = $venta->tipoPago;
-                $nombreTipoPago = $tipoPago ? $tipoPago->nombre_tipo_pago : 'N/A';
-                $pdf->SetFont('Courier', '', 8);
-                $pdf->Cell(0, 5, utf8_decode(strtoupper('TIPO DE PAGO: ' . $nombreTipoPago)), 0, 1);
-
-                // Firma
-                $pdf->SetFont('Courier', '', 10);
-                $anchoFirma = $pdf->GetPageWidth() / 2 - 20;
-                $pdf->Cell($anchoFirma, 6, '_________________________', 0, 0, 'C');
-                $pdf->Cell($anchoFirma, 6, '_________________________', 0, 1, 'C');
-                $pdf->Cell($anchoFirma, 6, 'FIRMA DEL CLIENTE', 0, 0, 'C');
-                $pdf->Cell($anchoFirma, 6, 'FIRMA AUTORIZADA', 0, 1, 'C');
-                $pdf->Ln(10);
-
-                // Nota de agradecimiento
-                $pdf->SetFont('Courier', 'I', 10);
-                $pdf->Cell(0, 7, utf8_decode('¡GRACIAS POR SU COMPRA!'), 0, 1, 'C');
-
-                // Dibujar el margen
-                $pdf->SetDrawColor(0, 0, 0);
-                $pdf->SetLineWidth(1);
-                $margenVertical = 10;
-                $margenHorizontal = 10;
-                $pdf->Rect($margenHorizontal, $margenVertical, $pdf->GetPageWidth() - ($margenHorizontal * 2), $pdf->GetY() + $margenVertical);
-
-                $nombreLimpio = preg_replace('/[^A-Za-z0-9\-]/', '_', $persona->nombre);
-                $pdfPath = public_path('docs/recibo_carta_' . $nombreLimpio . '_' . $id . '.pdf');
-                $pdf->Output($pdfPath, 'F');
-
-                return response()->download($pdfPath);
-            } else {
-                return response()->json(['error' => 'NO HAY DETALLES PARA ESTA VENTA'], 500);
+    
+            if ($venta->detalles->isEmpty()) {
+                return response()->json(['error' => 'NO HAY DETALLES PARA ESTA VENTA'], 404);
             }
+    
+            $pdf = \PDF::loadView('pdf.recibo_venta_carta', [
+                'venta' => $venta,
+                'persona' => $persona,
+                'empresa' => $empresa
+            ])->setPaper('letter', 'portrait');
+    
+            $nombreLimpio = preg_replace('/[^A-Za-z0-9\-]/', '_', $persona->nombre);
+            return $pdf->download("recibo_carta_{$nombreLimpio}_{$id}.pdf");
+    
         } catch (\Exception $e) {
-            Log::error('Error al imprimir el recibo en carta: ' . $e->getMessage());
+            \Log::error('Error al imprimir el recibo en carta: ' . $e->getMessage());
             return response()->json(['error' => 'OCURRIÓ UN ERROR AL IMPRIMIR EL RECIBO EN CARTA'], 500);
         }
     }

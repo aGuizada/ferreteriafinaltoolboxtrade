@@ -84,28 +84,77 @@
       <template v-if="listado == 1">
         <DataTable :value="arrayVenta" :rows="10" responsiveLayout="scroll"
           class="p-datatable-gridlines p-datatable-sm moto-table" :rowHover="true" dataKey="id">
+        
+
           <Column header="Opciones">
-            <template #body="slotProps">
-              <Button icon="pi pi-eye" @click="verVenta(slotProps.data.id)" class="p-button-sm p-mr-1"
-                style="background-color: green; border-color: green; color: white;" />
-              <template v-if="slotProps.data.estado === 'Registrado' && idrol !== 2">
-                <Button icon="pi pi-trash" @click="desactivarVenta(slotProps.data.id)"
-                  class="p-button-sm p-button-danger p-mr-1" />
-              </template>
-              <Button
-              v-if="slotProps.data.idtipo_venta !== 2 || !slotProps.data.idtipo_venta"
-              icon="pi pi-print" @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
-                class="p-button-sm p-button-primary p-mr-1" />
-              <Button v-if="slotProps.data.estado === 'Pendiente' && slotProps.data.idtipo_venta !== 2"
-                icon="pi pi-check-circle" @click="confirmarEntrega(slotProps.data.id)"
-                class="p-button-sm p-button-success p-mr-1" tooltip="Confirmar Entrega" />
-              <!-- NUEVO: Botón para ver plan de pagos si es venta a crédito -->
-              <Button v-if="slotProps.data.idtipo_venta === 2" icon="pi pi-calendar"
-                class="p-button-help p-button-info p-mr-1" @click="verPlanPagos(slotProps.data.id)"
-                tooltip="Ver plan de pagos" />
-              
-            </template>
-          </Column>
+  <template #body="slotProps">
+    <!-- Ver venta -->
+    <Button
+      icon="pi pi-eye"
+      @click="verVenta(slotProps.data.id)"
+      class="p-button-sm p-mr-1"
+      style="background-color: green; border-color: green; color: white;"
+    />
+
+    <!-- Anular venta -->
+    <template v-if="idrol !== 2 && (
+        slotProps.data.estado === 'Registrado' ||
+        slotProps.data.idtipo_venta === 2 ||
+        slotProps.data.idtipo_venta === 3
+      )">
+      <Button
+        icon="pi pi-trash"
+        @click="desactivarVenta(slotProps.data.id)"
+        class="p-button-sm p-button-danger p-mr-1"
+        tooltip="Anular venta"
+      />
+    </template>
+
+    <!-- Imprimir comprobante -->
+    <Button
+      v-if="slotProps.data.idtipo_venta !== 2 && slotProps.data.idtipo_venta !== 3"
+      icon="pi pi-print"
+      @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
+      class="p-button-sm p-button-primary p-mr-1"
+      tooltip="Imprimir comprobante"
+    />
+
+    <!-- Confirmar entrega -->
+    <Button
+      v-if="slotProps.data.estado === 'Pendiente' && slotProps.data.idtipo_venta !== 2"
+      icon="pi pi-check-circle"
+      @click="confirmarEntrega(slotProps.data.id)"
+      class="p-button-sm p-button-success p-mr-1"
+      tooltip="Confirmar Entrega"
+    />
+
+    <!-- Ver plan de pagos -->
+    <Button
+  v-if="slotProps.data.idtipo_venta === 2"
+  icon="pi pi-calendar"
+  class="p-button-sm p-mr-1"
+  style="background-color: #a855f7; border-color: #a855f7; color: white;"
+  @click="verPlanPagos(slotProps.data.id)"
+  tooltip="Ver plan de pagos"
+/>
+
+
+    <!-- Descargar plan de pagos con icono amarillo -->
+    <Button
+      v-if="slotProps.data.idtipo_venta === 2"
+        icon="pi pi-download"
+      class="p-button-sm p-button-warning p-mr-1"
+      @click="confirmarYDescargarPlanPagos(slotProps.data.id)"
+      tooltip="Descargar plan de pagos"
+    >
+      <template #icon>
+        <i class="pi pi-download" style="color: yellow;"></i>
+      </template>
+    </Button>
+  </template>
+</Column>
+
+
           <Column field="usuario" header="Vendedor"></Column>
           <Column field="razonSocial" header="Cliente"></Column>
           <Column field="documentoid" header="Documento" class="d-none d-md-table-cell"></Column>
@@ -1468,6 +1517,8 @@ export default {
         this.last_comprobante = 1;
       }
     },
+
+
     async registrarVenta(idtipo_pago = 1) {
   try {
     // 1. Validar si la caja está abierta antes de continuar
@@ -1562,23 +1613,29 @@ export default {
       this.cerrarModal2();
       this.listarVenta(1, "", "num_comprob");
 
+      // Venta a crédito: preguntar si desea imprimir el plan de pagos
       if (response.data.tipo === 'credito') {
+        Swal.fire({
+          title: '¿Desea imprimir el plan de pagos?',
+          text: 'Puede descargar el plan de pagos en PDF.',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, descargar',
+          cancelButtonText: 'No',
+          reverseButtons: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.open(`/venta/descargarPlanPagos/${response.data.id}`, '_blank');
+          }
+        });
 
-        if (response.data.pdf_url) {
-          window.open(response.data.pdf_url, '_blank');
-        }
-      
         this.$toast.add({
           severity: 'success',
           summary: 'Éxito',
           detail: response.data.message,
           life: 3000
         });
-      }
-
-
       } else if (this.idtipo_venta === 3) { // Venta adelantada
-        // Solo muestra mensaje de éxito específico
         Swal.fire({
           title: 'Pedido Adelantado Registrado',
           text: 'La venta adelantada se ha registrado correctamente',
@@ -1588,78 +1645,102 @@ export default {
         });
       }
 
-     this.reiniciarFormulario();
-return;
+      // Mostrar Swal para seleccionar formato de impresión en ventas al contado (efectivo o QR)
+      if (
+        (this.idtipo_venta === 1 && (idtipo_pago === 1 || idtipo_pago === 4))
+        && response.data.id
+      ) {
+        Swal.fire({
+          title: '¿Cómo desea imprimir el comprobante?',
+          text: 'Seleccione el formato de impresión',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Carta',
+          cancelButtonText: 'Rollo',
+          reverseButtons: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Imprimir en formato carta
+            window.open(`/resivo/imprimirCarta/${response.data.id}`, '_blank');
+          } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Imprimir en formato rollo
+            window.open(`/resivo/imprimirRollo/${response.data.id}`, '_blank');
+          }
+        });
+      }
 
-} catch (error) {
-  console.error("Error al registrar venta:", error);
+      this.reiniciarFormulario();
+      return;
+    }
 
-  // Intenta obtener el mensaje del backend
-  let mensaje = "Ocurrió un error al procesar la venta";
-  if (error.response && error.response.data && error.response.data.error) {
-    mensaje = error.response.data.error;
-  } else if (error.message) {
-    mensaje = error.message;
+  } catch (error) {
+    console.error("Error al registrar venta:", error);
+
+    // Intenta obtener el mensaje del backend
+    let mensaje = "Ocurrió un error al procesar la venta";
+    if (error.response && error.response.data && error.response.data.error) {
+      mensaje = error.response.data.error;
+    } else if (error.message) {
+      mensaje = error.message;
+    }
+
+    Swal.fire(
+      "Error",
+      mensaje,
+      "error"
+    );
+  } finally {
+    this.mostrarSpinner = false;
   }
-
-  Swal.fire(
-    "Error",
-    mensaje,
-    "error"
-  );
-} finally {
-  this.mostrarSpinner = false;
-}
-    },
+},
 
 
-  async descargarPlanPagos(idVenta) {
-        try {
-            // Forzar descarga en nueva pestaña
-            const url = `/venta/descargarPlanPagos/${id}`;
-            const a = document.createElement('a');
-            a.href = url;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Mostrar mensaje de éxito aunque no podamos verificar
-            this.$toast.add({
-                severity: 'success',
-                summary: 'Descarga iniciada',
-                detail: 'El plan de pagos se está descargando',
-                life: 3000
-            });
-            
-        } catch (error) {
-            console.error("Error:", error);ss
-            // Mostrar mensaje genérico
-            this.$toast.add({
-                severity: 'info',
-                summary: 'Descarga',
-                detail: 'Por favor revise su carpeta de descargas',
-                life: 3000
-            });
-        }
-    },
-  mostrarSelectorRecibo(id) {
-    Swal.fire({
-      title: 'Formato de recibo',
-      text: 'Seleccione el tamaño de impresión',
+async confirmarYDescargarPlanPagos(idVenta) {
+    const result = await Swal.fire({
+      title: '¿Desea descargar el plan de pagos?',
+      text: 'Se generará un PDF con el plan de pagos.',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: 'CARTA',
-      cancelButtonText: 'ROLLO'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.descargarRecibo(id, 'carta');
-      } else if (result.dismiss === Swal.DismissReason.cancel) {
-        this.descargarRecibo(id, 'rollo');
-      }
+      confirmButtonText: 'Sí, descargar',
+      cancelButtonText: 'No',
+      reverseButtons: true
     });
+
+    if (result.isConfirmed) {
+      this.descargarPlanPagos(idVenta);
+    }
   },
+  async descargarPlanPagos(idVenta) {
+  try {
+    // Forzar descarga en nueva pestaña
+    const url = `/venta/descargarPlanPagos/${idVenta}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Mostrar mensaje de éxito aunque no podamos verificar
+    this.$toast.add({
+      severity: 'success',
+      summary: 'Descarga iniciada',
+      detail: 'El plan de pagos se está descargando',
+      life: 3000
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    // Mostrar mensaje genérico
+    this.$toast.add({
+      severity: 'info',
+      summary: 'Descarga',
+      detail: 'Por favor revise su carpeta de descargas',
+      life: 3000
+    });
+  }
+},
 
   async imprimirPlanPagos(idVenta) {
     try {
@@ -1707,66 +1788,9 @@ return;
     }
 },
 
-  descargarRecibo(id, tipo) {
-    const endpoint = tipo === 'carta' ? "imprimirCarta" : "imprimirRollo";
-    axios.get(`/resivo/${endpoint}/${id}`, { 
-      responseType: "blob"
-    }).then(response => {
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${tipo}_${id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    }).catch(error => {
-      console.error("Error al descargar:", error);
-      Swal.fire('Error', 'No se pudo generar el recibo', 'error');
-    });
-  },
 
 
-    generarCuotas() {
-      if (!this.numero_cuotas || !this.tiempo_diaz) {
-        Swal.fire({
-          icon: "warning",
-          title: "Campos incompletos",
-          text: "Ingrese la cantidad de cuotas y frecuencia de pagos"
-        });
-        return;
-      }
 
-      // Validate numeric values
-      if (isNaN(this.numero_cuotas) || isNaN(this.tiempo_diaz)) {
-        Swal.fire({
-          icon: "error",
-          title: "Error en los datos",
-          text: "Los valores de cuotas y días deben ser números válidos"
-        });
-        return;
-      }
-
-      this.cuotas = [];
-      const fechaHoy = new Date();
-      const montoTotal = this.calcularTotal;
-      const montoPorCuota = parseFloat((montoTotal / this.numero_cuotas).toFixed(2));
-      let saldoRestante = montoTotal;
-
-      for (let i = 0; i < this.numero_cuotas; i++) {
-        const fechaPago = new Date(fechaHoy);
-        fechaPago.setDate(fechaPago.getDate() + ((i + 1) * parseInt(this.tiempo_diaz)));
-
-        const cuota = {
-          fecha_pago: fechaPago.toISOString().split('T')[0],
-          precio_cuota: montoPorCuota,
-          saldo_restante: parseFloat(saldoRestante.toFixed(2)),
-          estado: "Pendiente"
-        };
-
-        saldoRestante -= montoPorCuota;
-        this.cuotas.push(cuota);
-      }
-    },
     registrarVentaQR() {
       if (!this.qrPagoVerificado) {
         Swal.fire({
