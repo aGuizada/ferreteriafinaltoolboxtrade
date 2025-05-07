@@ -19,9 +19,9 @@ use App\Rol;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\NotifyAdmin;
 use FPDF;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Barryvdh\DomPDF\Facade as PDF;
 
 class VentaController extends Controller
 {
@@ -81,7 +81,6 @@ class VentaController extends Controller
             'pagination' => [
                 'total' => $ventas->total(),
                 'current_page' => $ventas->currentPage(),
-                'per_page' => $ventas->perPage(),
                 'last_page' => $ventas->lastPage(),
                 'from' => $ventas->firstItem(),
                 'to' => $ventas->lastItem(),
@@ -90,6 +89,19 @@ class VentaController extends Controller
             'usuario' => $usuario
         ];
     }
+    public function indexCredito()
+{
+    $ventas = Venta::with('cliente', 'usuario')
+        ->where('tipo_venta', 'credito')
+        ->orderBy('id', 'desc')
+        ->paginate(10);
+
+    return Inertia::render('Ventas/Credito', [
+        'ventas' => $ventas,
+        'clientes' => Cliente::all(),
+    ]);
+}
+
 
     /**
      * Obtiene la cabecera de una venta específica
@@ -414,27 +426,40 @@ public function store(Request $request)
 
     return $venta;
 }
+
+
+
+
+
+
 public function descargarPlanPagos($id)
 {
-    try {
-        $venta = Venta::with(['cliente', 'credito.cuotas'])->findOrFail($id);
-        
-        if ($venta->idtipo_venta != 2) {
-            return response()->json(['error' => 'Esta venta no es a crédito'], 400);
-        }
+    // Obtener los datos necesarios
+    $venta = Venta::with('cliente', 'credito.cuotas')->findOrFail($id);
+    $cliente = $venta->cliente;
+    $credito = $venta->credito;
+    $cuotasPagadas = $credito->cuotas->where('estado', 'Pagado');
+    $totalCuotas = $credito->cuotas->sum('precio_cuota');
 
-        $pdf = PDF::loadView('pdf.plan_pagos', [
-            'venta' => $venta,
-            'cuotas' => $venta->credito->cuotas,
-            'credito' => $venta->credito
-        ]);
+    // Cargar la vista Blade como HTML
+    $pdfContent = view('pdf.recibo_general_creditos', [
+        'venta' => $venta,
+        'cliente' => $cliente,
+        'credito' => $credito,
+        'cuotasPagadas' => $cuotasPagadas,
+        'totalCuotas' => $totalCuotas,
+    ])->render();
 
-        return $pdf->download("plan_pagos_{$id}.pdf");
+    // Generar el PDF usando DomPDF
+    $pdf = PDF::loadHTML($pdfContent);
 
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
-    }
+    // Descargar el PDF generado
+    return $pdf->download("plan_pagos_{$id}.pdf");
 }
+
+
+
+
     /**
      * Crea una venta con recibo
      */

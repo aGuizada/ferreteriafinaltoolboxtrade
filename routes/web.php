@@ -944,6 +944,9 @@ Route::get('/resivo/imprimirCarta/{id}', 'VentaController@imprimirResivoCarta');
         ]);
     });
 
-    
+
 
 });
+Route::get('/ventas/credito', 'VentaController@indexCredito')->name('ventas.credito');
+Route::get('/ventas/{id}/recibo', [VentaController::class, 'reciboPago'])->name('ventas.recibo');
+Route::get('/venta/descargarPlanPagos/{id}', 'VentaController@descargarPlanPagos');

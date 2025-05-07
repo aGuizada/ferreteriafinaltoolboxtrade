@@ -1563,16 +1563,19 @@ export default {
       this.listarVenta(1, "", "num_comprob");
 
       if (response.data.tipo === 'credito') {
-        // Para ventas a crédito - descargar plan de pagos
-        this.descargarPlanPagos(response.data.id);
 
-        // Opcional: Mostrar mensaje de éxito
+        if (response.data.pdf_url) {
+          window.open(response.data.pdf_url, '_blank');
+        }
+      
         this.$toast.add({
           severity: 'success',
           summary: 'Éxito',
           detail: response.data.message,
           life: 3000
         });
+      }
+
 
       } else if (this.idtipo_venta === 3) { // Venta adelantada
         // Solo muestra mensaje de éxito específico
@@ -1585,14 +1588,10 @@ export default {
         });
       }
 
-      this.reiniciarFormulario();
-      return;
-    }
+     this.reiniciarFormulario();
+return;
 
-    const errorMessage = (response.data && response.data.message) || 'Respuesta inesperada del servidor';
-    throw new Error(errorMessage);
-
-  } catch (error) {
+} catch (error) {
   console.error("Error al registrar venta:", error);
 
   // Intenta obtener el mensaje del backend
@@ -1609,14 +1608,22 @@ export default {
     "error"
   );
 } finally {
-    this.mostrarSpinner = false;
-  }
-},
+  this.mostrarSpinner = false;
+}
+    },
+
 
   async descargarPlanPagos(idVenta) {
         try {
-            // Usar window.location para forzar la descarga
-            window.open(`/venta/planPagosPDF/${idVenta}`, '_blank');
+            // Forzar descarga en nueva pestaña
+            const url = `/venta/descargarPlanPagos/${id}`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
             
             // Mostrar mensaje de éxito aunque no podamos verificar
             this.$toast.add({
