@@ -549,24 +549,33 @@ class CajaController extends Controller
         ];
     }
     public function estadoActual()
-{
-    // Busca la caja abierta del usuario actual
-    $caja = Caja::where('idusuario', \Auth::user()->id)
-                ->where('estado', '1')
-                ->orderBy('id', 'desc')
-                ->first();
-
-    if ($caja) {
-        return response()->json([
-            'abierta' => true,
-            'caja_id' => $caja->id,
-            'mensaje' => 'Caja abierta'
-        ]);
-    } else {
-        return response()->json([
-            'abierta' => false,
-            'mensaje' => 'No hay caja abierta'
-        ]);
+    {
+        $user = \Auth::user();
+    
+        if ($user->idrol == 1) { // Administrador
+            // Busca cualquier caja abierta
+            $caja = Caja::where('estado', '1')
+                        ->orderBy('id', 'desc')
+                        ->first();
+        } else {
+            // Vendedor: busca caja abierta en su sucursal
+            $caja = Caja::where('estado', '1')
+                        ->where('idsucursal', $user->idsucursal)
+                        ->orderBy('id', 'desc')
+                        ->first();
+        }
+    
+        if ($caja) {
+            return response()->json([
+                'abierta' => true,
+                'caja_id' => $caja->id,
+                'mensaje' => 'Caja abierta'
+            ]);
+        } else {
+            return response()->json([
+                'abierta' => false,
+                'mensaje' => 'No hay caja abierta'
+            ]);
+        }
     }
-}
 }

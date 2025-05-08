@@ -12,7 +12,7 @@
       <div class="p-d-flex p-ai-center p-mb-4" style="gap: 0.5rem;">
         <!-- Botón Nueva Venta -->
         <Button @click="abrirTipoVenta" label="Nueva Venta" icon="pi pi-plus"
-          class="p-button-success p-button-sm p-mr-2" />
+        class="p-button-secondary" />
 
         <!-- Buscador -->
         <span class="p-input-icon-left p-input-icon-right p-w-100">

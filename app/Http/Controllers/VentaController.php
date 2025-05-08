@@ -270,8 +270,19 @@ public function store(Request $request)
      */
     private function validarCajaAbierta()
     {
-        $ultimaCaja = Caja::latest()->first();
-        return $ultimaCaja && $ultimaCaja->estado == '1';
+        $user = Auth::user();
+    
+        if ($user->idrol == 1) {
+            return Caja::where('estado', '1')->exists();
+        }
+    
+        if (!isset($user->idsucursal)) {
+            return false;
+        }
+    
+        return Caja::where('estado', '1')
+            ->where('idsucursal', $user->idsucursal)
+            ->exists();
     }
 
     /**

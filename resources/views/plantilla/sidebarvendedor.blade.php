@@ -14,13 +14,18 @@
                         <ul class="nav-dropdown-items">
                         -->
                             <li @click="menu=5" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-basket-loaded"></i> Ventas</a>
+                                <a class="nav-link" href="#"><i class="icon-basket-loaded"></i> VENTAS</a>
                             </li>
+                            <li @click="menu=53" class="nav-item">
+                        <a class="nav-link" href="#"><i class="fa fa-credit-card" style="font-size: 16px;"></i> VENTAS A
+                            CREDITO</a>
+                    </li> 
                             <li @click="menu=6" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-notebook"></i> Clientes</a>
+                                <a class="nav-link" href="#"><i class="icon-notebook"></i> CLIENTES</a>
                             </li>
+                     
                            <li @click="menu=23" class="nav-item">
-                                <a class="nav-link" href="#"><i class="icon-calculator" style="font-size: 18px;"></i> Cotizaciones</a>
+                                <a class="nav-link" href="#"><i class="icon-calculator" style="font-size: 18px;"></i> COTIZACIONES</a>
                             </li>
                             <!--
                         </ul>
