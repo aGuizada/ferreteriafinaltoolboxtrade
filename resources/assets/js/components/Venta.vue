@@ -26,9 +26,13 @@
         </span>
 
         <!-- Botón Reporte usando PrimeVue -->
-        <Button @click="mostrarModal = true" label="Reporte" icon="pi pi-file-pdf"
-          class="p-button-danger p-button-sm p-ml-2" />
-
+        <Button
+  v-if="idrol === 1"
+  @click="mostrarModal = true"
+  label="Reporte"
+  icon="pi pi-file-pdf"
+  class="p-button-danger p-button-sm p-ml-2"
+/>
          
       </div>
 
