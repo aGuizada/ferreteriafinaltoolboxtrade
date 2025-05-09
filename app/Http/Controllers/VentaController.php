@@ -22,7 +22,8 @@ use FPDF;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade as PDF;
-
+use App\Exports\VentasExport;
+use Maatwebsite\Excel\Facades\Excel;
 class VentaController extends Controller
 {
     public function __construct()
@@ -1258,7 +1259,29 @@ public function obtenerCuotas(Request $request)
         return $pdf->download('reporte_ventas_' . ($fechaInicio ?? 'todas') . '_al_' . ($fechaFin ?? 'todas') . '.pdf');
     }
     
-      
+    public function exportarExcel(Request $request)
+    {
+        try {
+            $fechaInicio = $request->input('fecha_inicio');
+            $fechaFin = $request->input('fecha_fin');
+            $usuarioIds = $request->input('usuario_ids', []);
+    
+            \Log::info('Exportando Excel', [
+                'fecha_inicio' => $fechaInicio,
+                'fecha_fin' => $fechaFin,
+                'usuario_ids' => $usuarioIds
+            ]);
+    
+            return \Excel::download(
+                new \App\Exports\VentasExport($fechaInicio, $fechaFin, $usuarioIds),
+                'ventas.xlsx'
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error al exportar Excel: ' . $e->getMessage());
+            // Opcional: puedes retornar el error al frontend
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 
     /**
      * Registra las cuotas del crédito

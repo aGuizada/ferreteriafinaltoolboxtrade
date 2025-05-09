@@ -917,7 +917,7 @@ Route::group(["middleware" => ["auth"]], function () {
             "CreditoVentaController@generarReciboGeneral"
         );
         Route::get('/venta/obtenerCuotas', 'VentaController@obtenerCuotas')->name('venta.obtenerCuotas');
-
+        Route::post('/ventas/exportar-excel', 'VentaController@exportarExcel');
         Route::delete('/proveedor/eliminar/{id}', 'ProveedorController@eliminarProveedor');
         Route::delete('/cliente/eliminar/{id}', 'ClienteController@eliminarCliente');
              route::delete('/almacen/eliminar/{id}', 'AlmacenController@destroy');

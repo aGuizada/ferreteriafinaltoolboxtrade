@@ -28,7 +28,10 @@
         <!-- Botón Reporte usando PrimeVue -->
         <Button @click="mostrarModal = true" label="Reporte" icon="pi pi-file-pdf"
           class="p-button-danger p-button-sm p-ml-2" />
+
+         
       </div>
+
 
 
 
@@ -59,13 +62,33 @@
                   <label for="fecha_fin">Fecha Fin:</label>
                   <input type="date" v-model="fecha_fin" id="fecha_fin" class="form-control">
                 </div>
-
+                <div class="form-group">
+  <label>Usuarios:</label>
+  <div v-if="usuarios.length">
+    <div v-for="usuario in usuarios" :key="usuario.id" class="form-check">
+      <input class="form-check-input" type="checkbox" :id="'usuario_' + usuario.id" :value="usuario.id" v-model="usuariosSeleccionados">
+      <label class="form-check-label" :for="'usuario_' + usuario.id">
+        {{ usuario.nombre }}
+      </label>
+    </div>
+  </div>
+  <div v-else class="text-muted">Cargando usuarios...</div>
+</div>
                 <div class="d-flex justify-content-between">
-                  <button type="submit" class="btn btn-primary" :disabled="cargando">
-                    <span v-if="cargando" class="spinner-border spinner-border-sm"></span>
-                    Generar PDF
-                  </button>
-
+                  <Button
+  type="submit"
+  label="Generar PDF"
+  icon="pi pi-file-pdf"
+  class="p-button-danger p-button-sm"
+  :loading="cargando"
+/>
+                  <Button
+  @click="exportarExcel"
+  label="Generar Excel"
+  icon="pi pi-file-excel"
+  class="p-button-success p-button-sm p-ml-2"
+  :loading="cargando"
+/>
                   <!-- BOTÓN para cerrar -->
                   <button type="button" class="btn btn-secondary" @click="cerrarModalReporte">
                     Cerrar
@@ -1236,6 +1259,8 @@ export default {
 
   data() {
     return {
+      usuarios: [],
+      usuariosSeleccionados: [],
       mostrarModal: false,
       fecha_inicio: "",
       fecha_fin: "",
@@ -1442,6 +1467,118 @@ export default {
     },
   },
   methods: {
+    async exportarExcel() {
+  this.error = "";
+  if (!this.fecha_inicio || !this.fecha_fin) {
+    this.error = "Debe seleccionar ambas fechas.";
+    console.warn("Fechas no seleccionadas");
+    return;
+  }
+  this.cargando = true;
+  try {
+    const formData = new FormData();
+    formData.append("fecha_inicio", this.fecha_inicio);
+    formData.append("fecha_fin", this.fecha_fin);
+    this.usuariosSeleccionados.forEach(id => formData.append('usuario_ids[]', id));
+    console.log("Enviando datos para exportar Excel:", {
+      fecha_inicio: this.fecha_inicio,
+      fecha_fin: this.fecha_fin,
+      usuariosSeleccionados: this.usuariosSeleccionados
+    });
+
+    const response = await fetch("/ventas/exportar-excel", {
+      method: "POST",
+      headers: {
+        "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content")
+      },
+      body: formData
+    });
+
+    const disposition = response.headers.get('content-disposition');
+    if (!response.ok || !disposition || !disposition.includes('attachment')) {
+      const errorText = await response.text();
+      this.error = "Error al exportar Excel: " + errorText;
+      console.error("Respuesta del backend (error):", errorText);
+      this.cargando = false;
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `ventas_${this.fecha_inicio}_al_${this.fecha_fin}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+    console.log("Descarga de Excel completada");
+  } catch (e) {
+    this.error = "No se pudo exportar el Excel. " + (e.message || "");
+    console.error("Error en exportarExcel():", e);
+  } finally {
+    this.cargando = false;
+  }
+},
+
+
+
+    async cargarUsuarios() {
+  try {
+    const response = await fetch('/usuario/selectUsuarios', {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    const data = await response.json();
+    this.usuarios = data.usuarios || [];
+  } catch (error) {
+    this.usuarios = [];
+  }
+},
+  async generarReporte() {
+  this.error = "";
+  if (!this.fecha_inicio || !this.fecha_fin) {
+    this.error = "Debe seleccionar ambas fechas.";
+    return;
+  }
+  if (this.fecha_fin < this.fecha_inicio) {
+    this.error = "La fecha fin no puede ser menor que la fecha inicio.";
+    return;
+  }
+  this.cargando = true;
+  try {
+    const formData = new FormData();
+    formData.append("fecha_inicio", this.fecha_inicio);
+    formData.append("fecha_fin", this.fecha_fin);
+    // Agrega los usuarios seleccionados
+    this.usuariosSeleccionados.forEach(id => formData.append('usuario_ids[]', id));
+
+    const response = await fetch("/reporte-ventas/pdf", {
+      method: "POST",
+      headers: {
+        "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content")
+      },
+      body: formData
+    });
+
+    if (!response.ok) throw new Error("Error al generar el PDF");
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `reporte_ventas_${this.fecha_inicio}_al_${this.fecha_fin}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    this.error = "No se pudo generar el PDF. " + (e.message || "");
+  } finally {
+    this.cargando = false;
+  }
+},
     cerrarModalReporte() {
       console.log("Método cerrarModalReporte ejecutado");
       this.mostrarModal = false;
@@ -1449,53 +1586,7 @@ export default {
       this.fecha_inicio = "";
       this.fecha_fin = "";
     },
-    async generarReporte() {
-      this.error = "";
-      if (!this.fecha_inicio || !this.fecha_fin) {
-        this.error = "Debe seleccionar ambas fechas.";
-        return;
-      }
-      if (this.fecha_fin < this.fecha_inicio) {
-        this.error = "La fecha fin no puede ser menor que la fecha inicio.";
-        return;
-      }
-      this.cargando = true;
-      try {
-        // Usamos FormData para enviar los datos como POST
-        const formData = new FormData();
-        formData.append("fecha_inicio", this.fecha_inicio);
-        formData.append("fecha_fin", this.fecha_fin);
-
-        // Usamos fetch para recibir el PDF como blob
-        const response = await fetch("/reporte-ventas/pdf", {
-          method: "POST",
-          headers: {
-            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
-          },
-          body: formData
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Error al generar el PDF");
-        }
-
-        const blob = await response.blob();
-        // Descargar el PDF
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `reporte_ventas_${this.fecha_inicio}_al_${this.fecha_fin}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (e) {
-        this.error = "No se pudo generar el PDF. " + (e.message || "");
-      } finally {
-        this.cargando = false;
-      }
-    },
+ 
     async obtenerDatosSesionYComprobante() {
       try {
         // Clear existing number
@@ -2839,6 +2930,7 @@ async confirmarYDescargarPlanPagos(idVenta) {
     },
   },
   mounted() {
+    this.cargarUsuarios();
     this.datosConfiguracion();
     this.selectAlmacen();
     this.listarVenta(1, this.buscar);
