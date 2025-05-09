@@ -1214,34 +1214,39 @@ public function obtenerCuotas(Request $request)
     // Genera el PDF de ventas entre fechas
     public function generarReportePDF(Request $request)
     {
-        // Validar solo si se envían fechas
         $request->validate([
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
         ]);
-    
+
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
+        $usuarioIds = $request->input('usuario_ids', []);
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+        $usuarioIds = $request->input('usuario_ids', []);
     
-        // Si no se envían fechas, mostrar todas las ventas
         if (!$fechaInicio || !$fechaFin) {
-            $ventas = \App\Venta::with('cliente')
-                ->orderBy('fecha_hora', 'asc')
-                ->get();
+            $query = \App\Venta::with('cliente')->orderBy('fecha_hora', 'asc');
+            if (!empty($usuarioIds)) {
+                $query->whereIn('idusuario', $usuarioIds);
+            }
+            $ventas = $query->get();
             $fechaInicio = \App\Venta::min('fecha_hora') ? date('Y-m-d', strtotime(\App\Venta::min('fecha_hora'))) : null;
             $fechaFin = \App\Venta::max('fecha_hora') ? date('Y-m-d', strtotime(\App\Venta::max('fecha_hora'))) : null;
         } else {
-            // Filtrar por rango de fechas
-            $ventas = \App\Venta::with('cliente')
+            $query = \App\Venta::with('cliente')
                 ->whereBetween('fecha_hora', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'])
-                ->orderBy('fecha_hora', 'asc')
-                ->get();
+                ->orderBy('fecha_hora', 'asc');
+            if (!empty($usuarioIds)) {
+                $query->whereIn('idusuario', $usuarioIds);
+            }
+            $ventas = $query->get();
         }
     
         $total = $ventas->sum('total');
         $empresa = \App\Empresa::first();
     
-        // Usar el alias PDF igual que en InventarioController
         $pdf = \PDF::loadView('pdf.ventas_pdf', [
             'ventas' => $ventas,
             'fechaInicio' => $fechaInicio,
@@ -1252,6 +1257,8 @@ public function obtenerCuotas(Request $request)
     
         return $pdf->download('reporte_ventas_' . ($fechaInicio ?? 'todas') . '_al_' . ($fechaFin ?? 'todas') . '.pdf');
     }
+    
+      
 
     /**
      * Registra las cuotas del crédito

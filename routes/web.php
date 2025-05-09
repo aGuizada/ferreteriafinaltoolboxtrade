@@ -125,9 +125,9 @@ Route::group(["middleware" => ["auth"]], function () {
         Route::post("/enviarWhatsapp", "WhatsappController@enviaReporte");
         Route::get("/ventas-diarias", "VentaController@reporteVentasDiarias");
 
-        Route::get("/usuario/selectUsuario", "VentaController@selectUsuarios");
-        Route::post("/venta/emitirRecibo", "VentaController@emitirRecibo");
 
+        Route::post("/venta/emitirRecibo", "VentaController@emitirRecibo");
+        Route::get("/usuario/selectUsuarios", "UserController@selectUsuarios");
         Route::get("/empresa", "EmpresaController@index");
         //Route::post('/empresa/registrar', 'EmpresaController@store');
         Route::put("/empresa/actualizar", "EmpresaController@update");

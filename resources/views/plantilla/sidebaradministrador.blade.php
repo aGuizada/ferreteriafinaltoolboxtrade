@@ -1,5 +1,5 @@
 <div class="sidebar">
-   
+    <button class="sidebar-minimizer brand-minimizer" type="button" style="background-color: #a4b7c1"></button>
     <nav class="sidebar-nav">
         <ul class="nav">
 
@@ -130,7 +130,7 @@
                         <a class="nav-link" href="#"><i class="fa fa-trademark" style="font-size: 19px;"></i> MARCA</a>
                     </li>
                     <li @click="menu=19" class="nav-item">
-                        <a class="nav-link" href="#"><i class="fa fa-tags" style="font-size: 19px;"></i> CATEGORIA</a>
+                        <a class="nav-link" href="#"><i class="fa fa-tags" style="font-size: 19px;"></i> LINEA</a>
                     </li>
                     <li @click="menu=20" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-industry" style="font-size: 19px;"></i>
@@ -151,9 +151,9 @@
                     <li @click="menu=7" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-user" style="font-size: 19px;"></i> USUARIOS</a>
                     </li>
-                    <!-- <li @click="menu=8" class="nav-item">
+                    <li @click="menu=8" class="nav-item">
                         <a class="nav-link" href="#"><i class="fa fa-id-badge" style="font-size: 19px;"></i> ROLES</a>
-                    </li> -->
+                    </li>
                 </ul>
             </li>
           
