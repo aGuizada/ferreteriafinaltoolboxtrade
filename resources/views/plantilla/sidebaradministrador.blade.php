@@ -1,5 +1,4 @@
 <div class="sidebar">
-    <button class="sidebar-minimizer brand-minimizer" type="button" style="background-color: #a4b7c1"></button>
     <nav class="sidebar-nav">
         <ul class="nav">
 
