@@ -663,9 +663,14 @@
                         </div>
                       </template>
                     </Card>
-                    <Button label="Registrar Pago" icon="pi pi-check"
-                      class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="validarYRegistrarPago"
-                      :disabled="!montoValido" />
+                    <Button
+  label="Registrar Pago"
+  icon="pi pi-check"
+  class="p-button-success p-mt-2 p-button-lg p-button-raised"
+  @click="validarYRegistrarPago"
+  :disabled="!montoValido || loadingVenta"
+  :loading="loadingVenta"
+/>
                   </div>
                 </div>
               </TabPanel>
@@ -1613,7 +1618,7 @@ export default {
       }
     },
 
-
+   
     async registrarVenta(idtipo_pago = 1) {
   try {
     // 1. Validar si la caja está abierta antes de continuar
@@ -1627,7 +1632,7 @@ export default {
       return; // Detener el flujo
     }
 
-    console.log('Tipo de venta detectado:', this.tipoVenta);
+  
 
     // Validaciones previas (se mantienen igual)
     if (this.tipoVenta === 'credito') {
@@ -1651,7 +1656,7 @@ export default {
     }
     this.mostrarSpinner = true;
     await this.buscarOCrearCliente();
-    await this.obtenerDatosSesionYComprobante();
+  
 
     // Preparación de datos (se mantiene igual)
     const ventaData = {
@@ -1703,7 +1708,7 @@ export default {
     const response = await axios.post("/venta/registrar", ventaData);
 
     if (response.data && response.data.id) {
-      await this.obtenerDatosSesionYComprobante();
+    
       this.listado = 1;
       this.cerrarModal2();
       this.listarVenta(1, "", "num_comprob");
@@ -2423,19 +2428,32 @@ async confirmarYDescargarPlanPagos(idVenta) {
     },
 
     // Métodos para ventas al contado
-    validarYRegistrarPago() {
-      if (!this.recibido) {
-        this.montoInvalido = true;
-        return;
-      }
+    async validarYRegistrarPago() {
+  // Evita doble click si ya está procesando
+  if (this.loadingVenta) return;
 
-      if (!this.montoValido) {
-        this.montoInvalido = true;
-        return;
-      }
+  // Validaciones de monto recibido
+  if (!this.recibido) {
+    this.montoInvalido = true;
+    return;
+  }
 
-      this.registrarVenta(1); // 1 para pago en efectivo
-    },
+  if (!this.montoValido) {
+    this.montoInvalido = true;
+    return;
+  }
+
+  this.loadingVenta = true; // Activa loading
+
+  try {
+    await this.registrarVenta(1); // 1 para pago en efectivo
+  } catch (error) {
+    // Puedes mostrar un mensaje de error si quieres
+    console.error(error);
+  } finally {
+    this.loadingVenta = false; // Desactiva loading, pase lo que pase
+  }
+},
 
     // Método para venta adelantada
     validarYRegistrarVentaAdelantada() {
