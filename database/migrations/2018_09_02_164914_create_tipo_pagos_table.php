@@ -34,10 +34,11 @@ class CreateTipoPagosTable extends Migration
             ],
             [
                 'codigoClasificador' => 3,
-                'nombre_tipo_pago' => 'CHEQUE',
+                'nombre_tipo_pago' => 'TRANSFERENCIA BANCARIA',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            
             [
                 'codigoClasificador' => 4,
                 'nombre_tipo_pago' => 'QR SIMPLE',

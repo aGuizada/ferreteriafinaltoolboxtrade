@@ -721,6 +721,67 @@
                   </div>
                 </div>
               </TabPanel>
+
+              <!-- Nueva tab para transferencia -->
+              <TabPanel header="Transferencia">
+                <div class="p-grid p-fluid">
+                  <div class="p-col-12 p-md-7">
+                    <Card>
+                      <template #content>
+                        <div class="p-fluid">
+                          <div class="transfer-payment-info p-mb-3">
+                            <h5><i class="pi pi-money-bill p-mr-2"></i> Pago por Transferencia</h5>
+                            <p class="p-mt-2">
+                              1. Solicite al cliente que realice la transferencia bancaria.
+                            </p>
+                            <p>
+                              2. Verifique en su plataforma bancaria que la transferencia se haya realizado correctamente.
+                            </p>
+                            <p>
+                              3. Una vez confirmado el pago, presione "Confirmar Transferencia" para registrar la venta.
+                            </p>
+                          </div>
+                          <div class="transfer-verification-panel p-mt-3">
+                            <div class="p-field">
+                              <label>
+                                <i class="pi pi-check-circle p-mr-2"></i> Verificación de Transferencia
+                              </label>
+                              <div class="p-formgroup-inline p-mt-2">
+                                <div class="p-field-checkbox">
+                                  <Checkbox v-model="transferenciaPagoVerificado" binary id="verificacion-transferencia" />
+                                  <label for="verificacion-transferencia">He verificado que la transferencia se ha realizado correctamente</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </Card>
+                  </div>
+                  <div class="p-col-12 p-md-5">
+                    <Card>
+                      <template #content>
+                        <h5>Detalle de Venta</h5>
+                        <div class="p-d-flex p-jc-between p-mb-2">
+                          <span><i class="pi pi-dollar p-mr-2"></i> Monto Total:</span>
+                          <span class="p-text-bold">
+                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                          </span>
+                        </div>
+                        <div class="p-d-flex p-jc-between">
+                          <span><i class="pi pi-bank p-mr-2"></i> Total a Pagar por Transferencia:</span>
+                          <span class="p-text-bold p-text-xl">
+                            {{ totalFormateado }} {{ monedaVenta[1] }}
+                          </span>
+                        </div>
+                      </template>
+                    </Card>
+                    <Button label="Confirmar Transferencia" icon="pi pi-check"
+                      class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="registrarVentaTransferencia"
+                      :disabled="!transferenciaPagoVerificado" />
+                  </div>
+                </div>
+              </TabPanel>
             </TabView>
           </div>
 
@@ -1262,6 +1323,7 @@ export default {
       cargando: false,
       error: "",
       qrPagoVerificado: true,
+      transferenciaPagoVerificado: true,
       ventaDetalle: null,
       creditoInfo: null,
       cuotasCredito: [],
@@ -1944,6 +2006,19 @@ export default {
 
       // El método llama al mismo registrarVenta pero con el ID de tipo de pago para QR (4)
       this.registrarVenta(4); // 4 es el ID para tipo de pago QR
+    },
+    registrarVentaTransferencia() {
+      if (!this.transferenciaPagoVerificado) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Verificación requerida',
+          text: 'Debe verificar que la transferencia se ha realizado correctamente antes de continuar.'
+        });
+        return;
+      }
+
+      // El método llama al mismo registrarVenta pero con el ID de tipo de pago para transferencia (3)
+      this.registrarVenta(3); // 3 es el ID para tipo de pago transferencia
     },
     limpiarSeleccion() {
       // Set arraySeleccionado to null to close the modal
@@ -2732,8 +2807,8 @@ export default {
     obtenerNombrePago(idTipoPago) {
       const tipos = {
         1: "Efectivo",
-        2: "Transferencia",
-        3: "Tarjeta",
+        2: "Tarjeta",
+        3: "Transferencia Bancaria",
         4: "QR",
       };
 

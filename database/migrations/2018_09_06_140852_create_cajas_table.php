@@ -27,7 +27,8 @@ class CreateCajasTable extends Migration
             $table->decimal('ventasCredito', 11, 2)->default('0.00');
             $table->decimal('pagosEfectivoVentas', 11, 2)->default('0.00');
             $table->decimal('ventasAdelantadas', 11, 2)->default('0.00');
-            $table->decimal('pagosQR', 11, 2)->default('0.00'); // Nueva columna para pagos QR
+            $table->decimal('pagosQR', 11, 2)->default('0.00');
+            $table->decimal('pagosTransferencia', 11, 2)->default('0.00'); 
             $table->decimal('cuotasventasCredito', 11, 2)->default('0.00');
             $table->decimal('compras', 11, 2)->default('0.00');
             $table->decimal('comprasContado', 11, 2)->default('0.00');
@@ -35,7 +36,7 @@ class CreateCajasTable extends Migration
             $table->decimal('pagosEfecivocompras', 11, 2)->default('0.00');
             $table->decimal('saldoFaltante', 11, 2)->default('0.00');
             $table->decimal('PagoCuotaEfectivo', 11, 2)->default('0.00');
-            $table->decimal('saldoCaja', 11, 2)->nullable();;
+            $table->decimal('saldoCaja', 11, 2)->nullable();
             $table->boolean('estado')->default(1);
             $table->timestamps();
             

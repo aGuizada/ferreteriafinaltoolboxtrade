@@ -51,6 +51,21 @@
         {{ formatCurrency(slotProps.data.ventasAdelantadas || 0) }}
     </template>
 </Column>
+<Column field="comprasContado" header="Compras al Contado">
+    <template #body="slotProps">
+        {{ formatCurrency(slotProps.data.comprasContado || 0) }}
+    </template>
+</Column>
+<Column field="comprasCredito" header="Compras a Crédito">
+    <template #body="slotProps">
+        {{ formatCurrency(slotProps.data.comprasCredito || 0) }}
+    </template>
+</Column>
+<Column field="pagosTransferencia" header="Pagos por Transferencia">
+    <template #body="slotProps">
+        {{ formatCurrency(slotProps.data.pagosTransferencia || 0) }}
+    </template>
+</Column>
                 <Column field="saldoFaltante" header="Saldo de faltante"></Column>
                 <Column field="depositos" header="Depósitos Extras"></Column>
                 <Column field="salidas" header="Salidas Extras"></Column>
@@ -1178,7 +1193,7 @@ Diferencia (Faltante/Sobrante): Bs. ${saldoFaltante.toFixed(2)}
 }
 </script>
 <style scoped>
->>>.p-panel-header {
+.p-panel-header {
     padding: 0.75rem;
 }
 

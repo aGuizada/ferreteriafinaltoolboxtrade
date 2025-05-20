@@ -38,49 +38,56 @@ class CajaController extends Controller
              'pagosEfecivocompras', 
              'compras', 
              'comprasContado',
-             'saldoFaltante', 
-             'PagoCuotaEfectivo', 
-             'saldoCaja', 
+             'comprasCredito',
+             'pagosTransferencia',
+             'saldoFaltante',
+             'PagoCuotaEfectivo',
+             'saldoCaja',
              'estado',
              'cuotasventasCredito')
             ->where('cajas.idsucursal', '=', \Auth::user()->idsucursal)
             ->orderBy('cajas.id', 'desc')->paginate(6);
-        }
-        else{
+        } else {
             $cajas = Caja::join('sucursales', 'cajas.idsucursal', '=', 'sucursales.id')
             ->join('users', 'cajas.idusuario', '=', 'users.id')
-            ->select('cajas.id', 'cajas.idsucursal', 'sucursales.nombre as nombre_sucursal', 'cajas.idusuario', 'users.usuario as usuario', 'cajas.fechaApertura', 'cajas.fechaCierre', 'cajas.saldoInicial', 'cajas.depositos', 'cajas.salidas', 'cajas.ventas','cajas.pagosEfectivoVentas', 'cajas.compras', 'cajas.pagosEfecivocompras', 'cajas.saldoFaltante', 'cajas.PagoCuotaEfectivo', 'cajas.saldoCaja', 'cajas.estado')
+            ->select('cajas.id', 'cajas.idsucursal', 'sucursales.nombre as nombre_sucursal',
+             'cajas.idusuario', 'users.usuario as usuario', 'cajas.fechaApertura', 
+             'cajas.fechaCierre', 'saldoInicial', 
+             'depositos', 
+             'salidas', 
+             'ventas',
+             'ventasCredito',
+             'pagosEfectivoVentas', 
+             'pagosEfecivocompras', 
+             'compras', 
+             'comprasContado',
+             'comprasCredito',
+             'pagosTransferencia',
+             'saldoFaltante',
+             'PagoCuotaEfectivo',
+             'saldoCaja',
+             'estado',
+             'cuotasventasCredito')
             ->where('cajas.'.$criterio, 'like', '%'. $buscar . '%')
             ->orderBy('cajas.id', 'desc')->paginate(6);
         }
-    
+
         foreach ($cajas as $caja) {
-            // Pagos QR
             $caja->pagosQR = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 4)
                 ->sum('total');
-        
-            // Ventas adelantadas (solo tipo_venta = 3)
             $caja->ventasAdelantadas = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_venta', 3)
                 ->sum('total');
-        
-            // Ventas contado (tipo_pago = 1 y NO son adelantadas)
             $caja->ventasContado = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 1)
                 ->where('idtipo_venta', '!=', 3)
                 ->sum('total');
-        
-            // Ventas crédito (tipo_pago = 2)
             $caja->ventasCreditoCalculado = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 2)
                 ->sum('total');
-        
-            // Ventas totales (suma de todas las ventas)
             $caja->ventasTotalesCalculadas = Venta::where('idcaja', $caja->id)
                 ->sum('total');
-        
-            // Corregir saldo de caja
             $caja->saldoCaja = floatval($caja->saldoInicial)
                 + floatval($caja->depositos)
                 + floatval($caja->ventasContado)
@@ -89,8 +96,6 @@ class CajaController extends Controller
                 + floatval($caja->PagoCuotaEfectivo)
                 - floatval($caja->salidas)
                 - floatval($caja->compras);
-        
-            // Para depuración
             $caja->calculoDetallado = [
                 'saldoInicial' => floatval($caja->saldoInicial),
                 'depositos' => floatval($caja->depositos),
@@ -104,7 +109,7 @@ class CajaController extends Controller
                 'ventasTotales' => $caja->ventasTotalesCalculadas
             ];
         }
-        
+
         return [
             'pagination' => [
                 'total'        => $cajas->total(),
@@ -134,11 +139,14 @@ class CajaController extends Controller
         $caja->salidas = 0;
         $caja->ventas = 0;
         $caja->compras = 0;
+        $caja->comprasContado = 0;
+        $caja->comprasCredito = 0;
+        $caja->pagosTransferencia = 0;
         $caja->estado = '1';
         $caja->save();
     
         return response()->json([
-            'status' => 'success', 
+            'status' => 'success',
             'caja' => $caja,
             'message' => 'Caja aperturada correctamente con saldo inicial de ' . $caja->saldoInicial
         ], 200);
@@ -154,7 +162,7 @@ class CajaController extends Controller
 
         $transacciones = new TransaccionesCaja();
         $transacciones->idcaja = $request->id;
-        $transacciones->idusuario = \Auth::user()->id; 
+        $transacciones->idusuario = \Auth::user()->id;
         $transacciones->fecha = now()->setTimezone('America/La_Paz');
         $transacciones->transaccion = $request->transaccion;
         $transacciones->importe = ($request->depositos);
@@ -168,14 +176,13 @@ class CajaController extends Controller
         if ($request->salidas > $caja->saldoCaja) {
             return response()->json(['error' => 'Saldo insuficiente para realizar el retiro.'], 400);
         }
-
         $caja->salidas = ($request->salidas)+($caja->salidas);
         $caja->saldoCaja = $caja->saldoCaja - $request->salidas;
         $caja->save();
 
         $transacciones = new TransaccionesCaja();
         $transacciones->idcaja = $request->id;
-        $transacciones->idusuario = \Auth::user()->id; 
+        $transacciones->idusuario = \Auth::user()->id;
         $transacciones->fecha = now()->setTimezone('America/La_Paz');
         $transacciones->transaccion = $request->transaccion;
         $transacciones->importe = ($request->salidas);
@@ -187,7 +194,7 @@ class CajaController extends Controller
         if (!$request->ajax()) return redirect('/');
         $arqueoCaja = new ArqueoCaja();
         $arqueoCaja->idcaja = $request->idcaja;
-        $arqueoCaja->idusuario = \Auth::user()->id; 
+        $arqueoCaja->idusuario = \Auth::user()->id;
         $arqueoCaja->billete200 = $request->billete200;
         $arqueoCaja->billete100 = $request->billete100;
         $arqueoCaja->billete50 = $request->billete50;
@@ -209,37 +216,30 @@ class CajaController extends Controller
         DB::beginTransaction();
         try {
             $caja = Caja::findOrFail($request->id);
-    
             if ($caja->estado == '0') {
                 return response()->json(['error' => 'La caja ya está cerrada'], 400);
             }
-    
-            // Recalcular todos los movimientos de caja
+
             $ventasContado = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 1)
                 ->where('idtipo_venta', '!=', 3)
                 ->sum('total');
-    
             $pagosQR = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 4)
                 ->sum('total');
-    
             $ventasAdelantadas = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_venta', 3)
                 ->sum('total');
-    
             $ventasTotales = Venta::where('idcaja', $caja->id)->sum('total');
             $pagosCuotas = $caja->PagoCuotaEfectivo;
-    
-            // Convertimos todo a float para evitar errores de tipo
+
             $saldoInicial = (float) $caja->saldoInicial;
             $depositos = (float) $caja->depositos;
             $pagosEfectivoVentas = (float) $caja->pagosEfectivoVentas;
             $salidas = (float) $caja->salidas;
             $compras = (float) $caja->compras;
             $saldoReal = (float) $request->saldoReal;
-    
-            // Saldo que debería haber en el sistema
+
             $saldoSistema = $saldoInicial
                           + $depositos
                           + $ventasContado
@@ -248,11 +248,9 @@ class CajaController extends Controller
                           + $pagosEfectivoVentas
                           - $salidas
                           - $compras;
-    
-            // Diferencia entre lo que debería haber y lo que realmente hay
+
             $saldoFaltante = $saldoSistema - $saldoReal;
-    
-            // Actualizar datos de la caja
+
             $caja->fechaCierre = now()->setTimezone('America/La_Paz');
             $caja->estado = '0';
             $caja->ventasContado = $ventasContado;
@@ -288,24 +286,18 @@ class CajaController extends Controller
         if (!request()->ajax()) return redirect('/');
     
         $caja = Caja::findOrFail($id);
-        
-        // Calcular ventas al contado (excluyendo adelantadas)
+
         $ventasContado = Venta::where('idcaja', $caja->id)
             ->where('idtipo_pago', 1)
             ->where('idtipo_venta', '!=', 3)
             ->sum('total');
-    
-        // Calcular pagos QR
         $pagosQR = Venta::where('idcaja', $caja->id)
             ->where('idtipo_pago', 4)
             ->sum('total');
-    
-        // Calcular ventas adelantadas
         $ventasAdelantadas = Venta::where('idcaja', $caja->id)
             ->where('idtipo_venta', 3)
             ->sum('total');
-    
-        // Calcular saldo exactamente como en la tabla
+
         $saldo = (float)$caja->saldoInicial
                + (float)$caja->depositos
                + (float)$ventasContado
@@ -314,7 +306,7 @@ class CajaController extends Controller
                + (float)$caja->PagoCuotaEfectivo
                - (float)$caja->salidas
                - (float)$caja->compras;
-    
+
         return response()->json(['saldo' => $saldo]);
     }
 
@@ -322,34 +314,23 @@ class CajaController extends Controller
     {
         try {
             $caja = Caja::findOrFail($id);
-        
             if (!$caja->estado) {
                 throw new \Exception('La caja ya está cerrada');
             }
-        
-            // Calcular ventas al contado (excluyendo adelantadas)
+
             $ventasContado = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 1)
                 ->where('idtipo_venta', '!=', 3)
                 ->sum('total');
-        
-            // Calcular pagos QR
             $pagosQR = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_pago', 4)
                 ->sum('total');
-        
-            // Calcular ventas adelantadas
             $ventasAdelantadas = Venta::where('idcaja', $caja->id)
                 ->where('idtipo_venta', 3)
                 ->sum('total');
-        
-            // Calcular ventas totales
             $ventasTotales = Venta::where('idcaja', $caja->id)->sum('total');
-        
-            // Calcular pagos de cuotas
             $pagosCuotas = $caja->PagoCuotaEfectivo;
-        
-            // Calcular saldo de caja
+
             $saldoCaja = (float)$caja->saldoInicial 
                        + (float)$caja->depositos 
                        + (float)$ventasContado 
@@ -358,24 +339,21 @@ class CajaController extends Controller
                        + (float)$pagosCuotas
                        - (float)$caja->salidas 
                        - (float)$caja->compras;
-        
-            // Calcular total de ingresos
+
             $totalIngresos = (float)$caja->saldoInicial 
                            + (float)$caja->depositos 
                            + (float)$ventasContado 
                            + (float)$pagosQR 
                            + (float)$ventasAdelantadas
                            + (float)$pagosCuotas;
-        
-            // Calcular total de egresos
+
             $totalEgresos = (float)$caja->salidas + (float)$caja->compras;
-        
-            // Obtener ventas para el detalle
+
             $ventas = Venta::where('idcaja', $caja->id)
                 ->select('id', 'created_at as fecha', 'total', 'idtipo_pago', 'idtipo_venta')
                 ->orderBy('created_at', 'desc')
                 ->get();
-        
+
             return response()->json([
                 'id' => $caja->id,
                 'fechaApertura' => $caja->fechaApertura,
@@ -386,6 +364,9 @@ class CajaController extends Controller
                 'pagosQR' => (float)$pagosQR,
                 'ventasAdelantadas' => (float)$ventasAdelantadas,
                 'pagosCuotas' => (float)$pagosCuotas,
+                'comprasContado' => (float)$caja->comprasContado,
+                'comprasCredito' => (float)$caja->comprasCredito,
+                'pagosTransferencia' => (float)$caja->pagosTransferencia,
                 'totalIngresos' => $totalIngresos,
                 'totalEgresos' => $totalEgresos,
                 'saldoCaja' => $saldoCaja,
@@ -406,126 +387,112 @@ class CajaController extends Controller
     }
 
     public function generarPDF($id)
-{
-    try {
-        // Obtener los datos del resumen
-        $caja = Caja::findOrFail($id);
-        
-        // Calcular todos los valores necesarios (igual que en el método resumen)
-        $ventasContado = Venta::where('idcaja', $caja->id)
-            ->where('idtipo_pago', 1)
-            ->where('idtipo_venta', '!=', 3)
-            ->sum('total');
-        
-        $pagosQR = Venta::where('idcaja', $caja->id)
-            ->where('idtipo_pago', 4)
-            ->sum('total');
-        
-        $ventasAdelantadas = Venta::where('idcaja', $caja->id)
-            ->where('idtipo_venta', 3)
-            ->sum('total');
-        
-        $ventasTotales = Venta::where('idcaja', $caja->id)->sum('total');
-        $pagosCuotas = $caja->PagoCuotaEfectivo;
-        
-        $totalIngresos = (float)$caja->saldoInicial 
-                       + (float)$caja->depositos 
-                       + (float)$ventasContado 
-                       + (float)$pagosQR 
-                       + (float)$ventasAdelantadas
-                       + (float)$pagosCuotas;
-        
-        $totalEgresos = (float)$caja->salidas + (float)$caja->compras;
-        $saldoCaja = $totalIngresos - $totalEgresos;
-        
-        $ventas = Venta::where('idcaja', $caja->id)
-            ->select('id', 'created_at as fecha', 'total', 'idtipo_pago', 'idtipo_venta')
-            ->orderBy('created_at', 'desc')
-            ->get();
+    {
+        try {
+            $caja = Caja::findOrFail($id);
 
-        // Preparar los datos para la vista
-        $resumenCaja = [
-            'id' => $caja->id,
-            'fechaApertura' => $caja->fechaApertura,
-            'fechaCierre' => $caja->fechaCierre,
-            'saldoInicial' => (float)$caja->saldoInicial,
-            'ventasTotales' => $ventasTotales,
-            'ventas' => $ventas,
-            'ventasContado' => (float)$ventasContado,
-            'pagosQR' => (float)$pagosQR,
-            'ventasAdelantadas' => (float)$ventasAdelantadas,
-            'pagosCuotas' => (float)$pagosCuotas,
-            'totalIngresos' => $totalIngresos,
-            'totalEgresos' => $totalEgresos,
-            'saldoCaja' => $saldoCaja,
-            'esCajaCerrada' => !$caja->estado,
-            'movimientos' => [
-                ['concepto' => 'Saldo Inicial', 'monto' => (float)$caja->saldoInicial],
-                ['concepto' => 'Ventas al Contado', 'monto' => (float)$ventasContado],
-                ['concepto' => 'Pagos con QR', 'monto' => (float)$pagosQR],
-                ['concepto' => 'Ventas Adelantadas', 'monto' => (float)$ventasAdelantadas],
-                ['concepto' => 'Pagos de Cuotas', 'monto' => (float)$pagosCuotas],
-                ['concepto' => 'Depósitos', 'monto' => (float)$caja->depositos],
-                ['concepto' => 'Compras', 'monto' => (float)$caja->compras],
-                ['concepto' => 'Salidas', 'monto' => (float)$caja->salidas],
-            ]
-        ];
+            $ventasContado = Venta::where('idcaja', $caja->id)
+                ->where('idtipo_pago', 1)
+                ->where('idtipo_venta', '!=', 3)
+                ->sum('total');
+            $pagosQR = Venta::where('idcaja', $caja->id)
+                ->where('idtipo_pago', 4)
+                ->sum('total');
+            $ventasAdelantadas = Venta::where('idcaja', $caja->id)
+                ->where('idtipo_venta', 3)
+                ->sum('total');
+            $ventasTotales = Venta::where('idcaja', $caja->id)->sum('total');
+            $pagosCuotas = $caja->PagoCuotaEfectivo;
 
-        // Generar el PDF
-        $pdf = PDF::loadView('pdf.resumen_caja', ['resumenCaja' => $resumenCaja]);
-        return $pdf->download('resumen_caja_'.$id.'.pdf');
+            $totalIngresos = (float)$caja->saldoInicial 
+                           + (float)$caja->depositos 
+                           + (float)$ventasContado 
+                           + (float)$pagosQR 
+                           + (float)$ventasAdelantadas
+                           + (float)$pagosCuotas;
 
-    } catch (\Exception $e) {
-        abort(404, 'No se encontró la caja o hubo un error al generar el PDF: '.$e->getMessage());
+            $totalEgresos = (float)$caja->salidas + (float)$caja->compras;
+
+            $saldoCaja = $totalIngresos - $totalEgresos;
+
+            $ventas = Venta::where('idcaja', $caja->id)
+                ->select('id', 'created_at as fecha', 'total', 'idtipo_pago', 'idtipo_venta')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $resumenCaja = [
+                'id' => $caja->id,
+                'fechaApertura' => $caja->fechaApertura,
+                'fechaCierre' => $caja->fechaCierre,
+                'saldoInicial' => (float)$caja->saldoInicial,
+                'ventasTotales' => $ventasTotales,
+                'ventas' => $ventas,
+                'ventasContado' => (float)$ventasContado,
+                'pagosQR' => (float)$pagosQR,
+                'ventasAdelantadas' => (float)$ventasAdelantadas,
+                'pagosCuotas' => (float)$pagosCuotas,
+                'comprasContado' => (float)$caja->comprasContado,
+                'comprasCredito' => (float)$caja->comprasCredito,
+                'pagosTransferencia' => (float)$caja->pagosTransferencia,
+                'totalIngresos' => $totalIngresos,
+                'totalEgresos' => $totalEgresos,
+                'saldoCaja' => $saldoCaja,
+                'esCajaCerrada' => !$caja->estado,
+                'movimientos' => [
+                    ['concepto' => 'Saldo Inicial', 'monto' => (float)$caja->saldoInicial],
+                    ['concepto' => 'Ventas al Contado', 'monto' => (float)$ventasContado],
+                    ['concepto' => 'Pagos con QR', 'monto' => (float)$pagosQR],
+                    ['concepto' => 'Ventas Adelantadas', 'monto' => (float)$ventasAdelantadas],
+                    ['concepto' => 'Pagos de Cuotas', 'monto' => (float)$pagosCuotas],
+                    ['concepto' => 'Depósitos', 'monto' => (float)$caja->depositos],
+                    ['concepto' => 'Compras', 'monto' => (float)$caja->compras],
+                    ['concepto' => 'Salidas', 'monto' => (float)$caja->salidas],
+                ]
+            ];
+
+            $pdf = PDF::loadView('pdf.resumen_caja', ['resumenCaja' => $resumenCaja]);
+            return $pdf->download('resumen_caja_'.$id.'.pdf');
+        } catch (\Exception $e) {
+            abort(404, 'No se encontró la caja o hubo un error al generar el PDF: '.$e->getMessage());
+        }
     }
-}
 
     public function obtenerResumenCaja($id)
     {
         if (!request()->ajax()) return redirect('/');
     
         $caja = Caja::findOrFail($id);
-    
         if (!$caja->estado) {
             return response()->json(['error' => 'La caja ya está cerrada'], 400);
         }
-    
-        // Calcular ventas al contado (excluyendo adelantadas)
+
         $ventasContado = Venta::where('idcaja', $caja->id)
             ->where('idtipo_pago', 1)
             ->where('idtipo_venta', '!=', 3)
             ->sum('total');
-    
-        // Calcular pagos QR
         $pagosQR = Venta::where('idcaja', $caja->id)
             ->where('idtipo_pago', 4)
             ->sum('total');
-    
-        // Calcular ventas adelantadas
         $ventasAdelantadas = Venta::where('idcaja', $caja->id)
             ->where('idtipo_venta', 3)
             ->sum('total');
-    
-        // Obtener ventas del día
+
         $ventas = Venta::where('idcaja', $caja->id)
             ->select('id', 'created_at as fecha', 'total', 'idtipo_pago', 'idtipo_venta')
             ->orderBy('created_at', 'desc')
             ->get();
-    
-        // Calcular total de ingresos
+
         $totalIngresos = $caja->saldoInicial 
                        + $caja->depositos 
                        + $ventasContado 
                        + $pagosQR 
                        + $ventasAdelantadas
                        + $caja->PagoCuotaEfectivo;
-    
-        // Calcular total de egresos
+
         $totalEgresos = $caja->salidas + $caja->compras;
-    
-        // Calcular saldo de caja
+
         $saldoCaja = $totalIngresos - $totalEgresos;
-    
+
         return [
             'id' => $caja->id,
             'fechaApertura' => $caja->fechaApertura,
@@ -548,17 +515,16 @@ class CajaController extends Controller
             ]
         ];
     }
+
     public function estadoActual()
     {
         $user = \Auth::user();
-    
-        if ($user->idrol == 1) { // Administrador
-            // Busca cualquier caja abierta
+
+        if ($user->idrol == 1) {
             $caja = Caja::where('estado', '1')
                         ->orderBy('id', 'desc')
                         ->first();
         } else {
-            // Vendedor: busca caja abierta en su sucursal
             $caja = Caja::where('estado', '1')
                         ->where('idsucursal', $user->idsucursal)
                         ->orderBy('id', 'desc')

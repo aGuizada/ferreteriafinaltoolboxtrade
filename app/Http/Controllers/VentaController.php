@@ -560,12 +560,14 @@ public function descargarPlanPagos($id)
         $venta->idcaja = $cajaActual->id;
         $venta->save();
 
-        // Actualizar saldo de caja según el tipo de pago
         if ($request->idtipo_pago == 1) { // Pago al contado
             $cajaActual->ventasContado += $request->total;
             $cajaActual->saldoCaja += $request->total;
         } elseif ($request->idtipo_pago == 4) { // Pago QR
             $cajaActual->pagosQR += $request->total;
+            $cajaActual->saldoCaja += $request->total;
+        } elseif ($request->idtipo_pago == 3) { // Pago por Transferencia
+            $cajaActual->pagosTransferencia += $request->total;
             $cajaActual->saldoCaja += $request->total;
         }
         $cajaActual->save();
@@ -703,13 +705,27 @@ public function confirmarEntrega(Request $request)
              }
          } 
          // Si es otro medio de pago (no efectivo)
-         else {
-             if ($request->idtipo_venta == 1 || $request->idtipo_venta == 3) {
-                 // Actualizar solo el total de ventas para ventas al contado o adelantadas no efectivo
-                 $ultimaCaja->ventas += $request->total;
-             }
-             // Para créditos con otro medio de pago, ya está cubierto arriba (no sumar nada)
-         }
+       // Si es otro medio de pago (no efectivo)
+else {
+    if ($request->idtipo_pago == 4) { // QR
+        $ultimaCaja->pagosQR += $request->total;
+        $ultimaCaja->saldoCaja += $request->total;
+        $ultimaCaja->ventas += $request->total;
+    } elseif ($request->idtipo_pago == 3) { // Transferencia
+        $ultimaCaja->pagosTransferencia += $request->total;
+        $ultimaCaja->saldoCaja += $request->total;
+        $ultimaCaja->ventas += $request->total;
+    } elseif ($request->idtipo_pago == 2) { // Tarjeta
+        $ultimaCaja->pagosTarjeta += $request->total;
+        $ultimaCaja->saldoCaja += $request->total;
+        $ultimaCaja->ventas += $request->total;
+    } else {
+        // Otros medios de pago no especificados
+        if ($request->idtipo_venta == 1 || $request->idtipo_venta == 3) {
+            $ultimaCaja->ventas += $request->total;
+        }
+    }
+}
      
          $ultimaCaja->save();
      }
