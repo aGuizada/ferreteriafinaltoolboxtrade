@@ -1,3 +1,4 @@
+
 <template>
     <Dialog :visible.sync="dialogVisible" header="Importar productos" modal :containerStyle="{width: '100%', maxWidth: '800px'}"  @hide="cerrarModal">
         <template #header>
@@ -65,9 +66,6 @@
                     <div class="p-col">
                         <h5><i class="pi pi-eye"></i> Vista previa:</h5>
                     </div>
-                    <div class="p-col">
-                        <Dropdown v-model="monedaSeleccionada" :options="arrayMonedas" optionLabel="nombre" placeholder="Selecciona la moneda" />
-                    </div>
                 </div>
                 <div class="p-mt-2" v-if="arrayMonedas.length != 0">
                     <div class="toolbar">
@@ -77,35 +75,28 @@
                     </div>
                 </div>
                 <p class="text-muted">Este contenido se importará en la base de datos</p>
-                <span><i class="pi pi-exclamation-circle"></i> ADVERTENCIA</span>
                 <div v-for="(item, index) in erroresPrevios" :key="index">
                     <Message severity="error" :content="item" />
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th v-for="(header, index) in headersOrigin" :key="index">{{ header
-                                    }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(row, rowIndex) in previewCsv" :key="rowIndex">
-                                <td v-for="(cell, cellIndex) in row" :key="cellIndex">
-                                    {{
-                                    [5, 6, 7, 8, 9, 10, 11, 12, 13].includes(cellIndex) ?
-                                    cell + " " + monedaSeleccionada.simbolo : cell
-                                    }}
-                                </td>
-                                <td>{{ row[0] }}</td> <!-- Código -->
-                                <td>{{ row[1] }}</td> <!-- Nombre -->
-                                <td>{{ row[2] }}</td> <!-- Nombre genérico -->
-                                <td>{{ row[3] }}</td> <!-- Descripción -->
-                                <td>{{ row[4] }}</td> <!-- Unidad envase -->
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th v-for="(header, index) in headersOrigin" :key="index">{{ header }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(row, rowIndex) in previewCsv" :key="rowIndex">
+                    <td v-for="(header, cellIndex) in headersOrigin" :key="cellIndex">
+                        {{
+                        [4, 5, 6, 7, 8, 9, 10, 11].includes(cellIndex) ?
+                        (row[cellIndex] || '') + " " + monedaSeleccionada.simbolo : (row[cellIndex] || '')
+                        }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
             </div>
             <div v-if="pageImportar == 3">
                 <div v-if="errorsImport.length == 0 && erroresNoExiste.length == 0 && !successImport" class="text-center">
@@ -221,8 +212,8 @@ export default {
             headersOrigin: [],
             monedaSeleccionada: {
                 id: 1,
-                nombre: "Dolar estadounidense",
-                simbolo: "USD",
+                nombre: "Boliviano",
+            simbolo: "BS",
                 tipo_cambio: "1.00"
             },
             arrayMonedas: [],
@@ -241,10 +232,8 @@ export default {
             headersOrigin: [
                 "Codigo",
                 "Nombre",
-                "Nombre generico",
                 "Descripciòn",
                 "Unidad envase",
-                "Precio List unidad",
                 "Precio costo unidad",
                 "Precio costo paquete",
                 "Precio venta",
@@ -254,7 +243,6 @@ export default {
                 "Precio cuatro",
                 "Costo compra",
                 "Stock minimo",
-                "Estado",
                 "Linea",
                 "Grupo",
                 "Proveedor",
@@ -289,9 +277,18 @@ export default {
         }
     },
     methods: {
+        alignDataWithHeaders(data) {
+            return data.map(row => {
+                const alignedRow = [];
+                this.headersOrigin.forEach((header, index) => {
+                    alignedRow[index] = row[index] || ''; // Fill missing data with empty strings
+                });
+                return alignedRow;
+            });
+        },
         formatCellValue(value, field) {
         // Asumiendo que los índices 5-13 corresponden a ciertos campos
-        const monedaFields = ['Precio List unidad', 'Precio costo unidad', 'Precio costo paquete', 'Precio venta', 'Precio uno', 'Precio dos', 'Precio tres', 'Precio cuatro', 'Costo compra'];
+        const monedaFields = ['Precio costo unidad', 'Precio costo paquete', 'Precio venta', 'Precio uno', 'Precio dos', 'Precio tres', 'Precio cuatro', 'Costo compra'];
         if (monedaFields.includes(field)) {
             return `${value} ${this.monedaSeleccionada.simbolo}`;
         }
@@ -344,14 +341,13 @@ export default {
             console.log("data ",this.previewCsv)
             let contentCsv = this.dividirElementos(this.previewCsv)
 
+            // Set "Estado" to 1 for all entries
+            contentCsv = contentCsv.map(row => {
+                row.push(1); // Assuming "Estado" is the last column
+                return row;
+            });
 
             this.pageImportar = 3;
-            // ANtes era en csv ahora quier convertir ese array a excel y enviar el excel
-            // const csvContent = this.arrayToCsv(contentCsv);
-            // const blob = new Blob([csvContent], { type: 'text/csv' });
-            // const newCsvFile = new File([blob], 'nuevo_csv.csv', { type: 'text/csv' });
-            // const formData = new FormData();
-            // formData.append('archivo', newCsvFile);
             const excelFile = this.arrayToExcel(contentCsv, 'nuevo_excel.xlsx');
             const formData = new FormData();
             formData.append('archivo', excelFile);
@@ -396,6 +392,8 @@ export default {
                     .then(headers => {
                         this.csvHeaders = headers;
                         this.headersArray = headers;
+                        this.selectAllHeaders(); // Automatically select all headers
+                        this.confirmCsv(); // Automatically confirm CSV and proceed to preview
                     })
                     .catch(error => {
                         console.error('Error al extraer encabezados:', error);
@@ -497,14 +495,7 @@ export default {
             link.click();
         },
         selectAllHeaders() {
-             // Seleccionar todos los encabezados automáticamente
-             console.log("Headers del csv");
-            console.log(this.csvHeaders);
-            console.log("Headers del csv");
-
             this.selectedHeadersFromFile = [...this.csvHeaders.slice(0, this.headersOrigin.length)];
-            console.log("array",this.selectedHeadersFromFile)
-
         },
         updateData() {
             this.extractHeaders(this.selectedFile, this.selectedFile.name.split('.').pop().toLowerCase())
@@ -585,40 +576,25 @@ export default {
                         newContent.shift();
                     } else {
                         newContent.shift();
-
                     }
-                    this.previewCsv = newContent;
+                    this.previewCsv = this.alignDataWithHeaders(newContent);
 
                 } else if (this.selectedFile.name.endsWith('.xlsx')) {
-                    console.log("archivo ")
                     const workbook = XLSX.read(event.target.result, { type: 'binary' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     content = XLSX.utils.sheet_to_csv(worksheet);
                     const rows = content.split('\n');
                     const arrayOfArrays = rows.map((row, index) => this.splitRow(row, index));
-                    console.log("DATO FINAL");
-                    console.log(arrayOfArrays);
-                    console.log("DATO FINAL");
-
                     let newContent = this.getCsvSubset(arrayOfArrays, this.selectedHeadersFromFile);
-
-                    console.log(" new content",this.selectedHeadersFromFile);
-
 
                     if (this.includeHeader) {
                         newContent.shift();
                         newContent.shift();
                     } else {
                         newContent.shift();
-
                     }
-                    this.previewCsv = newContent;
-                    this.previewCsvObject= this.convertArrayToObject(this.selectedHeadersFromFile,this.previewCsv);
-                    this.previewCsvObjectColumns = this.createColumns(this.selectedHeadersFromFile);
-                    console.log("CSV ARCHIVO");
-                    console.log(this.previewCsv);
-                    console.log("CSV ARCHIVO");
+                    this.previewCsv = this.alignDataWithHeaders(newContent);
                 } else {
                     console.error("Formato de archivo no compatible.");
                     return;
@@ -628,6 +604,7 @@ export default {
             reader.readAsArrayBuffer(this.selectedFile);
             this.listarMonedas();
         },
+  
         convertArrayToObject(headers, array) {
             return array.map(row => {
                 return row.reduce((acc, value, index) => {
@@ -699,7 +676,7 @@ export default {
         dividirElementos(array) {
             return array.map(subarray => {
                 return subarray.map((valor, indice) => {
-                    if (indice >= 5 && indice <= 13) {
+                    if (indice >= 4 && indice <= 12) {
                         return parseFloat(valor) / this.monedaSeleccionada.tipo_cambio;
                     } else {
                         return valor;

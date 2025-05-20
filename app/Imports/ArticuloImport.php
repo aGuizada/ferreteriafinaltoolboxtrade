@@ -13,7 +13,7 @@ use App\Medida;
 use App\Marca;
 use App\Industria;
 use Illuminate\Support\Facades\Log;
-use Exception; // Importa la clase Exception
+use Exception;
 
 class ArticuloImport implements ToCollection
 {
@@ -39,14 +39,12 @@ class ArticuloImport implements ToCollection
 
     private function createCategoriaMapping()
     {
-        // Obtener las categorías y convertir los nombres a mayúsculas
         $categorias = Categoria::pluck('nombre', 'id')->map(function ($nombre) {
             return strtoupper($nombre);
         })->toArray();
     
         return $categorias;
     }
-    
 
     private function createPersonaMapping()
     {
@@ -89,50 +87,47 @@ class ArticuloImport implements ToCollection
             foreach ($rows as $row) {
                 $rowErrors = [];
 
-                $idCategoria = $this->getCategoriaId($row[16]);
-                $idGrupo = $this->getGrupoId($row[17]);
-                $idProveedor = $this->getProveedorId($row[18]);
-                $idMedida = $this->getMedidaId($row[19]);
-                $idMarca = $this->getMarcaId($row[20]);
-                $idIndustria = $this->getIndustriaId($row[21]);
+                $idCategoria = $this->getCategoriaId($row[13]);
+                $idGrupo = $this->getGrupoId($row[14]);
+                $idProveedor = $this->getProveedorId($row[15]);
+                $idMedida = $this->getMedidaId($row[16]);
+                $idMarca = $this->getMarcaId($row[17]);
+                $idIndustria = $this->getIndustriaId($row[18]);
 
                 if (!$idCategoria) {
-                    $rowErrors[] = "Error fila $rowNumber: No existe 'Linea $row[16]'";
+                    $rowErrors[] = "Error fila $rowNumber: No existe 'Linea $row[13]'";
                 }
                 if (!$idGrupo) {
-                    $rowErrors[] = "Error fila $rowNumber: No existe 'Grupo $row[17]'";
+                    $rowErrors[] = "Error fila $rowNumber: No existe 'Grupo $row[14]'";
                 }
                 if (!$idProveedor) {
-                    $rowErrors[] = "Error fila $rowNumber: El proveedor '$row[18]' no está registrado";
+                    $rowErrors[] = "Error fila $rowNumber: El proveedor '$row[15]' no está registrado";
                 }
                 if (!$idMedida) {
-                    $rowErrors[] = "Error fila $rowNumber: La medida '$row[19]' no está registrada en la base de datos";
+                    $rowErrors[] = "Error fila $rowNumber: La medida '$row[16]' no está registrada en la base de datos";
                 }
                 if (!$idMarca) {
-                    $rowErrors[] = "Error fila $rowNumber: No existe 'Marca $row[20]'";
+                    $rowErrors[] = "Error fila $rowNumber: No existe 'Marca $row[17]'";
                 }
                 if (!$idIndustria) {
-                    $rowErrors[] = "Error fila $rowNumber: No existe 'Industria $row[21]'";
+                    $rowErrors[] = "Error fila $rowNumber: No existe 'Industria $row[18]'";
                 }
 
                 try {
                     Articulo::create([
                         'codigo' => $row[0],
                         'nombre' => $row[1],
-                        'nombre_generico' => $row[2],
-                        'descripcion' => $row[3],
-                        'unidad_envase' => $row[4],
-                        'precio_list_unid' => $row[5],
-                        'precio_costo_unid' => $row[6],
-                        'precio_costo_paq' => $row[7],
-                        'precio_venta' => $row[8],
-                        'precio_uno' => $row[9],
-                        'precio_dos' => $row[10],
-                        'precio_tres' => $row[11],
-                        'precio_cuatro' => $row[12],
-                        'costo_compra' => $row[13],
-                        'stock' => $row[14],
-                        'condicion' => $row[15],
+                        'descripcion' => $row[2],
+                        'unidad_envase' => $row[3],
+                        'precio_costo_unid' => $row[4],
+                        'precio_costo_paq' => $row[5],
+                        'precio_venta' => $row[6],
+                        'precio_uno' => $row[7],
+                        'precio_dos' => $row[8],
+                        'precio_tres' => $row[9],
+                        'precio_cuatro' => $row[10],
+                        'costo_compra' => $row[11],
+                        'stock' => $row[12],
                         'fotografia' => null,
                         'idcategoria' => $idCategoria,
                         'idgrupo' => $idGrupo,
@@ -159,12 +154,12 @@ class ArticuloImport implements ToCollection
             }
 
             if ($importacionExitosa) {
-                \DB::commit(); // Confirmar la transacción si no hay errores
+                \DB::commit();
             } else {
-                \DB::rollBack(); // Revertir la transacción en caso de error
+                \DB::rollBack();
             }
         } catch (Exception $e) {
-            \DB::rollBack(); // Revertir la transacción en caso de error
+            \DB::rollBack();
             $importacionExitosa = false;
             $this->errors[] = "Error al procesar fila: " . $e->getMessage();
         }
