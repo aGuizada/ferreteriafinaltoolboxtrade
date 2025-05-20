@@ -627,41 +627,71 @@ private function registrarCuotasCredito($creditoVenta, $cuotasPago)
     }
 }
 public function confirmarEntrega(Request $request)
-    {
-        if (!$request->ajax()) {
-            return redirect('/');
-        }
+{
+    if (!$request->ajax()) {
+        return redirect('/');
+    }
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
+        
+        // Buscar la venta
+        $venta = Venta::findOrFail($request->id);
+        
+        // Verificar que la venta tenga estado Pendiente
+        if ($venta->estado !== 'Pendiente') {
+            return response()->json([
+                'error' => 'Esta venta no está en estado Pendiente.'
+            ], 400);
+        }
+        
+        // Si es venta adelantada, registrar en caja
+        if ($venta->idtipo_venta == 3) {
+            $ultimaCaja = Caja::latest()->first();
             
-            // Buscar la venta
-            $venta = Venta::findOrFail($request->id);
-            
-            // Verificar que la venta tenga estado Pendiente
-            if ($venta->estado !== 'Pendiente') {
-                return response()->json([
-                    'error' => 'Esta venta no está en estado Pendiente.'
-                ], 400);
+            // Registrar según el tipo de pago
+            if ($venta->idtipo_pago == 1) { // Efectivo
+                $ultimaCaja->ventasAdelantadas += $venta->total;
+                $ultimaCaja->ventas += $venta->total;
+                $ultimaCaja->pagosEfectivoVentas += $venta->total;
+                $ultimaCaja->saldoCaja += $venta->total;
+            } elseif ($venta->idtipo_pago == 4) { // QR
+                $ultimaCaja->pagosQR += $venta->total;
+                $ultimaCaja->ventasAdelantadas += $venta->total;
+                $ultimaCaja->saldoCaja += $venta->total;
+                $ultimaCaja->ventas += $venta->total;
+            } elseif ($venta->idtipo_pago == 3) { // Transferencia
+                $ultimaCaja->pagosTransferencia += $venta->total;
+                $ultimaCaja->ventasAdelantadas += $venta->total;
+                $ultimaCaja->saldoCaja += $venta->total;
+                $ultimaCaja->ventas += $venta->total;
+            } elseif ($venta->idtipo_pago == 2) { // Tarjeta
+                $ultimaCaja->pagosTarjeta += $venta->total;
+                $ultimaCaja->ventasAdelantadas += $venta->total;
+                $ultimaCaja->saldoCaja += $venta->total;
+                $ultimaCaja->ventas += $venta->total;
             }
             
-            // Actualizar estado
-            $venta->estado = 'Entregado';
-            $venta->save();
-            
-            DB::commit();
-            
-            return response()->json([
-                'mensaje' => 'Entrega confirmada correctamente.'
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error al confirmar entrega: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Error al confirmar entrega: ' . $e->getMessage()
-            ], 500);
+            $ultimaCaja->save();
         }
+        
+        // Actualizar estado de la venta
+        $venta->estado = 'Entregado';
+        $venta->save();
+        
+        DB::commit();
+        
+        return response()->json([
+            'mensaje' => 'Entrega confirmada correctamente.'
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error al confirmar entrega: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Error al confirmar entrega: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Actualiza la caja con la nueva venta
@@ -690,42 +720,34 @@ public function confirmarEntrega(Request $request)
              return;
          }
      
+         // Si es venta adelantada (tipo 3), no registrar en caja hasta la entrega
+         if ($request->idtipo_venta == 3) {
+             return;
+         }
+     
          // Si el pago es en efectivo (tipo 1)
          if ($request->idtipo_pago == 1) {
-             if ($request->idtipo_venta == 3) { // Venta adelantada
-                 $ultimaCaja->ventasContado += $request->total;
-                 $ultimaCaja->ventas += $request->total;
-                 $ultimaCaja->pagosEfectivoVentas += $request->total;
-                 $ultimaCaja->saldoCaja += $request->total;
-             } else { // Venta al contado
-                 $ultimaCaja->ventasContado += $request->total;
-                 $ultimaCaja->ventas += $request->total;
-                 $ultimaCaja->pagosEfectivoVentas += $request->total;
-                 $ultimaCaja->saldoCaja += $request->total;
-             }
+             $ultimaCaja->ventasContado += $request->total;
+             $ultimaCaja->ventas += $request->total;
+             $ultimaCaja->pagosEfectivoVentas += $request->total;
+             $ultimaCaja->saldoCaja += $request->total;
          } 
          // Si es otro medio de pago (no efectivo)
-       // Si es otro medio de pago (no efectivo)
-else {
-    if ($request->idtipo_pago == 4) { // QR
-        $ultimaCaja->pagosQR += $request->total;
-        $ultimaCaja->saldoCaja += $request->total;
-        $ultimaCaja->ventas += $request->total;
-    } elseif ($request->idtipo_pago == 3) { // Transferencia
-        $ultimaCaja->pagosTransferencia += $request->total;
-        $ultimaCaja->saldoCaja += $request->total;
-        $ultimaCaja->ventas += $request->total;
-    } elseif ($request->idtipo_pago == 2) { // Tarjeta
-        $ultimaCaja->pagosTarjeta += $request->total;
-        $ultimaCaja->saldoCaja += $request->total;
-        $ultimaCaja->ventas += $request->total;
-    } else {
-        // Otros medios de pago no especificados
-        if ($request->idtipo_venta == 1 || $request->idtipo_venta == 3) {
-            $ultimaCaja->ventas += $request->total;
-        }
-    }
-}
+         else {
+             if ($request->idtipo_pago == 4) { // QR
+                 $ultimaCaja->pagosQR += $request->total;
+                 $ultimaCaja->saldoCaja += $request->total;
+                 $ultimaCaja->ventas += $request->total;
+             } elseif ($request->idtipo_pago == 3) { // Transferencia
+                 $ultimaCaja->pagosTransferencia += $request->total;
+                 $ultimaCaja->saldoCaja += $request->total;
+                 $ultimaCaja->ventas += $request->total;
+             } elseif ($request->idtipo_pago == 2) { // Tarjeta
+                 $ultimaCaja->pagosTarjeta += $request->total;
+                 $ultimaCaja->saldoCaja += $request->total;
+                 $ultimaCaja->ventas += $request->total;
+             }
+         }
      
          $ultimaCaja->save();
      }
@@ -917,11 +939,11 @@ public function obtenerCuotas(Request $request)
                  $caja->saldoCaja -= $primerMonto;
                  \Log::info("Revertido crédito efectivo: -{$primerMonto} en ventas, pagosEfectivoVentas, ventasCredito, saldoCaja");
              } else if ($venta->idtipo_venta == 3) { // Adelantada
-                 $caja->ventasContado -= $venta->total;
+                 $caja->ventasAdelantadas -= $venta->total;
                  $caja->ventas -= $venta->total;
                  $caja->pagosEfectivoVentas -= $venta->total;
                  $caja->saldoCaja -= $venta->total;
-                 \Log::info("Revertido adelantada efectivo: -{$venta->total} en ventasContado, ventas, pagosEfectivoVentas, saldoCaja");
+                 \Log::info("Revertido adelantada efectivo: -{$venta->total} en ventasAdelantadas, ventas, pagosEfectivoVentas, saldoCaja");
              } else { // Contado
                  $caja->ventasContado -= $venta->total;
                  $caja->ventas -= $venta->total;
@@ -934,16 +956,25 @@ public function obtenerCuotas(Request $request)
          else {
              if ($venta->idtipo_pago == 4) { // QR
                  $caja->pagosQR -= $venta->total;
+                 if ($venta->idtipo_venta == 3) {
+                     $caja->ventasAdelantadas -= $venta->total;
+                 }
                  $caja->saldoCaja -= $venta->total;
                  $caja->ventas -= $venta->total;
                  \Log::info("Revertido QR: -{$venta->total} en pagosQR, saldoCaja, ventas");
              } else if ($venta->idtipo_pago == 2) { // Tarjeta
                  $caja->pagosTarjeta -= $venta->total;
+                 if ($venta->idtipo_venta == 3) {
+                     $caja->ventasAdelantadas -= $venta->total;
+                 }
                  $caja->saldoCaja -= $venta->total;
                  $caja->ventas -= $venta->total;
                  \Log::info("Revertido tarjeta: -{$venta->total} en pagosTarjeta, saldoCaja, ventas");
              } else if ($venta->idtipo_pago == 3) { // Transferencia
                  $caja->pagosTransferencia -= $venta->total;
+                 if ($venta->idtipo_venta == 3) {
+                     $caja->ventasAdelantadas -= $venta->total;
+                 }
                  $caja->saldoCaja -= $venta->total;
                  $caja->ventas -= $venta->total;
                  \Log::info("Revertido transferencia: -{$venta->total} en pagosTransferencia, saldoCaja, ventas");
@@ -968,7 +999,7 @@ public function obtenerCuotas(Request $request)
          }
      
          // Evitar negativos
-         $campos = ['ventas', 'ventasContado', 'pagosEfectivoVentas', 'ventasCredito', 'saldoCaja', 'pagosQR', 'pagosTarjeta', 'pagosTransferencia'];
+         $campos = ['ventas', 'ventasContado', 'pagosEfectivoVentas', 'ventasCredito', 'saldoCaja', 'pagosQR', 'pagosTarjeta', 'pagosTransferencia', 'ventasAdelantadas'];
          foreach ($campos as $campo) {
              if (isset($caja->$campo) && $caja->$campo < 0) {
                  \Log::warning("El campo {$campo} quedó negativo ({$caja->$campo}), se ajusta a 0");
