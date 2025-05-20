@@ -11,8 +11,7 @@
       </template>
       <div class="p-d-flex p-ai-center p-mb-4" style="gap: 0.5rem;">
         <!-- Botón Nueva Venta -->
-        <Button @click="abrirTipoVenta" label="Nueva Venta" icon="pi pi-plus"
-        class="p-button-secondary" />
+        <Button @click="abrirTipoVenta" label="Nueva Venta" icon="pi pi-plus" class="p-button-secondary" />
 
         <!-- Buscador -->
         <span class="p-input-icon-left p-input-icon-right p-w-100">
@@ -26,14 +25,9 @@
         </span>
 
         <!-- Botón Reporte usando PrimeVue -->
-        <Button
-  v-if="idrol === 1"
-  @click="mostrarModal = true"
-  label="Reporte"
-  icon="pi pi-file-pdf"
-  class="p-button-danger p-button-sm p-ml-2"
-/>
-         
+        <Button v-if="idrol === 1" @click="mostrarModal = true" label="Reporte" icon="pi pi-file-pdf"
+          class="p-button-danger p-button-sm p-ml-2" />
+
       </div>
 
 
@@ -67,32 +61,23 @@
                   <input type="date" v-model="fecha_fin" id="fecha_fin" class="form-control">
                 </div>
                 <div class="form-group">
-  <label>Usuarios:</label>
-  <div v-if="usuarios.length">
-    <div v-for="usuario in usuarios" :key="usuario.id" class="form-check">
-      <input class="form-check-input" type="checkbox" :id="'usuario_' + usuario.id" :value="usuario.id" v-model="usuariosSeleccionados">
-      <label class="form-check-label" :for="'usuario_' + usuario.id">
-        {{ usuario.nombre }}
-      </label>
-    </div>
-  </div>
-  <div v-else class="text-muted">Cargando usuarios...</div>
-</div>
+                  <label>Usuarios:</label>
+                  <div v-if="usuarios.length">
+                    <div v-for="usuario in usuarios" :key="usuario.id" class="form-check">
+                      <input class="form-check-input" type="checkbox" :id="'usuario_' + usuario.id" :value="usuario.id"
+                        v-model="usuariosSeleccionados">
+                      <label class="form-check-label" :for="'usuario_' + usuario.id">
+                        {{ usuario.nombre }}
+                      </label>
+                    </div>
+                  </div>
+                  <div v-else class="text-muted">Cargando usuarios...</div>
+                </div>
                 <div class="d-flex justify-content-between">
-                  <Button
-  type="submit"
-  label="Generar PDF"
-  icon="pi pi-file-pdf"
-  class="p-button-danger p-button-sm"
-  :loading="cargando"
-/>
-                  <Button
-  @click="exportarExcel"
-  label="Generar Excel"
-  icon="pi pi-file-excel"
-  class="p-button-success p-button-sm p-ml-2"
-  :loading="cargando"
-/>
+                  <Button type="submit" label="Generar PDF" icon="pi pi-file-pdf" class="p-button-danger p-button-sm"
+                    :loading="cargando" />
+                  <Button @click="exportarExcel" label="Generar Excel" icon="pi pi-file-excel"
+                    class="p-button-success p-button-sm p-ml-2" :loading="cargando" />
                   <!-- BOTÓN para cerrar -->
                   <button type="button" class="btn btn-secondary" @click="cerrarModalReporte">
                     Cerrar
@@ -111,75 +96,50 @@
       <template v-if="listado == 1">
         <DataTable :value="arrayVenta" :rows="10" responsiveLayout="scroll"
           class="p-datatable-gridlines p-datatable-sm moto-table" :rowHover="true" dataKey="id">
-        
+
 
           <Column header="Opciones">
-  <template #body="slotProps">
-    <!-- Ver venta -->
-    <Button
-      icon="pi pi-eye"
-      @click="verVenta(slotProps.data.id)"
-      class="p-button-sm p-mr-1"
-      style="background-color: green; border-color: green; color: white;"
-    />
+            <template #body="slotProps">
+              <!-- Ver venta -->
+              <Button icon="pi pi-eye" @click="verVenta(slotProps.data.id)" class="p-button-sm p-mr-1"
+                style="background-color: green; border-color: green; color: white;" />
 
-    <!-- Anular venta -->
-    <template v-if="idrol !== 2 && (
-        slotProps.data.estado === 'Registrado' ||
-        slotProps.data.idtipo_venta === 2 ||
-        slotProps.data.idtipo_venta === 3
-      )">
-      <Button
-        icon="pi pi-trash"
-        @click="desactivarVenta(slotProps.data.id)"
-        class="p-button-sm p-button-danger p-mr-1"
-        tooltip="Anular venta"
-      />
-    </template>
+              <!-- Anular venta -->
+              <template v-if="idrol !== 2 && (
+                slotProps.data.estado === 'Registrado' ||
+                slotProps.data.idtipo_venta === 2 ||
+                slotProps.data.idtipo_venta === 3
+              )">
+                <Button icon="pi pi-trash" @click="desactivarVenta(slotProps.data.id)"
+                  class="p-button-sm p-button-danger p-mr-1" tooltip="Anular venta" />
+              </template>
 
-    <!-- Imprimir comprobante -->
-    <Button
-      v-if="slotProps.data.idtipo_venta !== 2 && slotProps.data.idtipo_venta !== 3"
-      icon="pi pi-print"
-      @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
-      class="p-button-sm p-button-primary p-mr-1"
-      tooltip="Imprimir comprobante"
-    />
+              <!-- Imprimir comprobante -->
+              <Button v-if="slotProps.data.idtipo_venta !== 2 && slotProps.data.idtipo_venta !== 3" icon="pi pi-print"
+                @click="imprimirResivo(slotProps.data.id, slotProps.data.correo)"
+                class="p-button-sm p-button-primary p-mr-1" tooltip="Imprimir comprobante" />
 
-    <!-- Confirmar entrega -->
-    <Button
-      v-if="slotProps.data.estado === 'Pendiente' && slotProps.data.idtipo_venta !== 2"
-      icon="pi pi-check-circle"
-      @click="confirmarEntrega(slotProps.data.id)"
-      class="p-button-sm p-button-success p-mr-1"
-      tooltip="Confirmar Entrega"
-    />
+              <!-- Confirmar entrega -->
+              <Button v-if="slotProps.data.estado === 'Pendiente' && slotProps.data.idtipo_venta !== 2"
+                icon="pi pi-check-circle" @click="confirmarEntrega(slotProps.data.id)"
+                class="p-button-sm p-button-success p-mr-1" tooltip="Confirmar Entrega" />
 
-    <!-- Ver plan de pagos -->
-    <Button
-  v-if="slotProps.data.idtipo_venta === 2"
-  icon="pi pi-calendar"
-  class="p-button-sm p-mr-1"
-  style="background-color: #a855f7; border-color: #a855f7; color: white;"
-  @click="verPlanPagos(slotProps.data.id)"
-  tooltip="Ver plan de pagos"
-/>
+              <!-- Ver plan de pagos -->
+              <Button v-if="slotProps.data.idtipo_venta === 2" icon="pi pi-calendar" class="p-button-sm p-mr-1"
+                style="background-color: #a855f7; border-color: #a855f7; color: white;"
+                @click="verPlanPagos(slotProps.data.id)" tooltip="Ver plan de pagos" />
 
 
-    <!-- Descargar plan de pagos con icono amarillo -->
-    <Button
-      v-if="slotProps.data.idtipo_venta === 2"
-        icon="pi pi-download"
-      class="p-button-sm p-button-warning p-mr-1"
-      @click="confirmarYDescargarPlanPagos(slotProps.data.id)"
-      tooltip="Descargar plan de pagos"
-    >
-      <template #icon>
-        <i class="pi pi-download" style="color: yellow;"></i>
-      </template>
-    </Button>
-  </template>
-</Column>
+              <!-- Descargar plan de pagos con icono amarillo -->
+              <Button v-if="slotProps.data.idtipo_venta === 2" icon="pi pi-download"
+                class="p-button-sm p-button-warning p-mr-1" @click="confirmarYDescargarPlanPagos(slotProps.data.id)"
+                tooltip="Descargar plan de pagos">
+                <template #icon>
+                  <i class="pi pi-download" style="color: yellow;"></i>
+                </template>
+              </Button>
+            </template>
+          </Column>
 
 
           <Column field="usuario" header="Vendedor"></Column>
@@ -208,7 +168,6 @@
           @page="onPageChange" />
       </template>
 
-      <!-- Ver Detalle de Venta -->
       <!-- Ver Detalle de Venta -->
       <template v-if="listado == 2">
         <Card class="shadow">
@@ -348,8 +307,8 @@
                 <Column field="estado" header="Estado">
                   <template #body="slotProps">
                     <Tag :severity="slotProps.data.estado === 'Pagado'
-                        ? 'success'
-                        : 'warning'
+                      ? 'success'
+                      : 'warning'
                       " :value="slotProps.data.estado">
                     </Tag>
                   </template>
@@ -391,21 +350,36 @@
                 </template>
               </Column>
               <Column field="cantidad" header="Cantidad"></Column>
+              <Column header="Descuento">
+                <template #body="slotProps">
+                  {{ formatCurrency(slotProps.data.descuento || 0) }}
+                </template>
+              </Column>
               <Column header="Subtotal">
                 <template #body="slotProps">
                   <strong>{{
                     formatCurrency(
-                      slotProps.data.precio * slotProps.data.cantidad
+                      slotProps.data.precio * slotProps.data.cantidad - (slotProps.data.descuento || 0)
                     )
                   }}</strong>
                 </template>
               </Column>
             </DataTable>
 
-            <!-- Total -->
+            <!-- Total section with discounts -->
             <div class="total-section">
-              <div class="total-label">Total:</div>
-              <div class="total-amount">{{ formatCurrency(total) }}</div>
+              <div class="subtotal-row">
+                <div class="total-label">Subtotal:</div> 
+                <div class="total-amount">{{ formatCurrency(calcularSubtotal) }}</div>
+              </div>
+              <div class="discount-row" v-if="ventaDetalle && ventaDetalle.descuento">
+                <div class="total-label">Descuento:</div>
+                <div class="total-amount">-{{ formatCurrency(ventaDetalle.descuento) }}</div>
+              </div>
+              <div class="total-row">
+                <div class="total-label">Total Final:</div>
+                <div class="total-amount">{{ formatCurrency(total) }}</div>
+              </div>
             </div>
 
             <!-- Botones de acción -->
@@ -553,6 +527,22 @@
                   {{ monedaVenta[1] }}
                 </template>
               </Column>
+              <div class="p-grid p-mt-2 p-justify-end">
+                <div class="p-col-12 p-md-12 p-text-right" style="line-height: 1.2">
+                  <div class="p-mb-2">
+                    <InputNumber v-model="descuento" :min="0" :max="calcularTotalSinDescuento" suffix="Bs"
+                      placeholder="Descuento" class="p-mr-2" />
+                    <Button label="Aplicar" @click="aplicarDescuento" class="p-button-sm" />
+                  </div>
+                  <div v-if="developmentMode" class="p-mb-1">
+                    <small>Subtotal: {{ calcularTotalSinDescuento.toFixed(2) }} {{ monedaVenta[1] }}</small>
+                  </div>
+                  <span style="font-size: 1.5rem; font-weight: 500;">Total Neto: </span>
+                  <strong style="font-size: 1.8rem; color: #2c3e50;">
+                    {{ totalConDescuento.toFixed(2) }} {{ monedaVenta[1] }}
+                  </strong>
+                </div>
+              </div>
             </DataTable>
           </div>
 
@@ -624,7 +614,7 @@
                             <div class="p-inputgroup">
                               <span class="p-inputgroup-addon">{{
                                 monedaVenta[1]
-                                }}</span>
+                              }}</span>
                               <InputNumber id="montoEfectivo" v-model="recibido" placeholder="Ingrese el monto recibido"
                                 :class="{ 'p-invalid': montoInvalido }" />
                             </div>
@@ -663,14 +653,9 @@
                         </div>
                       </template>
                     </Card>
-                    <Button
-  label="Registrar Pago"
-  icon="pi pi-check"
-  class="p-button-success p-mt-2 p-button-lg p-button-raised"
-  @click="validarYRegistrarPago"
-  :disabled="!montoValido || loadingVenta"
-  :loading="loadingVenta"
-/>
+                    <Button label="Registrar Pago" icon="pi pi-check"
+                      class="p-button-success p-mt-2 p-button-lg p-button-raised" @click="validarYRegistrarPago"
+                      :disabled="!montoValido || loadingVenta" :loading="loadingVenta" />
                   </div>
                 </div>
               </TabPanel>
@@ -880,7 +865,7 @@
                       <div class="p-inputgroup">
                         <span class="p-inputgroup-addon">{{
                           monedaVenta[1]
-                          }}</span>
+                        }}</span>
                         <InputNumber id="montoAdelantado" v-model="montoAdelantado"
                           placeholder="Ingrese el monto recibido" :class="{ 'p-invalid': montoAdelantadoInvalido }" />
                       </div>
@@ -1074,7 +1059,7 @@
             </div>
 
             <div class="d-flex align-items-center">
-              
+
 
               <div class="input-group me-2" style="width: 120px;">
                 <button class="btn btn-outline-danger" type="button" @click="cantidad > 1 ? cantidad-- : null">
@@ -1268,6 +1253,7 @@ export default {
 
   data() {
     return {
+      descuento: 0,
       usuarios: [],
       usuariosSeleccionados: [],
       mostrarModal: false,
@@ -1404,34 +1390,45 @@ export default {
     },
   },
   computed: {
+    calcularTotalSinDescuento() {
+      return this.arrayDetalle.reduce((total, producto) => {
+        return total + (producto.precioseleccionado * producto.cantidad);
+      }, 0);
+    },
+
+    totalConDescuento() {
+      return this.calcularTotalSinDescuento - (this.descuento || 0);
+    },
+
     totalFormateado() {
-      return (this.calcularTotal * parseFloat(this.monedaVenta[0])).toFixed(2);
+      return (this.totalConDescuento * parseFloat(this.monedaVenta[0])).toFixed(2);
     },
     calcularCambio() {
       if (!this.recibido) return "0.00";
       return (
         this.recibido -
-        this.calcularTotal * parseFloat(this.monedaVenta[0])
+        this.totalConDescuento * parseFloat(this.monedaVenta[0])
       ).toFixed(2);
     },
     calcularCambioAdelantado() {
       if (!this.montoAdelantado) return "0.00";
       return (
         this.montoAdelantado -
-        this.calcularTotal * parseFloat(this.monedaVenta[0])
+        this.totalConDescuento * parseFloat(this.monedaVenta[0])
       ).toFixed(2);
     },
     montoValido() {
       if (!this.recibido) return false;
       return (
-        this.recibido >= this.calcularTotal * parseFloat(this.monedaVenta[0])
+        this.recibido >= this.totalConDescuento * parseFloat(this.monedaVenta[0])
       );
     },
+
     montoAdelantadoValido() {
       if (!this.montoAdelantado) return false;
       return (
         this.montoAdelantado >=
-        this.calcularTotal * parseFloat(this.monedaVenta[0])
+        this.totalConDescuento * parseFloat(this.monedaVenta[0])
       );
     },
     datosAdelantadosValidos() {
@@ -1465,129 +1462,172 @@ export default {
         return stockTotal;
       }
     },
-    calcularTotal() {
-      let resultado = 0.0;
-      for (let i = 0; i < this.arrayDetalle.length; i++) {
-        resultado +=
-          this.arrayDetalle[i].precioseleccionado *
-          this.arrayDetalle[i].cantidad;
+    calcularTotal: function () {
+      var resultado = 0.0;
+      const currencyMultiplier = parseFloat(this.monedaVenta[0]);
+      for (var i = 0; i < this.arrayDetalle.length; i++) {
+        resultado += (this.arrayDetalle[i].precioseleccionado * this.arrayDetalle[i].cantidad) * currencyMultiplier;
       }
+      // Restar descuento directamente del total
+      resultado -= parseFloat(this.descuento) || 0;
       return resultado;
+    },
+    calcularSubtotal() {
+      return this.arrayDetalle.reduce((subtotal, producto) => {
+        return subtotal + (producto.precio * producto.cantidad);
+      }, 0);
     },
   },
   methods: {
-    async exportarExcel() {
-  this.error = "";
-  if (!this.fecha_inicio || !this.fecha_fin) {
-    this.error = "Debe seleccionar ambas fechas.";
-    console.warn("Fechas no seleccionadas");
+    aplicarDescuento() {
+  const discountValue = parseFloat(this.descuento) || 0;
+  const totalBeforeDiscount = this.calcularTotalSinDescuento;
+
+  // Validaciones
+  if (discountValue < 0) {
+    this.$toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'El descuento no puede ser negativo',
+      life: 3000
+    });
+    this.descuento = 0;
     return;
   }
-  this.cargando = true;
-  try {
-    const formData = new FormData();
-    formData.append("fecha_inicio", this.fecha_inicio);
-    formData.append("fecha_fin", this.fecha_fin);
-    this.usuariosSeleccionados.forEach(id => formData.append('usuario_ids[]', id));
-    console.log("Enviando datos para exportar Excel:", {
-      fecha_inicio: this.fecha_inicio,
-      fecha_fin: this.fecha_fin,
-      usuariosSeleccionados: this.usuariosSeleccionados
+
+  if (discountValue > totalBeforeDiscount) {
+    this.$toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'El descuento no puede ser mayor que el total',
+      life: 3000
     });
-
-    const response = await fetch("/ventas/exportar-excel", {
-      method: "POST",
-      headers: {
-        "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content")
-      },
-      body: formData
-    });
-
-    const disposition = response.headers.get('content-disposition');
-    if (!response.ok || !disposition || !disposition.includes('attachment')) {
-      const errorText = await response.text();
-      this.error = "Error al exportar Excel: " + errorText;
-      console.error("Respuesta del backend (error):", errorText);
-      this.cargando = false;
-      return;
-    }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `ventas_${this.fecha_inicio}_al_${this.fecha_fin}.xlsx`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-    console.log("Descarga de Excel completada");
-  } catch (e) {
-    this.error = "No se pudo exportar el Excel. " + (e.message || "");
-    console.error("Error en exportarExcel():", e);
-  } finally {
-    this.cargando = false;
+    this.descuento = 0;
+    return;
   }
+
+  // Aplicar el descuento
+  this.totalConDescuento = totalBeforeDiscount - discountValue;
+  
+  this.$toast.add({
+    severity: 'success',
+    summary: 'Éxito',
+    detail: 'Descuento aplicado correctamente',
+    life: 3000
+  });
 },
+    async exportarExcel() {
+      this.error = "";
+      if (!this.fecha_inicio || !this.fecha_fin) {
+        this.error = "Debe seleccionar ambas fechas.";
+        console.warn("Fechas no seleccionadas");
+        return;
+      }
+      this.cargando = true;
+      try {
+        const formData = new FormData();
+        formData.append("fecha_inicio", this.fecha_inicio);
+        formData.append("fecha_fin", this.fecha_fin);
+        this.usuariosSeleccionados.forEach(id => formData.append('usuario_ids[]', id));
+        console.log("Enviando datos para exportar Excel:", {
+          fecha_inicio: this.fecha_inicio,
+          fecha_fin: this.fecha_fin,
+          usuariosSeleccionados: this.usuariosSeleccionados
+        });
+
+        const response = await fetch("/ventas/exportar-excel", {
+          method: "POST",
+          headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content")
+          },
+          body: formData
+        });
+
+        const disposition = response.headers.get('content-disposition');
+        if (!response.ok || !disposition || !disposition.includes('attachment')) {
+          const errorText = await response.text();
+          this.error = "Error al exportar Excel: " + errorText;
+          console.error("Respuesta del backend (error):", errorText);
+          this.cargando = false;
+          return;
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `ventas_${this.fecha_inicio}_al_${this.fecha_fin}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        console.log("Descarga de Excel completada");
+      } catch (e) {
+        this.error = "No se pudo exportar el Excel. " + (e.message || "");
+        console.error("Error en exportarExcel():", e);
+      } finally {
+        this.cargando = false;
+      }
+    },
 
 
 
     async cargarUsuarios() {
-  try {
-    const response = await fetch('/usuario/selectUsuarios', {
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
+      try {
+        const response = await fetch('/usuario/selectUsuarios', {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        const data = await response.json();
+        this.usuarios = data.usuarios || [];
+      } catch (error) {
+        this.usuarios = [];
       }
-    });
-    const data = await response.json();
-    this.usuarios = data.usuarios || [];
-  } catch (error) {
-    this.usuarios = [];
-  }
-},
-  async generarReporte() {
-  this.error = "";
-  if (!this.fecha_inicio || !this.fecha_fin) {
-    this.error = "Debe seleccionar ambas fechas.";
-    return;
-  }
-  if (this.fecha_fin < this.fecha_inicio) {
-    this.error = "La fecha fin no puede ser menor que la fecha inicio.";
-    return;
-  }
-  this.cargando = true;
-  try {
-    const formData = new FormData();
-    formData.append("fecha_inicio", this.fecha_inicio);
-    formData.append("fecha_fin", this.fecha_fin);
-    // Agrega los usuarios seleccionados
-    this.usuariosSeleccionados.forEach(id => formData.append('usuario_ids[]', id));
+    },
+    async generarReporte() {
+      this.error = "";
+      if (!this.fecha_inicio || !this.fecha_fin) {
+        this.error = "Debe seleccionar ambas fechas.";
+        return;
+      }
+      if (this.fecha_fin < this.fecha_inicio) {
+        this.error = "La fecha fin no puede ser menor que la fecha inicio.";
+        return;
+      }
+      this.cargando = true;
+      try {
+        const formData = new FormData();
+        formData.append("fecha_inicio", this.fecha_inicio);
+        formData.append("fecha_fin", this.fecha_fin);
+        // Agrega los usuarios seleccionados
+        this.usuariosSeleccionados.forEach(id => formData.append('usuario_ids[]', id));
 
-    const response = await fetch("/reporte-ventas/pdf", {
-      method: "POST",
-      headers: {
-        "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content")
-      },
-      body: formData
-    });
+        const response = await fetch("/reporte-ventas/pdf", {
+          method: "POST",
+          headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').getAttribute("content")
+          },
+          body: formData
+        });
 
-    if (!response.ok) throw new Error("Error al generar el PDF");
+        if (!response.ok) throw new Error("Error al generar el PDF");
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `reporte_ventas_${this.fecha_inicio}_al_${this.fecha_fin}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (e) {
-    this.error = "No se pudo generar el PDF. " + (e.message || "");
-  } finally {
-    this.cargando = false;
-  }
-},
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `reporte_ventas_${this.fecha_inicio}_al_${this.fecha_fin}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        this.error = "No se pudo generar el PDF. " + (e.message || "");
+      } finally {
+        this.cargando = false;
+      }
+    },
     cerrarModalReporte() {
       console.log("Método cerrarModalReporte ejecutado");
       this.mostrarModal = false;
@@ -1595,7 +1635,7 @@ export default {
       this.fecha_inicio = "";
       this.fecha_fin = "";
     },
- 
+
     async obtenerDatosSesionYComprobante() {
       try {
         // Clear existing number
@@ -1618,252 +1658,253 @@ export default {
       }
     },
 
-   
+
     async registrarVenta(idtipo_pago = 1) {
-  try {
-    // 1. Validar si la caja está abierta antes de continuar
-    const cajaResponse = await axios.get('/caja/estado-actual');
-    if (!cajaResponse.data.abierta) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Caja no abierta',
-        text: 'Debe abrir una caja antes de registrar una venta.'
-      });
-      return; // Detener el flujo
-    }
+      try {
+        // 1. Validar si la caja está abierta antes de continuar
+        const cajaResponse = await axios.get('/caja/estado-actual');
+        if (!cajaResponse.data.abierta) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Caja no abierta',
+            text: 'Debe abrir una caja antes de registrar una venta.'
+          });
+          return; // Detener el flujo
+        }
 
-  
 
-    // Validaciones previas (se mantienen igual)
-    if (this.tipoVenta === 'credito') {
-      if (!this.numero_cuotas || !this.tiempo_diaz) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
-        });
-        return;
-      }
 
-      if (!this.cuotas || this.cuotas.length === 0) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
-        });
-        return;
-      }
-    }
-    this.mostrarSpinner = true;
-    await this.buscarOCrearCliente();
-  
-
-    // Preparación de datos (se mantiene igual)
-    const ventaData = {
-      idcliente: this.idcliente,
-      tipo_comprobante: this.tipo_comprobante,
-      serie_comprobante: this.serie_comprobante,
-      num_comprobante: this.num_comprob,
-      impuesto: this.impuesto || 0.18,
-      total: this.calcularTotal,
-      idAlmacen: this.idAlmacen,
-      idtipo_pago: idtipo_pago,
-      idtipo_venta: this.idtipo_venta,
-      data: this.arrayDetalle
-    };
-
-    // Datos específicos para venta adelantada (se mantiene igual)
-    if (this.tipoVenta === 'adelantada') {
-      ventaData.direccion_entrega = this.direccionEntrega;
-      ventaData.telefono_contacto = this.telefonoContacto;
-      ventaData.fecha_entrega = this.fechaEntrega
-        ? (typeof this.fechaEntrega === 'string'
-          ? this.fechaEntrega
-          : this.fechaEntrega.toISOString().split('T')[0])
-        : null;
-      ventaData.observaciones = this.observaciones;
-      ventaData.estado = "Pendiente";
-
-      if (this.tipoPagoAdelantado === "efectivo") {
-        ventaData.monto_recibido = this.montoAdelantado;
-        ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
-      }
-    }
-
-    // Datos específicos para venta a crédito (se mantiene igual)
-    if (this.tipoVenta === 'credito') {
-      ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
-        numero_cuota: index + 1,
-        fecha_pago: cuota.fecha_pago,
-        precio_cuota: parseFloat(cuota.precio_cuota),
-        saldo_restante: parseFloat(cuota.saldo_restante),
-        estado: 'Pendiente'
-      }));
-
-      ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
-      ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
-      ventaData.estado_credito = 'Pendiente';
-    }
-
-    const response = await axios.post("/venta/registrar", ventaData);
-
-    if (response.data && response.data.id) {
-    
-      this.listado = 1;
-      this.cerrarModal2();
-      this.listarVenta(1, "", "num_comprob");
-
-      // Venta a crédito: preguntar si desea imprimir el plan de pagos
-      if (response.data.tipo === 'credito') {
-        Swal.fire({
-          title: '¿Desea imprimir el plan de pagos?',
-          text: 'Puede descargar el plan de pagos en PDF.',
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonText: 'Sí, descargar',
-          cancelButtonText: 'No',
-          reverseButtons: true
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.open(`/venta/descargarPlanPagos/${response.data.id}`, '_blank');
+        // Validaciones previas (se mantienen igual)
+        if (this.tipoVenta === 'credito') {
+          if (!this.numero_cuotas || !this.tiempo_diaz) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe ingresar el número de cuotas y la frecuencia de pagos.'
+            });
+            return;
           }
-        });
 
+          if (!this.cuotas || this.cuotas.length === 0) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe generar las cuotas antes de registrar una venta a crédito.'
+            });
+            return;
+          }
+        }
+        this.mostrarSpinner = true;
+        await this.buscarOCrearCliente();
+
+
+        // Preparación de datos (se mantiene igual)
+        const ventaData = {
+          idcliente: this.idcliente,
+          tipo_comprobante: this.tipo_comprobante,
+          serie_comprobante: this.serie_comprobante,
+          num_comprobante: this.num_comprob,
+          impuesto: this.impuesto || 0.18,
+          total: this.calcularTotalSinDescuento, // Use the total BEFORE discount
+  descuento: this.descuento || 0,
+          idAlmacen: this.idAlmacen,
+          idtipo_pago: idtipo_pago,
+          idtipo_venta: this.idtipo_venta,
+          data: this.arrayDetalle
+        };
+
+        // Datos específicos para venta adelantada (se mantiene igual)
+        if (this.tipoVenta === 'adelantada') {
+          ventaData.direccion_entrega = this.direccionEntrega;
+          ventaData.telefono_contacto = this.telefonoContacto;
+          ventaData.fecha_entrega = this.fechaEntrega
+            ? (typeof this.fechaEntrega === 'string'
+              ? this.fechaEntrega
+              : this.fechaEntrega.toISOString().split('T')[0])
+            : null;
+          ventaData.observaciones = this.observaciones;
+          ventaData.estado = "Pendiente";
+
+          if (this.tipoPagoAdelantado === "efectivo") {
+            ventaData.monto_recibido = this.montoAdelantado;
+            ventaData.cambio = parseFloat(this.calcularCambioAdelantado);
+          }
+        }
+
+        // Datos específicos para venta a crédito (se mantiene igual)
+        if (this.tipoVenta === 'credito') {
+          ventaData.cuotaspago = this.cuotas.map((cuota, index) => ({
+            numero_cuota: index + 1,
+            fecha_pago: cuota.fecha_pago,
+            precio_cuota: parseFloat(cuota.precio_cuota),
+            saldo_restante: parseFloat(cuota.saldo_restante),
+            estado: 'Pendiente'
+          }));
+
+          ventaData.tiempo_dias_cuota = parseInt(this.tiempo_diaz);
+          ventaData.numero_cuotasCredito = parseInt(this.numero_cuotas);
+          ventaData.estado_credito = 'Pendiente';
+        }
+
+        const response = await axios.post("/venta/registrar", ventaData);
+
+        if (response.data && response.data.id) {
+
+          this.listado = 1;
+          this.cerrarModal2();
+          this.listarVenta(1, "", "num_comprob");
+
+          // Venta a crédito: preguntar si desea imprimir el plan de pagos
+          if (response.data.tipo === 'credito') {
+            Swal.fire({
+              title: '¿Desea imprimir el plan de pagos?',
+              text: 'Puede descargar el plan de pagos en PDF.',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, descargar',
+              cancelButtonText: 'No',
+              reverseButtons: true
+            }).then((result) => {
+              if (result.isConfirmed) {
+                window.open(`/venta/descargarPlanPagos/${response.data.id}`, '_blank');
+              }
+            });
+
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: response.data.message,
+              life: 3000
+            });
+          } else if (this.idtipo_venta === 3) { // Venta adelantada
+            Swal.fire({
+              title: 'Pedido Adelantado Registrado',
+              text: 'La venta adelantada se ha registrado correctamente',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+
+          // Mostrar Swal para seleccionar formato de impresión en ventas al contado (efectivo o QR)
+          if (
+            (this.idtipo_venta === 1 && (idtipo_pago === 1 || idtipo_pago === 4))
+            && response.data.id
+          ) {
+            Swal.fire({
+              title: '¿Cómo desea imprimir el comprobante?',
+              text: 'Seleccione el formato de impresión',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Carta',
+              cancelButtonText: 'Rollo',
+              reverseButtons: true
+            }).then((result) => {
+              if (result.isConfirmed) {
+                // Imprimir en formato carta
+                window.open(`/resivo/imprimirCarta/${response.data.id}`, '_blank');
+              } else if (result.dismiss === Swal.DismissReason.cancel) {
+                // Imprimir en formato rollo
+                window.open(`/resivo/imprimirRollo/${response.data.id}`, '_blank');
+              }
+            });
+          }
+
+          this.reiniciarFormulario();
+          return;
+        }
+
+      } catch (error) {
+        console.error("Error al registrar venta:", error);
+
+        // Intenta obtener el mensaje del backend
+        let mensaje = "Ocurrió un error al procesar la venta";
+        if (error.response && error.response.data && error.response.data.error) {
+          mensaje = error.response.data.error;
+        } else if (error.message) {
+          mensaje = error.message;
+        }
+
+        Swal.fire(
+          "Error",
+          mensaje,
+          "error"
+        );
+      } finally {
+        this.mostrarSpinner = false;
+      }
+    },
+
+
+    async confirmarYDescargarPlanPagos(idVenta) {
+      const result = await Swal.fire({
+        title: '¿Desea descargar el plan de pagos?',
+        text: 'Se generará un PDF con el plan de pagos.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, descargar',
+        cancelButtonText: 'No',
+        reverseButtons: true
+      });
+
+      if (result.isConfirmed) {
+        this.descargarPlanPagos(idVenta);
+      }
+    },
+    async descargarPlanPagos(idVenta) {
+      try {
+        // Forzar descarga en nueva pestaña
+        const url = `/venta/descargarPlanPagos/${idVenta}`;
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Mostrar mensaje de éxito aunque no podamos verificar
         this.$toast.add({
           severity: 'success',
-          summary: 'Éxito',
-          detail: response.data.message,
+          summary: 'Descarga iniciada',
+          detail: 'El plan de pagos se está descargando',
           life: 3000
         });
-      } else if (this.idtipo_venta === 3) { // Venta adelantada
-        Swal.fire({
-          title: 'Pedido Adelantado Registrado',
-          text: 'La venta adelantada se ha registrado correctamente',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false
+
+      } catch (error) {
+        console.error("Error:", error);
+        // Mostrar mensaje genérico
+        this.$toast.add({
+          severity: 'info',
+          summary: 'Descarga',
+          detail: 'Por favor revise su carpeta de descargas',
+          life: 3000
         });
       }
+    },
 
-      // Mostrar Swal para seleccionar formato de impresión en ventas al contado (efectivo o QR)
-      if (
-        (this.idtipo_venta === 1 && (idtipo_pago === 1 || idtipo_pago === 4))
-        && response.data.id
-      ) {
-        Swal.fire({
-          title: '¿Cómo desea imprimir el comprobante?',
-          text: 'Seleccione el formato de impresión',
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonText: 'Carta',
-          cancelButtonText: 'Rollo',
-          reverseButtons: true
-        }).then((result) => {
-          if (result.isConfirmed) {
-            // Imprimir en formato carta
-            window.open(`/resivo/imprimirCarta/${response.data.id}`, '_blank');
-          } else if (result.dismiss === Swal.DismissReason.cancel) {
-            // Imprimir en formato rollo
-            window.open(`/resivo/imprimirRollo/${response.data.id}`, '_blank');
-          }
-        });
-      }
-
-      this.reiniciarFormulario();
-      return;
-    }
-
-  } catch (error) {
-    console.error("Error al registrar venta:", error);
-
-    // Intenta obtener el mensaje del backend
-    let mensaje = "Ocurrió un error al procesar la venta";
-    if (error.response && error.response.data && error.response.data.error) {
-      mensaje = error.response.data.error;
-    } else if (error.message) {
-      mensaje = error.message;
-    }
-
-    Swal.fire(
-      "Error",
-      mensaje,
-      "error"
-    );
-  } finally {
-    this.mostrarSpinner = false;
-  }
-},
-
-
-async confirmarYDescargarPlanPagos(idVenta) {
-    const result = await Swal.fire({
-      title: '¿Desea descargar el plan de pagos?',
-      text: 'Se generará un PDF con el plan de pagos.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, descargar',
-      cancelButtonText: 'No',
-      reverseButtons: true
-    });
-
-    if (result.isConfirmed) {
-      this.descargarPlanPagos(idVenta);
-    }
-  },
-  async descargarPlanPagos(idVenta) {
-  try {
-    // Forzar descarga en nueva pestaña
-    const url = `/venta/descargarPlanPagos/${idVenta}`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // Mostrar mensaje de éxito aunque no podamos verificar
-    this.$toast.add({
-      severity: 'success',
-      summary: 'Descarga iniciada',
-      detail: 'El plan de pagos se está descargando',
-      life: 3000
-    });
-
-  } catch (error) {
-    console.error("Error:", error);
-    // Mostrar mensaje genérico
-    this.$toast.add({
-      severity: 'info',
-      summary: 'Descarga',
-      detail: 'Por favor revise su carpeta de descargas',
-      life: 3000
-    });
-  }
-},
-
-  async imprimirPlanPagos(idVenta) {
-    try {
+    async imprimirPlanPagos(idVenta) {
+      try {
         this.loading = true;
-        
+
         // Verificar que el ID sea válido
         if (!idVenta || isNaN(idVenta)) {
-            throw new Error("ID de venta inválido");
+          throw new Error("ID de venta inválido");
         }
 
         // Mostrar confirmación
         const confirm = await Swal.fire({
-            title: 'Generar Plan de Pagos',
-            text: '¿Desea generar el plan de pagos para esta venta?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Generar PDF',
-            cancelButtonText: 'Cancelar',
-            reverseButtons: true
+          title: 'Generar Plan de Pagos',
+          text: '¿Desea generar el plan de pagos para esta venta?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Generar PDF',
+          cancelButtonText: 'Cancelar',
+          reverseButtons: true
         });
 
         if (!confirm.isConfirmed) {
-            return;
+          return;
         }
 
         // Crear un enlace temporal
@@ -1874,19 +1915,19 @@ async confirmarYDescargarPlanPagos(idVenta) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-    } catch (error) {
+
+      } catch (error) {
         console.error("Error al imprimir plan de pagos:", error);
         this.$toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'No se pudo generar el plan de pagos: ' + error.message,
-            life: 5000
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo generar el plan de pagos: ' + error.message,
+          life: 5000
         });
-    } finally {
+      } finally {
         this.loading = false;
-    }
-},
+      }
+    },
 
 
 
@@ -2429,31 +2470,31 @@ async confirmarYDescargarPlanPagos(idVenta) {
 
     // Métodos para ventas al contado
     async validarYRegistrarPago() {
-  // Evita doble click si ya está procesando
-  if (this.loadingVenta) return;
+      // Evita doble click si ya está procesando
+      if (this.loadingVenta) return;
 
-  // Validaciones de monto recibido
-  if (!this.recibido) {
-    this.montoInvalido = true;
-    return;
-  }
+      // Validaciones de monto recibido
+      if (!this.recibido) {
+        this.montoInvalido = true;
+        return;
+      }
 
-  if (!this.montoValido) {
-    this.montoInvalido = true;
-    return;
-  }
+      if (!this.montoValido) {
+        this.montoInvalido = true;
+        return;
+      }
 
-  this.loadingVenta = true; // Activa loading
+      this.loadingVenta = true; // Activa loading
 
-  try {
-    await this.registrarVenta(1); // 1 para pago en efectivo
-  } catch (error) {
-    // Puedes mostrar un mensaje de error si quieres
-    console.error(error);
-  } finally {
-    this.loadingVenta = false; // Desactiva loading, pase lo que pase
-  }
-},
+      try {
+        await this.registrarVenta(1); // 1 para pago en efectivo
+      } catch (error) {
+        // Puedes mostrar un mensaje de error si quieres
+        console.error(error);
+      } finally {
+        this.loadingVenta = false; // Desactiva loading, pase lo que pase
+      }
+    },
 
     // Método para venta adelantada
     validarYRegistrarVentaAdelantada() {
@@ -2630,42 +2671,42 @@ async confirmarYDescargarPlanPagos(idVenta) {
     },
     verVenta(id) {
       this.listado = 2;
-   this.cargando = true;
- 
-   // Obtener cabecera de venta
-   axios.get(`/venta/obtenerCabecera?id=${id}`)
-     .then((response) => {
-       if (response.data.venta) {
-         this.ventaDetalle = {
-           ...response.data.venta,
-           ...(response.data.datosAdelantados || {})
-         };
-         this.cliente = response.data.venta.nombre;
-         this.tipo_comprobante = response.data.venta.tipo_comprobante;
-         this.num_comprobante = response.data.venta.num_comprobante;
-         this.total = response.data.venta.total;
- 
-         // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
-         this.creditoInfo = response.data.credito || null;
-         this.cuotasCredito = response.data.cuotas || [];
-       }
-       this.cargando = false;
-     })
-     .catch((error) => {
-       console.error("Error al obtener cabecera:", error);
-       Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
-       this.cargando = false;
-     });
- 
-   // Obtener detalles de productos
-   axios.get(`/venta/obtenerDetalles?id=${id}`)
-     .then((response) => {
-       this.arrayDetalle = response.data.detalles;
-     })
-     .catch((error) => {
-       console.error("Error al obtener detalles:", error);
-     });
- },
+      this.cargando = true;
+
+      // Obtener cabecera de venta
+      axios.get(`/venta/obtenerCabecera?id=${id}`)
+        .then((response) => {
+          if (response.data.venta) {
+            this.ventaDetalle = {
+              ...response.data.venta,
+              ...(response.data.datosAdelantados || {})
+            };
+            this.cliente = response.data.venta.nombre;
+            this.tipo_comprobante = response.data.venta.tipo_comprobante;
+            this.num_comprobante = response.data.venta.num_comprobante;
+            this.total = response.data.venta.total;
+
+            // ASIGNAR DATOS DE CRÉDITO Y CUOTAS
+            this.creditoInfo = response.data.credito || null;
+            this.cuotasCredito = response.data.cuotas || [];
+          }
+          this.cargando = false;
+        })
+        .catch((error) => {
+          console.error("Error al obtener cabecera:", error);
+          Swal.fire("Error", "No se pudo obtener los detalles de la venta", "error");
+          this.cargando = false;
+        });
+
+      // Obtener detalles de productos
+      axios.get(`/venta/obtenerDetalles?id=${id}`)
+        .then((response) => {
+          this.arrayDetalle = response.data.detalles;
+        })
+        .catch((error) => {
+          console.error("Error al obtener detalles:", error);
+        });
+    },
 
     // Formato para fechas
     formatFecha(fecha) {
@@ -2824,48 +2865,48 @@ async confirmarYDescargarPlanPagos(idVenta) {
       }
     },
     imprimirResivo(id, correo = null) {
-    // Este método SOLO se llama para ventas al contado (idtipo_venta === 1)
-    Swal.fire({
-      title: "Seleccione formato de recibo",
-      text: "Elija el tamaño para imprimir el comprobante",
-      icon: "info",
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: "CARTA",
-      cancelButtonText: "ROLLO",
-      reverseButtons: true,
-    }).then((result) => {
-      const endpoint = result.value ? "imprimirCarta" : "imprimirRollo";
-      const filename = result.value ? "recibo_carta.pdf" : "recibo_rollo.pdf";
+      // Este método SOLO se llama para ventas al contado (idtipo_venta === 1)
+      Swal.fire({
+        title: "Seleccione formato de recibo",
+        text: "Elija el tamaño para imprimir el comprobante",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: "CARTA",
+        cancelButtonText: "ROLLO",
+        reverseButtons: true,
+      }).then((result) => {
+        const endpoint = result.value ? "imprimirCarta" : "imprimirRollo";
+        const filename = result.value ? "recibo_carta.pdf" : "recibo_rollo.pdf";
 
-      axios.get(`/resivo/${endpoint}/${id}`, { 
-        responseType: "blob",
-        timeout: 10000
-      })
-      .then((response) => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        setTimeout(() => {
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        }, 100);
-      })
-      .catch((error) => {
-        console.error("Error al generar recibo:", error);
-        this.$toast.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo generar el documento',
-          life: 3000
-        });
+        axios.get(`/resivo/${endpoint}/${id}`, {
+          responseType: "blob",
+          timeout: 10000
+        })
+          .then((response) => {
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            }, 100);
+          })
+          .catch((error) => {
+            console.error("Error al generar recibo:", error);
+            this.$toast.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo generar el documento',
+              life: 3000
+            });
+          });
       });
-    });
-  },
+    },
 
 
 
@@ -2938,7 +2979,7 @@ async confirmarYDescargarPlanPagos(idVenta) {
       this.tipoVentaSeleccionado = false;
       this.step = 1;
       this.cuotas = [];
-
+      this.descuento = 0;
       // Resetear campos de venta adelantada
       this.direccionEntrega = "";
       this.telefonoContacto = "";
@@ -2959,7 +3000,7 @@ async confirmarYDescargarPlanPagos(idVenta) {
     this.ejecutarFlujoCompleto();
   },
 
-  
+
 };
 </script>
 
@@ -3189,24 +3230,31 @@ async confirmarYDescargarPlanPagos(idVenta) {
 
 .total-section {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 12px 16px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
   background-color: #f8f9fa;
   border-radius: 5px;
-  margin-bottom: 24px;
+  margin: 24px 0;
 }
 
-.total-label {
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-right: 16px;
+.subtotal-row,
+.discount-row,
+.total-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
-.total-amount {
+.discount-row {
+  color: #dc3545;
+}
+
+.total-row {
+  border-top: 1px solid #dee2e6;
+  padding-top: 8px;
+  font-size: 1.2em;
   font-weight: bold;
-  font-size: 1.2rem;
-  color: #2196f3;
 }
 
 .botones-accion {
@@ -3686,8 +3734,9 @@ async confirmarYDescargarPlanPagos(idVenta) {
 
 /* SOLUCIÓN DEFINITIVA PARA BOTONES DE SELECCIÓN DE PAGO */
 @media (max-width: 768px) {
+
   /* Contenedor principal */
-  .p-d-flex.p-jc-center.p-mb-3 > .p-d-flex {
+  .p-d-flex.p-jc-center.p-mb-3>.p-d-flex {
     flex-direction: column !important;
     width: 100% !important;
     gap: 0.5rem !important;

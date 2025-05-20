@@ -195,76 +195,97 @@ class VentaController extends Controller
      * Registra una nueva venta
      */
  
-public function store(Request $request)
-{
-    if (!$request->ajax()) return redirect('/');
-
-    // Validar campos obligatorios
-    $request->validate([
-        'idcliente' => 'required|integer',
-        'idtipo_pago' => 'required|integer',
-        'idtipo_venta' => 'required|integer|in:1,2,3',
-        'tipo_comprobante' => 'required|string',
-        'serie_comprobante' => 'required|string',
-        'num_comprobante' => 'required|string',
-        'impuesto' => 'required|numeric',
-        'total' => 'required|numeric',
-        'idAlmacen' => 'required|integer',
-        'data' => 'required|array|min:1'
-    ], [
-        'tipo_comprobante.required' => 'El tipo de comprobante es obligatorio.',
-        'serie_comprobante.required' => 'La serie de comprobante es obligatoria.',
-        'num_comprobante.required' => 'El número de comprobante es obligatorio.',
-        // Puedes agregar más mensajes personalizados si lo deseas
-    ]);
-
-    try {
-        DB::beginTransaction();
-
-        if (!$this->validarCajaAbierta()) {
-            return ['id' => -1, 'caja_validado' => 'Debe tener una caja abierta'];
-        }
-
-        if (!is_array($request->data)) {
-            throw new \Exception("Los datos de los productos no son válidos");
-        }
-
-        if (empty($request->data)) {
-            throw new \Exception("No se han proporcionado productos para la venta");
-        }
-
-        if ($request->tipo_comprobante === "RESIVO") {
-            $venta = $this->crearVentaResivo($request);
-        } else {
-            $venta = $this->crearVenta($request);
-        }
-
-        $this->actualizarCaja($request);
-        $this->registrarDetallesVenta($venta, $request->data, $request->idAlmacen);
-        $this->notificarAdministradores();
-
-        DB::commit();
-       // Respuesta diferenciada según tipo de venta
-       if ($venta->idtipo_venta == 2) { // Si es venta a crédito
-        return response()->json([
-            'id' => $venta->id,
-            'tipo' => 'credito',
-            'pdf_url' => url("/venta/descargarPlanPagos/{$venta->id}"),
-            'message' => 'Venta a crédito registrada correctamente'
-        ]);
-    }else { // Venta al contado
-            return response()->json([
-                'id' => $venta->id,
-                'tipo' => 'contado',
-                'message' => 'Venta registrada correctamente'
-            ]);
-        }
-    } catch (\Exception $e) {
-        DB::rollBack();
-        \Log::error('Error al registrar venta: ' . $e->getMessage() . ' - Línea: ' . $e->getLine() . ' - Archivo: ' . $e->getFile());
-        return ['error' => $e->getMessage()];
-    }
-}
+     public function store(Request $request)
+     {
+         if (!$request->ajax()) return redirect('/');
+     
+         // Validar campos obligatorios (añadir descuento)
+         $request->validate([
+             'idcliente' => 'required|integer',
+             'idtipo_pago' => 'required|integer',
+             'idtipo_venta' => 'required|integer|in:1,2,3',
+             'tipo_comprobante' => 'required|string',
+             'serie_comprobante' => 'required|string',
+             'num_comprobante' => 'required|string',
+             'impuesto' => 'required|numeric',
+             'total' => 'required|numeric',
+             'descuento' => 'nullable|numeric|min:0', // Añadido descuento
+             'idAlmacen' => 'required|integer',
+             'data' => 'required|array|min:1'
+         ], [
+             'tipo_comprobante.required' => 'El tipo de comprobante es obligatorio.',
+             'serie_comprobante.required' => 'La serie de comprobante es obligatoria.',
+             'num_comprobante.required' => 'El número de comprobante es obligatorio.',
+             'descuento.min' => 'El descuento no puede ser negativo' // Mensaje para descuento
+         ]);
+     
+         try {
+             DB::beginTransaction();
+     
+             if (!$this->validarCajaAbierta()) {
+                 return ['id' => -1, 'caja_validado' => 'Debe tener una caja abierta'];
+             }
+     
+             if (!is_array($request->data)) {
+                 throw new \Exception("Los datos de los productos no son válidos");
+             }
+     
+             if (empty($request->data)) {
+                 throw new \Exception("No se han proporcionado productos para la venta");
+             }
+     
+             // Validar que el descuento no sea mayor al total
+             if ($request->descuento && $request->descuento > $request->total) {
+                 throw new \Exception("El descuento no puede ser mayor al total de la venta");
+             }
+     
+             // Aplicar descuento al total si existe
+             $totalConDescuento = $request->descuento 
+                 ? $request->total - $request->descuento
+                 : $request->total;
+     
+             // Modificar el request para pasar el total con descuento
+             $request->merge(['total' => $totalConDescuento]);
+     
+             if ($request->tipo_comprobante === "RESIVO") {
+                 $venta = $this->crearVentaResivo($request);
+             } else {
+                 $venta = $this->crearVenta($request);
+             }
+     
+             // Asignar el descuento a la venta
+             $venta->descuento = $request->descuento ?? 0;
+             $venta->save();
+     
+             $this->actualizarCaja($request);
+             $this->registrarDetallesVenta($venta, $request->data, $request->idAlmacen);
+             $this->notificarAdministradores();
+     
+             DB::commit();
+             
+             // Respuesta diferenciada según tipo de venta
+             if ($venta->idtipo_venta == 2) { // Si es venta a crédito
+                 return response()->json([
+                     'id' => $venta->id,
+                     'tipo' => 'credito',
+                     'pdf_url' => url("/venta/descargarPlanPagos/{$venta->id}"),
+                     'message' => 'Venta a crédito registrada correctamente',
+                     'descuento_aplicado' => $venta->descuento // Opcional: devolver descuento aplicado
+                 ]);
+             } else { // Venta al contado
+                 return response()->json([
+                     'id' => $venta->id,
+                     'tipo' => 'contado',
+                     'message' => 'Venta registrada correctamente',
+                     'descuento_aplicado' => $venta->descuento // Opcional: devolver descuento aplicado
+                 ]);
+             }
+         } catch (\Exception $e) {
+             DB::rollBack();
+             \Log::error('Error al registrar venta: ' . $e->getMessage() . ' - Línea: ' . $e->getLine() . ' - Archivo: ' . $e->getFile());
+             return ['error' => $e->getMessage()];
+         }
+     }
 
     /**
      * Valida si hay una caja abierta
@@ -984,6 +1005,10 @@ public function obtenerCuotas(Request $request)
             }
             \Log::info("Venta encontrada", ['venta_id' => $venta->id]);
     
+            // Calcular total con descuento
+            $totalConDescuento = $venta->total;
+            $descuento = $venta->descuento ?? 0;
+            
             $persona = Persona::find($venta->idcliente);
             if (!$persona) {
                 \Log::error("Cliente no encontrado para venta: $id");
@@ -1016,7 +1041,9 @@ public function obtenerCuotas(Request $request)
                 'venta' => $venta,
                 'persona' => $persona,
                 'empresa' => $empresa,
-                'logoPath' => $logoPath
+                'logoPath' => $logoPath,
+                'totalConDescuento' => $totalConDescuento,
+                'descuento' => $descuento
             ])->setPaper([0, 0, 226.77, 600], 'portrait');
     
             \Log::info("PDF generado correctamente");
@@ -1031,7 +1058,6 @@ public function obtenerCuotas(Request $request)
             return response()->json(['error' => 'OCURRIÓ UN ERROR AL IMPRIMIR EL RECIBO EN ROLLO: ' . $e->getMessage()], 500);
         }
     }
-
     /**
      * Imprime un recibo en formato carta
      */
@@ -1057,10 +1083,16 @@ public function obtenerCuotas(Request $request)
                 return response()->json(['error' => 'NO HAY DETALLES PARA ESTA VENTA'], 404);
             }
     
+            // Calcular total con descuento
+            $totalConDescuento = $venta->total;
+            $descuento = $venta->descuento ?? 0;
+    
             $pdf = \PDF::loadView('pdf.recibo_venta_carta', [
                 'venta' => $venta,
                 'persona' => $persona,
-                'empresa' => $empresa
+                'empresa' => $empresa,
+                'totalConDescuento' => $totalConDescuento,
+                'descuento' => $descuento
             ])->setPaper('letter', 'portrait');
     
             $nombreLimpio = preg_replace('/[^A-Za-z0-9\-]/', '_', $persona->nombre);
@@ -1282,10 +1314,4 @@ public function obtenerCuotas(Request $request)
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-    /**
-     * Registra las cuotas del crédito
-     */
-
-
 }

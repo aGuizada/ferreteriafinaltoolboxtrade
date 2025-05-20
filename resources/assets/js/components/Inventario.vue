@@ -68,6 +68,12 @@
         responsiveLayout="scroll" class="p-datatable-gridlines p-datatable-sm moto-table">
         <Column v-for="col in columnas" :key="col.field" :field="col.field" :header="col.header" 
           :body="col.body || null" :escape="false"></Column>
+        <Column header="Acciones">
+          <template #body="slotProps">
+            <Button icon="pi pi-eye" class="p-button-sm p-button-info" 
+              @click="verHistorial(slotProps.data)" />
+          </template>
+        </Column>
       </DataTable>
 
       <!-- Modal de Resumen -->
@@ -107,6 +113,21 @@
           </div>
         </div>
       </div>
+
+      <!-- Modal de Historial -->
+      <Dialog :visible.sync="mostrarHistorial" :modal="true" :closable="true" :style="{ width: '50vw' }">
+        <template #header>
+          <h4>Historial de Producto</h4>
+        </template>
+        <DataTable :value="historialData" responsiveLayout="scroll" class="p-datatable-sm">
+          <Column field="fecha" header="Fecha" />
+          <Column field="cantidadComprada" header="Cantidad Comprada" />
+          <Column field="cantidadAgotada" header="Cantidad Agotada" />
+        </DataTable>
+        <template #footer>
+          <Button label="Cerrar" icon="pi pi-times" @click="mostrarHistorial = false" class="p-button-danger" />
+        </template>
+      </Dialog>
 
       <Paginator :rows="10" :totalRecords="pagination.total" @page="onPageChange"
         :rowsPerPageOptions="[5, 10, 20]" />
@@ -167,12 +188,15 @@ export default {
       columnas: [],
       totalInversion: 0,
       totalProductosConStock: 0,
+      historialData: [],
+      mostrarHistorial: false,
     };
   },
   mounted() {
     this.selectAlmacen();
     this.listarInventario(1, '', this.criterio);
     this.setColumnas();
+    console.log(this.arrayInventario); // Log to check data
   },
   methods: {
     abrirModalImportar() {
@@ -197,6 +221,7 @@ export default {
       const url = `/inventarios/itemLote/${this.tipoSeleccionado}?idAlmacen=${this.almacenSeleccionado}&buscar=${buscar}&criterio=${criterio}&page=${page}&incluir_vencimiento=true`;
       axios.get(url).then(response => {
         this.arrayInventario = response.data.inventarios.data;
+        console.log('Estructura completa del primer item:', this.arrayInventario[0]); // Verifica TODOS los campos
         this.pagination = response.data.pagination;
       }).catch(error => {
         console.error(error);
@@ -304,13 +329,59 @@ export default {
           { field: 'nombre_almacen', header: 'Almacén' },
         ];
       }
+    },
+    verHistorial(data) {
+      console.log('Datos completos del producto:', data);
+      let productId;
+
+      if (this.tipoSeleccionado === 'item') {
+        productId = data.idarticulo;
+      } else {
+        productId = data.idarticulo || data.articulo_id;
+      }
+
+      console.log('ID a usar:', productId);
+
+      if (!productId) {
+        this.$toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo identificar el ID del producto',
+          life: 3000
+        });
+        return;
+      }
+
+      axios.get(`/inventarios/historial/${productId}`)
+        .then(response => {
+          if (response.data.success) {
+            this.historialData = response.data.historial;
+            this.mostrarHistorial = true;
+          } else {
+            this.$toast.add({
+              severity: 'info',
+              summary: 'Info',
+              detail: response.data.message || 'No hay historial disponible',
+              life: 3000
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error al obtener el historial:', error);
+          this.$toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Error al obtener el historial',
+            life: 3000
+          });
+        });
     }
   }
 };
 </script>
 
 <style scoped>
->>>.p-panel-header {
+.p-panel-header {
   padding: 0.75rem;
 }
 
@@ -359,7 +430,7 @@ export default {
   font-weight: 600;
 }
 
->>> .p-datatable .p-datatable-tbody > tr > td {
+ .p-datatable .p-datatable-tbody > tr > td {
   padding: 0.5rem 1rem;
 }
 

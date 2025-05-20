@@ -21,11 +21,11 @@ class InventarioController extends Controller
         if (!$request->has('inventarios')) {
             return response()->json(['error' => 'No se enviaron inventarios'], 400);
         }
-    
+
         DB::beginTransaction();
         try {
             $inventarios = $request->input('inventarios');
-    
+
             foreach ($inventarios as $inventario) {
                 // Verificar si el artículo existe
                 $articulo = Articulo::find($inventario['idarticulo']);
@@ -33,43 +33,29 @@ class InventarioController extends Controller
                     Log::warning("Artículo no encontrado: " . $inventario['idarticulo']);
                     continue;
                 }
-    
+
                 // Asignar fecha de vencimiento, usando un valor por defecto si no está presente
                 $fechaVencimiento = isset($inventario['fecha_vencimiento']) 
                     ? date('Y-m-d', strtotime($inventario['fecha_vencimiento'])) 
                     : '2099-01-01';
-    
-                // Verificar si ya existe un registro de inventario con el mismo artículo, almacén y fecha de vencimiento
-                $inventarioExistente = Inventario::where('idarticulo', $inventario['idarticulo'])
-                    ->where('idalmacen', $inventario['idalmacen'])
-                    ->whereDate('fecha_vencimiento', $fechaVencimiento)
-                    ->first();
-    
-                if ($inventarioExistente) {
-                    // Si existe, actualizar los valores de saldo_stock y cantidad
-                    $cantidad = $inventario['cantidad'] ?? 0;
-                    $inventarioExistente->saldo_stock += $cantidad;
-                    $inventarioExistente->cantidad += $cantidad;
-                    $inventarioExistente->save();
-                } else {
-                    // Si no existe, crear un nuevo registro
-                    $cantidad = $inventario['cantidad'] ?? 0;
-                    Inventario::create([
-                        'idalmacen' => $inventario['idalmacen'],
-                        'idarticulo' => $inventario['idarticulo'],
-                        'fecha_vencimiento' => $fechaVencimiento,
-                        'saldo_stock' => $cantidad,
-                        'cantidad' => $cantidad
-                    ]);
-                }
+
+                // Crear un nuevo registro siempre
+                $cantidad = $inventario['cantidad'] ?? 0;
+                Inventario::create([
+                    'idalmacen' => $inventario['idalmacen'],
+                    'idarticulo' => $inventario['idarticulo'],
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'saldo_stock' => $cantidad,
+                    'cantidad' => $cantidad
+                ]);
             }
-    
+
             DB::commit();
             return response()->json([
                 'status' => 'success',
                 'message' => 'Inventarios guardados exitosamente'
             ], 200);
-    
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Error al registrar inventarios: " . $e->getMessage());
@@ -79,86 +65,47 @@ class InventarioController extends Controller
             ], 500);
         }
     }
-    
 
-    
     public function store(Request $request)
     {
-        Log::info("al menos llegaa xddd");
+        if (!$request->has('inventarios')) {
+            return response()->json(['error' => 'No se enviaron inventarios'], 400);
+        }
 
-        if ($request->has('inventarios')) {
+        DB::beginTransaction();
+        try {
             $inventarios = $request->input('inventarios');
-            Log::info("llego");
+            
             foreach ($inventarios as $inventario) {
-                // Verificar si el idarticulo existe en la tabla de articulos
                 $articulo = Articulo::find($inventario['idarticulo']);
-                Log::info("llego2");
-
+                
                 if ($articulo) {
-                    // El idarticulo existe, obtener todos los inventarios con el mismo idarticulo
-                    $inventariosExistente = Inventario::where('idarticulo', $inventario['idarticulo'])
-                        ->whereDate('fecha_vencimiento', $inventario['fecha_vencimiento'])
-                        ->get();
-                    Log::info("El articulo existe");
-
-                    $foundInventory = false;
-                    foreach ($inventariosExistente as $invExistente) {
-                        Log::info("El inventario");
-                        $fechaVencimiento = new \DateTime($invExistente->fecha_vencimiento);
-
-                        // Comparar solo la fecha de vencimiento (día, mes y año)
-                        if ($fechaVencimiento->format('Y-m-d') === date('Y-m-d', strtotime($inventario['fecha_vencimiento'])) && $invExistente->idalmacen == intval($inventario['idalmacen']) ) {
-                            // Verificar si el índice 'cantidad' está presente antes de usarlo
-                            Log::info("se comparo");
-
-                            if (isset($inventario['cantidad'])) {
-                                // Si la fecha de vencimiento coincide, sumar el saldo_stock
-                                $invExistente->saldo_stock += $inventario['cantidad'];
-                                $invExistente->cantidad += $inventario['cantidad'];
-                                $invExistente->save();
-                                $foundInventory = true;
-                                break;
-                            } else {
-                                // Manejar el caso en el que el índice 'cantidad' no está presente
-                                Log::info("El índice 'cantidad' no está presente en el array");
-                            }
-                        }
-                    }
-
-                    if (!$foundInventory) {
-                        // Si no hay coincidencias de fecha de vencimiento, registrar normalmente
-                        $newInventario = new Inventario();
-                        $newInventario->idalmacen = $inventario['idalmacen'];
-                        $newInventario->idarticulo = $inventario['idarticulo'];
-                        $newInventario->fecha_vencimiento = $inventario['fecha_vencimiento'];
-
-                        // Verificar si el índice 'cantidad' está presente antes de usarlo
-                        if (isset($inventario['cantidad'])) {
-                            $newInventario->saldo_stock = $inventario['cantidad'];
-                            $newInventario->cantidad = $inventario['cantidad'];
-                        } else {
-                            // Asignar un valor por defecto en caso de que el índice 'cantidad' no esté presente
-                            $newInventario->saldo_stock = 0;
-                            $newInventario->cantidad = 0;
-
-                            Log::info("El índice 'cantidad' no está presente en el array");
-                        }
-
-                        $newInventario->save();
-                    }
+                    // Crear nuevo registro siempre
+                    $newInventario = new Inventario();
+                    $newInventario->idalmacen = $inventario['idalmacen'];
+                    $newInventario->idarticulo = $inventario['idarticulo'];
+                    $newInventario->fecha_vencimiento = $inventario['fecha_vencimiento'] ?? '2099-01-01';
+                    $newInventario->saldo_stock = $inventario['cantidad'] ?? 0;
+                    $newInventario->cantidad = $inventario['cantidad'] ?? 0;
+                    $newInventario->save();
                 } else {
-                    // El idarticulo no existe, registrar normalmente
-                    Log::info("No existe el articulo");
+                    Log::warning("Artículo no encontrado: " . $inventario['idarticulo']);
                 }
             }
 
-            // Aquí puedes retornar una respuesta al cliente para indicar que los datos fueron guardados exitosamente
+            DB::commit();
             return response()->json(['message' => 'Inventarios guardados exitosamente'], 200);
-        }
 
-        // Si no se enviaron inventarios en la solicitud, puedes retornar una respuesta de error
-        return response()->json(['error' => 'No se enviaron inventarios'], 400);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error al registrar inventarios: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al guardar inventarios'
+            ], 500);
+        }
     }
+
     public function generarReporteInversion(Request $request)
     {
         $idAlmacen = $request->idAlmacen;
@@ -423,39 +370,41 @@ class InventarioController extends Controller
     {
         if (!$request->ajax())
             return redirect('/');
+        
         $idAlmacen = $request->idAlmacen;
         $criterio = $request->criterio;
         $buscar = $request->buscar;
+        $incluirVencimiento = $request->input('incluir_vencimiento', false);
     
         if ($tipo === 'item') {
             $inventarios = Inventario::join('almacens', 'inventarios.idalmacen', '=', 'almacens.id')
                 ->join('articulos', 'inventarios.idarticulo', '=', 'articulos.id')
-                ->join('proveedores', 'articulos.idproveedor', '=', 'proveedores.id')
-                ->join('personas', 'proveedores.id', '=', 'personas.id')
                 ->select(
+                    'articulos.id as idarticulo',
                     'articulos.nombre as nombre_producto',
                     'articulos.unidad_envase',
                     'articulos.precio_costo_unid',
                     'almacens.nombre_almacen',
-                    'inventarios.cantidad',
+                    DB::raw('SUM(inventarios.cantidad) as cantidad'),
                     DB::raw('SUM(inventarios.saldo_stock) as saldo_stock_total'),
                     DB::raw('SUM(inventarios.saldo_stock * articulos.precio_costo_unid) as inversion_total')
                 )
                 ->where('inventarios.idalmacen', '=', $idAlmacen)
-                ->groupBy('articulos.nombre', 'almacens.nombre_almacen', 'articulos.unidad_envase', 'inventarios.cantidad', 'articulos.precio_costo_unid')
-                ->orderBy('articulos.nombre')
-                ->orderBy('almacens.nombre_almacen');
+                ->groupBy('articulos.id', 'articulos.nombre', 'articulos.unidad_envase', 'articulos.precio_costo_unid', 'almacens.nombre_almacen')
+                ->orderBy('articulos.nombre');
+    
         } else if ($tipo === 'lote') {
             $inventarios = Inventario::join('almacens', 'inventarios.idalmacen', '=', 'almacens.id')
                 ->join('articulos', 'inventarios.idarticulo', '=', 'articulos.id')
                 ->select(
+                    'inventarios.id',
+                    'articulos.id as idarticulo',
                     'articulos.nombre as nombre_producto',
                     'articulos.unidad_envase',
                     'articulos.precio_costo_unid',
                     'inventarios.saldo_stock',
                     'inventarios.cantidad',
                     DB::raw('(inventarios.saldo_stock * articulos.precio_costo_unid) as inversion_lote'),
-                    DB::raw('DATE_FORMAT(inventarios.created_at, "%Y-%m-%d") as fecha_ingreso'),
                     'inventarios.fecha_vencimiento',
                     'almacens.nombre_almacen',
                 )
@@ -464,13 +413,9 @@ class InventarioController extends Controller
         }
     
         if (!empty($buscar)) {
-            $inventarios = $inventarios->where(function ($query) use ($criterio, $buscar, $tipo) {
-                $query->where('articulos.' . $criterio, 'like', '%' . $buscar . '%');
-                if ($tipo === 'lote') {
-                    $query->orWhere('articulos.' . $criterio, 'like', '%' . $buscar . '%');
-                }
-            });
+            $inventarios = $inventarios->where('articulos.'.$criterio, 'like', '%' . $buscar . '%');
         }
+    
         $inventarios = $inventarios->paginate(10);
     
         return [
@@ -571,6 +516,44 @@ class InventarioController extends Controller
             Log::error('Error en la importación: ' . $e->getMessage());
 
             return response()->json(['error' => 'Error en la importación', 'mensaje' => $e->getMessage()], 500);
+        }
+    }
+    public function verHistorial($idArticulo)
+    {
+        try {
+            Log::info("Solicitud de historial recibida para ID: " . $idArticulo);
+            
+            $historial = DB::table('inventarios')
+                ->join('almacens', 'inventarios.idalmacen', '=', 'almacens.id')
+                ->select(
+                    'inventarios.fecha_vencimiento as fecha',
+                    'inventarios.cantidad as cantidadComprada',
+                    DB::raw('(inventarios.cantidad - inventarios.saldo_stock) as cantidadAgotada'),
+                    'almacens.nombre_almacen',
+                    DB::raw('DATE_FORMAT(inventarios.created_at, "%Y-%m-%d") as fecha_ingreso')
+                )
+                ->where('inventarios.idarticulo', $idArticulo)
+                ->orderBy('inventarios.created_at', 'desc')
+                ->get();
+    
+            if ($historial->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No se encontró historial para este producto',
+                    'historial' => []
+                ], 200);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'historial' => $historial
+            ], 200);
+        } catch (Exception $e) {
+            Log::error('Error al obtener el historial: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el historial: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

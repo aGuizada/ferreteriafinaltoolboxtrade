@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Resibo de Venta (Rollo)</title>
+    <title>Recibo de Venta (Rollo)</title>
     <style>
         /* Estilos optimizados para impresión térmica 80mm */
         @page { margin: 0;  }
@@ -79,6 +79,9 @@
             margin: 3px auto;
             text-align: center;
         }
+        .discount-row {
+            color: #ff0000;
+        }
     </style>
 </head>
 <body>
@@ -87,7 +90,7 @@
         @if(isset($logoPath) && file_exists($logoPath))
             <img src="{{ $logoPath }}" class="logo" alt="Logo">
         @endif
-        <div class="titulo-recibo">Resibo de venta</div>
+        <div class="titulo-recibo">PROFORMA</div>
         <div>No. {{ str_pad($venta->id ?? '00000', 5, '0', STR_PAD_LEFT) }}</div>
     </div>
 
@@ -115,12 +118,16 @@
             </tr>
         </thead>
         <tbody>
-            @php $total = 0; @endphp
+            @php 
+                $subtotalSinDescuento = 0;
+                $totalConDescuento = $venta->total ?? 0;
+                $descuento = $venta->descuento ?? 0;
+            @endphp
             @if(isset($venta->detalles) && count($venta->detalles) > 0)
                 @foreach($venta->detalles as $detalle)
                     @php
                         $subtotal = $detalle->cantidad * $detalle->precio;
-                        $total += $subtotal;
+                        $subtotalSinDescuento += $subtotal;
                     @endphp
                     <tr>
                         <td>{{ isset($detalle->producto->nombre) ? strtoupper(substr($detalle->producto->nombre, 0, 20)) : 'PRODUCTO' }}</td>
@@ -135,9 +142,19 @@
             @endif
         </tbody>
         <tfoot>
+            @if($descuento > 0)
+            <tr>
+                <td colspan="2" class="align-right">SUBTOTAL Bs.</td>
+                <td class="align-right">{{ number_format($subtotalSinDescuento, 2) }}</td>
+            </tr>
+            <tr class="discount-row">
+                <td colspan="2" class="align-right">DESCUENTO Bs.</td>
+                <td class="align-right">-{{ number_format($descuento, 2) }}</td>
+            </tr>
+            @endif
             <tr class="totals">
                 <td colspan="2" class="align-right">TOTAL Bs.</td>
-                <td class="align-right">{{ number_format($total, 2) }}</td>
+                <td class="align-right">{{ number_format($totalConDescuento, 2) }}</td>
             </tr>
             @if(isset($venta->monto_recibido))
             <tr>
@@ -146,7 +163,7 @@
             </tr>
             <tr>
                 <td colspan="2" class="align-right">Cambio Bs.</td>
-                <td class="align-right">{{ number_format($venta->monto_recibido - $total, 2) }}</td>
+                <td class="align-right">{{ number_format($venta->monto_recibido - $totalConDescuento, 2) }}</td>
             </tr>
             @endif
         </tfoot>
@@ -165,10 +182,6 @@
     </div>
     @endif
 
-    <!-- Pie de página -->
-    <div class="footer">
-        {{ $empresa->leyenda_factura ?? '¡Gracias por su compra!' }}<br>
-        {{ $empresa->horario_atencion ?? 'Atendemos de Lunes a Viernes 8:00-18:00' }}
-    </div>
+
 </body>
 </html>

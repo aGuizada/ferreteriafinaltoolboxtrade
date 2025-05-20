@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-
+use App\Empresa;
 class CotizacionVentaController extends Controller
 {
     /**
@@ -197,44 +197,64 @@ class CotizacionVentaController extends Controller
     /**
      * Generar PDF de la cotización
      */
-    public function pdf($id)
-    {
-        $venta = CotizacionVenta::join('personas', 'cotizacion_venta.idcliente', '=', 'personas.id')
-            ->join('users', 'cotizacion_venta.idusuario', '=', 'users.id')
-            ->select(
-                'cotizacion_venta.id', 'cotizacion_venta.created_at', 'cotizacion_venta.impuesto',
-                'cotizacion_venta.total', 'cotizacion_venta.validez', 'cotizacion_venta.plazo_entrega',
-                'personas.nombre', 'personas.tipo_documento', 'personas.num_documento',
-                'personas.direccion', 'personas.email', 'personas.telefono', 'users.usuario'
-            )
-            ->where('cotizacion_venta.id', '=', $id)
-            ->get();
+  
+     public function pdf(Request $request, $id)
+     {
+       
+         $format = $request->query('format', 'standard');
     
-        $detalles = DetalleCotizacionVenta::join('articulos', 'detalle_cotizacion.idarticulo', '=', 'articulos.id')
-            ->select(
-                'detalle_cotizacion.cantidad', 'detalle_cotizacion.precio',
-                'detalle_cotizacion.descuento', 'articulos.nombre as articulo'
-            )
-            ->where('detalle_cotizacion.idcotizacion', '=', $id)
-            ->get();
-    
-        $fechaVenta = $venta[0]->created_at->format('d/m/Y');
-        $horaVenta = $venta[0]->created_at->format('H:i');
-        $fechaValidez = Carbon::parse($venta[0]->validez)->format('d/m/Y');
-        $diasValidez = $venta[0]->plazo_entrega;
-    
-        $pdf = \PDF::loadView('pdf.cotizacionpdf', [
-            'venta' => $venta,
-            'detalles' => $detalles,
-            'fechaVenta' => $fechaVenta,
-            'horaVenta' => $horaVenta,
-            'fechaValidez' => $fechaValidez,
-            'diasValidez' => $diasValidez
-        ]);
+         $venta = CotizacionVenta::join('personas', 'cotizacion_venta.idcliente', '=', 'personas.id')
+             ->join('users', 'cotizacion_venta.idusuario', '=', 'users.id')
+             ->select(
+                 'cotizacion_venta.id', 'cotizacion_venta.created_at', 'cotizacion_venta.impuesto',
+                 'cotizacion_venta.total', 'cotizacion_venta.validez', 'cotizacion_venta.plazo_entrega',
+                 'cotizacion_venta.tiempo_entrega', 'cotizacion_venta.lugar_entrega', 'cotizacion_venta.nota',
+                 'personas.nombre', 'personas.tipo_documento', 'personas.num_documento',
+                 'personas.direccion', 'personas.email', 'personas.telefono', 'users.usuario'
+             )
+             ->where('cotizacion_venta.id', '=', $id)
+             ->get();
+     
+         $detalles = DetalleCotizacionVenta::join('articulos', 'detalle_cotizacion.idarticulo', '=', 'articulos.id')
+             ->select(
+                 'detalle_cotizacion.cantidad', 'detalle_cotizacion.precio',
+                 'detalle_cotizacion.descuento', 'articulos.nombre as articulo'
+             )
+             ->where('detalle_cotizacion.idcotizacion', '=', $id)
+             ->get();
+     
         
-        return $pdf->download('cotizacion-' . $id . '.pdf');
-    }
-
+         $fechaVenta = $venta[0]->created_at->format('d/m/Y');
+         $horaVenta = $venta[0]->created_at->format('H:i');
+         $fechaValidez = Carbon::parse($venta[0]->validez)->format('d/m/Y');
+         $diasValidez = $venta[0]->plazo_entrega;
+     
+       
+         $empresa = Empresa::first();
+         if (!$empresa) {
+             return response()->json(['error' => 'NO SE ENCONTRÓ LA EMPRESA'], 404);
+         }
+     
+      
+         $view = $format === 'rollo' ? 'pdf.cotizacion_rollo' : 'pdf.cotizacionpdf';
+     
+      
+         $pdf = \PDF::loadView($view, [
+             'venta' => $venta,
+             'detalles' => $detalles,
+             'fechaVenta' => $fechaVenta,
+             'horaVenta' => $horaVenta,
+             'fechaValidez' => $fechaValidez,
+             'diasValidez' => $diasValidez,
+             'empresa' => $empresa
+         ]);
+     
+         if ($format === 'rollo') {
+             $pdf->setPaper([0, 0, 226.77, 600], 'portrait'); 
+         }
+     
+         return $pdf->download('cotizacion-' . $id . '.pdf');
+     }
     /**
      * Desactivar cotización
      */

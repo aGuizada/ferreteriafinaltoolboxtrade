@@ -29,6 +29,7 @@ class CreateVentasTable extends Migration
             $table->dateTime('fecha_hora');
             $table->decimal('impuesto', 4, 2);
             $table->decimal('total', 11, 2);
+            $table->decimal('descuento', 11, 2)->default(0);
             $table->string('estado', 20);
             $table->integer('idcaja')->unsigned();
             $table->foreign('idcaja')->references('id')->on('cajas');

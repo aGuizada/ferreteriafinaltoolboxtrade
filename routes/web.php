@@ -931,7 +931,7 @@ Route::get('/inventarios/generar-reporte-inversion', 'InventarioController@gener
 Route::get('/venta', 'VentaController@index')->name('venta.index');
 Route::get('/venta/obtenerCabecera', 'VentaController@obtenerCabecera');
 Route::get('/venta/obtenerDetalles', 'VentaController@obtenerDetalles');
-
+Route::get('/inventarios/historial/{idArticulo}', 'InventarioController@verHistorial')->name('inventarios.historial');
 // Rutas para imprimir comprobantes
 Route::get('/resivo/imprimirRollo/{id}', 'VentaController@imprimirResivoRollo');
 Route::get('/resivo/imprimirCarta/{id}', 'VentaController@imprimirResivoCarta');

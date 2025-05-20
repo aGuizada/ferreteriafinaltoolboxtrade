@@ -98,14 +98,14 @@
       <i class="bi bi-eye"></i>
     </button>
     <button
-      type="button"
-      class="btn btn-md btn-primary"
-      title="Generar PDF"
-      @click="pdfVenta(venta.id)"
-      style="min-width: 40px;"
-    >
-      <i class="bi bi-file-pdf"></i>
-    </button>
+    type="button"
+    class="btn btn-md btn-primary"
+    title="Generar PDF"
+    @click="promptPdfFormat(venta.id)"
+    style="min-width: 40px;"
+  >
+    <i class="bi bi-file-pdf"></i>
+  </button>
     <button
       type="button"
       class="btn btn-md btn-warning"
@@ -176,47 +176,71 @@
                 </h5>
                 
                 <!-- Información principal -->
-                <div class="row">
-                  <div class="col-md-4">
-                    <div class="form-group">
-                      <label class="font-weight-bold text-dark">Cliente <span class="text-danger">*</span></label>
-                      <v-select 
-                        :on-search="selectCliente" 
-                        label="num_documento" 
-                        :options="arrayCliente"
-                        placeholder="Buscar por documento..." 
-                        :onChange="getDatosCliente"
-                        v-model="clienteSeleccionado"
-                        class="style-chooser"
-                      >
-                      </v-select>
-                    </div>
-                  </div>
-                  <div class="col-md-2">
-                    <div class="form-group">
-                      <label class="text-muted">Documento</label>
-                      <input type="text" class="form-control bg-light" v-model="nitcliente" readonly>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                      <label class="font-weight-bold text-dark">Almacén <span class="text-danger">*</span></label>
-                      <select class="form-control" v-model="AlmacenSeleccionado" @change="getDatosAlmacen">
-                        <option value="0" disabled>Seleccione</option>
-                        <option v-for="opcion in arrayAlmacenes" :key="opcion.id" :value="opcion.id">
-                          {{ opcion.nombre_almacen }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="form-group">
-                      <label class="font-weight-bold text-dark">Días de validez <span class="text-danger">*</span></label>
-                      <input type="number" class="form-control" v-model="dias_validez">
-                    </div>
-                  </div>
-                </div>
-  
+                <template>
+  <div>
+    <div class="row">
+      <!-- Cliente and Documento -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="font-weight-bold text-dark">Cliente <span class="text-danger">*</span></label>
+          <v-select 
+            :on-search="selectCliente" 
+            label="num_documento" 
+            :options="arrayCliente"
+            placeholder="Buscar por documento..." 
+            :onChange="getDatosCliente"
+            v-model="clienteSeleccionado"
+            class="style-chooser"
+          >
+          </v-select>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="text-muted">Documento</label>
+          <input type="text" class="form-control bg-light" v-model="nitcliente" readonly>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Almacén and Días de Validez -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="font-weight-bold text-dark">Almacén <span class="text-danger">*</span></label>
+          <select class="form-control" v-model="AlmacenSeleccionado" @change="getDatosAlmacen">
+            <option value="0" disabled>Seleccione</option>
+            <option v-for="opcion in arrayAlmacenes" :key="opcion.id" :value="opcion.id">
+              {{ opcion.nombre_almacen }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="font-weight-bold text-dark">Días de validez <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" v-model="dias_validez">
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Tiempo de Entrega and Lugar de Entrega -->
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="font-weight-bold text-dark">Tiempo de Entrega <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" v-model="tiempo_entrega" placeholder="Ingrese tiempo de entrega">
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label class="font-weight-bold text-dark">Lugar de Entrega <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" v-model="lugar_entrega" placeholder="Ingrese lugar de entrega">
+        </div>
+      </div>
+    </div>
+  </div>
+</template> 
                 <!-- Separador con título -->
                 <div class="section-divider mt-3 mb-4">
                   <span>Agregar artículos</span>
@@ -580,6 +604,7 @@
   <script>
   import vSelect from 'vue-select';
   import Button from "primevue/button";
+  import Swal from 'sweetalert2';
 export default {
   components: {
     Button,
@@ -627,9 +652,9 @@ export default {
       precio: 0,
       
       // Datos cotización
-      dias_validez: 7,
-      tiempo_entrega: "Inmediata",
-      lugar_entrega: "Deposito",
+      dias_validez: 5,
+      tiempo_entrega: "",
+      lugar_entrega: "",
       forma_pago: 'Contado',
       estado_cotizacion: 'En espera',
       titulocard: '',
@@ -1144,11 +1169,29 @@ export default {
         });
     },
     
-    pdfVenta(id) {
-      window.open('/cotizacionventa/pdf/' + id, '_blank');
-    },
-    
-    // MODAL
+ 
+    promptPdfFormat(id) {
+  Swal.fire({
+    title: 'Seleccione el formato de impresión',
+    showCancelButton: true,
+    confirmButtonText: 'Carta',
+    cancelButtonText: 'Rollo',
+    showCloseButton: true,
+    reverseButtons: true,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.generatePdf(id, 'carta');
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+      this.generatePdf(id, 'rollo');
+    }
+  });
+},
+
+  generatePdf(id, format) {
+    const url = `/cotizacionventa/pdf/${id}?format=${format}`;
+    window.open(url, '_blank');
+  },
+
     abrirModal() {
       this.listarArticulo("", "");
       this.arrayArticulo = [];

@@ -23,7 +23,7 @@ class Venta extends Model
         'estado',
         'monto_recibido',
         'cambio',
-        // Campos para ventas adelantadas
+         'descuento',
         'direccion_entrega',
         'telefono_contacto',
         'fecha_entrega',
