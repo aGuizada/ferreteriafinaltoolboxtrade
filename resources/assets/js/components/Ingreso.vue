@@ -23,8 +23,18 @@
                             class="form-control" 
                             placeholder="Buscar..."
                         >
+                        <button
+  type="button"
+  @click="descargarReportePDF"
+  class="btn btn-sm btn-primary"
+  style="margin-left: 5px;"
+>
+  <i class="fas fa-file-pdf"></i> Descargar PDF
+</button>
                     </div>
+
                 </div>
+ 
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-sm">
@@ -65,7 +75,15 @@
                                       <span class="pi pi-print p-button-icon"></span>
                                       <span class="p-button-label">&nbsp;</span>
                                     </button>
-
+                                    <button
+                                        type="button"
+                                        @click="generarReporteCompra(ingreso.id)"
+                                        class="btn btn-sm p-button p-component p-button-icon-only"
+                                        style="background-color: orange; border-color: orange; color: white; margin-left: 5px;"
+                                    >
+                                        <span class="pi pi-download p-button-icon"></span>
+                                        <span class="p-button-label">&nbsp;</span>
+                                    </button>
                                     <template v-if="ingreso.estado == 'Registrado'">
                                         <button type="button" class="btn btn-danger btn-sm"
                                             @click="desactivarIngreso(ingreso.id)">
@@ -754,6 +772,26 @@ export default {
         listarArticuloProveedor(dato) {
             this.idproveedor = dato.idproveedor;
         },
+        descargarReportePDF() {
+        // Open the PDF in a new tab
+        window.open('/reporteComprasPDF', '_blank');
+    },
+    generarReporteCompra(id) {
+        swal({
+            title: "Selecciona el formato del reporte",
+            text: "¿En qué formato deseas generar el reporte?",
+            type: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Rollo",
+            cancelButtonText: "Carta",
+            reverseButtons: true
+        }).then((result) => {
+            const formato = result.value ? 'roll' : 'letter';
+            window.open(`/ingreso/generar-reporte-compra/${id}/${formato}`, '_blank');
+        });
+    },
 
         desactivarIngreso(id) {
             swal({

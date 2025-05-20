@@ -498,4 +498,57 @@ class IngresoController extends Controller
             ], 500);
         }
     }
+    public function generarReportePDF()
+{
+    $compras = Ingreso::join("personas", "ingresos.idproveedor", "=", "personas.id")
+        ->join("users", "ingresos.idusuario", "=", "users.id")
+        ->select(
+            "ingresos.fecha_hora",
+            "ingresos.num_comprobante",
+            "personas.nombre as proveedor",
+            "users.usuario",
+            "ingresos.tipo_comprobante",
+            "ingresos.estado",
+            "ingresos.total"
+        )
+        ->orderBy("ingresos.id", "desc")
+        ->get();
+
+    $pdf = PDF::loadView('pdf.reporte_compras', compact('compras'));
+    return $pdf->download('reporte_compras.pdf');
+}
+public function generarReporteCompra($idIngreso, $formato)
+{
+    $ingreso = Ingreso::join("personas", "ingresos.idproveedor", "=", "personas.id")
+        ->join("users", "ingresos.idusuario", "=", "users.id")
+        ->select(
+            "ingresos.id",
+            "ingresos.tipo_comprobante",
+            "ingresos.serie_comprobante",
+            "ingresos.num_comprobante",
+            "ingresos.created_at",
+            "ingresos.impuesto",
+            "ingresos.total",
+            "ingresos.estado",
+            "personas.nombre",
+            "users.usuario"
+        )
+        ->where("ingresos.id", "=", $idIngreso)
+        ->first();
+
+    $detalles = DetalleIngreso::join("articulos", "detalle_ingresos.idarticulo", "=", "articulos.id")
+        ->select("detalle_ingresos.cantidad", "detalle_ingresos.precio", "articulos.nombre as articulo")
+        ->where("detalle_ingresos.idingreso", "=", $idIngreso)
+        ->get();
+
+    $view = $formato === 'roll' ? 'pdf.reporte_compra_rollo' : 'pdf.reporte_compra_carta';
+    $pdf = PDF::loadView($view, compact('ingreso', 'detalles'));
+
+    if ($formato === 'roll') {
+        $pdf->setPaper([0, 0, 226.77, 600], 'portrait'); // Set dimensions for roll format
+    }
+
+    $filename = $formato === 'roll' ? 'reporte_compra_rollo.pdf' : 'reporte_compra_carta.pdf';
+    return $pdf->download($filename);
+}
 }
