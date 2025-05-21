@@ -55,13 +55,9 @@
                                     </div>
                                     <div class="p-field p-col-12 p-md-3">
                                         <label for="tipoComprobante">Tipo Comprobante</label>
-                                        <Dropdown id="tipoComprobante" class="p-inputtext-sm" v-model="form.tipo_comprobante" :options="lista_comprobantes" optionLabel="nombre" placeholder="Lista comprobantes ..." :class="{'p-invalid': submitted && v$.form.tipo_comprobante.$invalid}"/>
-                                        <small class="p-error" v-if="(submitted && v$.form.tipo_comprobante.required.$invalid)"><strong>Comprobante es obligatorio.</strong></small>
+                                        <InputText id="tipoComprobante" class="p-inputtext-sm" v-model="form.tipo_comprobante" disabled />
                                     </div>
-                                    <div class="p-field p-col-12 p-md-3">
-                                        <label for="serieComprobante">Serie Comprobante</label>
-                                        <InputText id="serieComprobante" class="p-inputtext-sm" v-model="form.serie_comprobante" placeholder="Serie ..." />
-                                    </div>
+                                    
                                     <div class="p-field p-col-12 p-md-3">
                                         <label for="numeroComprobante">Número Comprobante</label>
                                         <InputText id="numeroComprobante" class="p-inputtext-sm" v-model="form.num_comprobante" placeholder="Número ..." />
@@ -103,6 +99,7 @@
                                         <Column selectionMode="multiple" :styles="{'max-width':'10%'}"></Column>
                                         <Column field="codigo" header="Codigo" :sortable="true" :styles="{'max-width':'15%'}"></Column>
                                         <Column field="nombre" header="Nombre" :sortable="true" :styles="{'max-width':'35%'}"></Column>
+                                        <Column field="marca" header="Marca" :sortable="true" :styles="{'max-width':'15%'}"></Column>
                                         <Column field="precio_costo_unid" header="Precio Unidad" :sortable="true" :styles="{'max-width':'20%'}">
                                             <template #body="slotProps">
                                                 {{ formatCurrency(slotProps.data.precio_costo_unid) }}
@@ -244,6 +241,7 @@
                                     </template>
                                 </Column>
                                 <Column field="nombre" header="Nombre" :sortable="true" :styles="{width:'25%'}"></Column>
+                                <Column field="nombre_marca" header="Marca" :sortable="true" :styles="{'max-width':'15%'}"></Column>
                                 <Column field="nombre_proveedor" header="Proveedor" :sortable="true" :styles="{width:'15%'}"></Column>
                                 <Column field="unidad_envase" header="Unidades por Paquete" :sortable="true" :styles="{width:'10%'}"></Column>
                                 <Column field="precio_costo_unid" header="Costo Unidad" :sortable="true" :styles="{width:'15%'}">

@@ -30,7 +30,7 @@ export default {
 
     data() {
         return {
-
+            
             activeIndex: 0,
             submitted: false,
             form: {
@@ -45,7 +45,6 @@ export default {
             ],
             lista_comprobantes: [
                 {nombre: 'Recibo', id: 1},
-                {nombre: 'Nota de Ingreso', id: 2},
             ],
 
             form_cuotas: {
@@ -113,7 +112,9 @@ export default {
                     }
                 ]},
             ]
+            
         }
+        
     },
 
     validations() {
@@ -181,6 +182,15 @@ export default {
     },
 
     methods: {
+
+        formatCurrency(value) {
+            if (value === null || value === undefined) return '';
+            return new Intl.NumberFormat('es-BO', {
+                style: 'currency',
+                currency: 'BOB',
+                minimumFractionDigits: 2
+            }).format(value);
+        },
         toggleFechaVencimiento(articulo) {
             if (articulo.fecha_vencimiento) {
                 articulo.fecha_vencimiento = null;
@@ -825,34 +835,50 @@ export default {
                     });
         },
 
-        selectProveedor(event) {
-            let me = this;
-
-            if (!event.query.trim().length) {
-                var url = `/proveedor?page=${1}&buscar=${''}&criterio=${'todos'}&por_pagina=${3}`;
-                axios.get(url).then(function (response) {
-                        var respuesta = response.data;
-                        me.array_proveedores = respuesta.personas.data;
-                        me.loading = false;
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                        me.loading = false;
-                    });
+        selectProveedor(event) { 
+            let me = this; 
+        
+            if (!event.query.trim().length) { 
+                var url = `/proveedor?page=${1}&buscar=${''}&criterio=${'todos'}&por_pagina=${3}`; 
+                axios.get(url).then(function (response) { 
+                        var respuesta = response.data; 
+                        me.array_proveedores = respuesta.personas.data; 
+                        me.loading = false; 
+                    }) 
+                    .catch(function (error) { 
+                        console.log(error); 
+                        me.loading = false; 
+                    }); 
+            } 
+            else 
+            { 
+                this.loading = true; 
+        
+                var url = `/proveedor?page=${1}&buscar=${me.form.proveedorSeleccionado}&criterio=${'todos'}&por_pagina=${3}`; 
+                axios.get(url).then(function (response) { 
+                        var respuesta = response.data; 
+                        me.array_proveedores = respuesta.personas.data; 
+                        me.loading = false; 
+                    }) 
+                    .catch(function (error) { 
+                        console.log(error); 
+                        me.loading = false; 
+                    }); 
             }
-            else
-            {
-                this.loading = true;
-
-                var url = `/proveedor?page=${1}&buscar=${me.form.proveedorSeleccionado}&criterio=${'todos'}&por_pagina=${3}`;
-                axios.get(url).then(function (response) {
-                        var respuesta = response.data;
-                        me.array_proveedores = respuesta.personas.data;
-                        me.loading = false;
+            
+            // Agregar este código para cargar los artículos del proveedor seleccionado
+            if (me.form.proveedorSeleccionado && me.form.proveedorSeleccionado.id) {
+                axios.get(`/articulo/listarArticulosProveedor/${me.form.proveedorSeleccionado.id}`)
+                    .then(function(response) {
+                        me.array_articulos_proveedor = response.data;
+                        
+                        // Agregar este console.log para ver la estructura de los datos
+                        if (me.array_articulos_proveedor.length > 0) {
+                            console.log("Datos del primer artículo:", me.array_articulos_proveedor[0]);
+                        }
                     })
-                    .catch(function (error) {
-                        console.log(error);
-                        me.loading = false;
+                    .catch(function(error) {
+                        console.error("Error al cargar artículos:", error);
                     });
             }
         },
@@ -915,6 +941,7 @@ export default {
 
     created() {
         this.minDate = new Date();
+        this.form.tipo_comprobante = "RECIBO";
     },
 
     mounted() {
