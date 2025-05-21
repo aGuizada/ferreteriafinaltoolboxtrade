@@ -277,6 +277,12 @@
                   </div>
                 </div>
                 <div class="datos-item">
+                  <label>Pago inicial:</label>
+                  <div>
+                    {{ creditoInfo && creditoInfo.pago_inicial ? formatCurrency(creditoInfo.pago_inicial) : "0.00" }}
+                  </div>
+                </div>
+                <div class="datos-item">
                   <label>Número de cuotas:</label>
                   <div>
                     {{ creditoInfo ? creditoInfo.numero_cuotas : "N/A" }}
@@ -800,8 +806,15 @@
                   <InputNumber id="tiempoDias" v-model="tiempo_diaz" :useGrouping="false" />
                   <span class="p-inputgroup-addon">Dias</span>
                 </div>
-              </div>
 
+              </div>
+              <div class="form-group" style="max-width: 200px;">
+                <label for="pago_inicial">Pago Inicial:</label>
+                <div class="input-group">
+                  <span class="input-group-text">Bs.</span>
+                  <input type="number" id="pago_inicial" v-model="pago_inicial" class="form-control" min="0" :max="calcularTotal" step="0.01" @input="validarPagoInicial">
+                </div>
+              </div>
               <div class="p-col-4">
                 <div class="p-field">
                   <label class="font-weight-bold">Total</label>
@@ -1347,7 +1360,7 @@ export default {
       saldosNegativos: 1,
       mostrarSpinner: false,
       impuesto: 0.18, // Añadido valor por defecto para el impuesto
-
+      pago_inicial: 0,
       // Búsqueda y listados
       buscar: "",
       buscarA: "",
@@ -1541,6 +1554,15 @@ export default {
     },
   },
   methods: {
+
+  validarPagoInicial() {
+    if (parseFloat(this.pago_inicial) > this.calcularTotal) {
+      this.pago_inicial = this.calcularTotal;
+    }
+    if (this.numero_cuotas && this.tiempo_diaz) {
+      this.generarCuotas();
+    }
+  },
     aplicarDescuento() {
   const discountValue = parseFloat(this.descuento) || 0;
   const totalBeforeDiscount = this.calcularTotalSinDescuento;
@@ -2500,48 +2522,66 @@ export default {
     },
 
     // Métodos para ventas a crédito
-    generarCuotas() {
-      if (!this.numero_cuotas || !this.tiempo_diaz) {
-        Swal.fire({
-          icon: "warning",
-          title: "Campos incompletos",
-          text: "Ingrese la cantidad de cuotas y frecuencia de pagos",
-        });
-        return;
-      }
+  generarCuotas() { 
+  if (!this.numero_cuotas || !this.tiempo_diaz) { 
+    Swal.fire({ 
+      icon: "warning", 
+      title: "Campos incompletos", 
+      text: "Ingrese la cantidad de cuotas y frecuencia de pagos", 
+    }); 
+    return; 
+  } 
 
-      this.cuotas = [];
-      const fechaHoy = new Date();
-      const montoEntero = Math.floor(this.calcularTotal / this.numero_cuotas);
-      const montoDecimal = (
-        this.calcularTotal -
-        montoEntero * (this.numero_cuotas - 1)
-      ).toFixed(2);
-      let saldoRestante = this.calcularTotal;
+  this.cuotas = []; 
+  const fechaHoy = new Date(); 
+  
+  // Convertir pago_inicial a número y asegurar que sea un valor válido
+  const pagoInicial = parseFloat(this.pago_inicial || 0);
+  
+  // Calcular el monto a financiar (total - pago inicial)
+  const montoAFinanciar = this.calcularTotal - pagoInicial;
+  
+  // Validar que el monto a financiar sea positivo
+  if (montoAFinanciar <= 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Pago inicial incorrecto",
+      text: "El pago inicial no puede ser igual o mayor al total de la venta",
+    });
+    this.pago_inicial = 0;
+    return;
+  }
+  
+  const montoEntero = Math.floor(montoAFinanciar / this.numero_cuotas); 
+  const montoDecimal = ( 
+    montoAFinanciar - 
+    montoEntero * (this.numero_cuotas - 1) 
+  ).toFixed(2); 
+  let saldoRestante = montoAFinanciar; 
 
-      for (let i = 0; i < this.numero_cuotas; i++) {
-        const fechaPago = new Date(
-          fechaHoy.getTime() + (i + 1) * this.tiempo_diaz * 24 * 60 * 60 * 1000
-        );
+  for (let i = 0; i < this.numero_cuotas; i++) { 
+    const fechaPago = new Date( 
+      fechaHoy.getTime() + (i + 1) * this.tiempo_diaz * 24 * 60 * 60 * 1000 
+    ); 
 
-        const cuota = {
-          fecha_pago: fechaPago.toISOString().split("T")[0],
-          precio_cuota:
-            i === this.numero_cuotas - 1
-              ? parseFloat(montoDecimal).toFixed(2)
-              : montoEntero,
-          totalCancelado: 0,
-          saldo_restante: saldoRestante,
-          fecha_cancelado: null,
-          estado: "Pendiente",
-        };
+    const cuota = { 
+      fecha_pago: fechaPago.toISOString().split("T")[0], 
+      precio_cuota: 
+        i === this.numero_cuotas - 1 
+          ? parseFloat(montoDecimal).toFixed(2) 
+          : montoEntero, 
+      totalCancelado: 0, 
+      saldo_restante: saldoRestante, 
+      fecha_cancelado: null, 
+      estado: "Pendiente", 
+    }; 
 
-        saldoRestante -= cuota.precio_cuota;
-        saldoRestante = parseFloat(saldoRestante).toFixed(2);
+    saldoRestante -= cuota.precio_cuota; 
+    saldoRestante = parseFloat(saldoRestante).toFixed(2); 
 
-        this.cuotas.push(cuota);
-      }
-    },
+    this.cuotas.push(cuota); 
+  } 
+},
 
     // Métodos para ventas al contado
     async validarYRegistrarPago() {
