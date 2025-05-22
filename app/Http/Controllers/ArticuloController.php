@@ -293,13 +293,15 @@ class ArticuloController extends Controller
             'articulos.precio_costo_paq',
             'articulos.unidad_envase',
             'personas.nombre as nombre_proveedor',
-            'categorias.nombre as nombre_categoria'
+            'categorias.nombre as nombre_categoria',
+            'marcas.nombre as marca' 
         ];
 
         $query = Articulo::select($campos)
             ->join('categorias', 'articulos.idcategoria','=','categorias.id')
             ->join('proveedores', 'articulos.idproveedor','=','proveedores.id')
             ->join('personas', 'proveedores.id','=','personas.id')
+            ->join('marcas', 'articulos.idmarca','=','marcas.id')
             ->where('idproveedor', $idProveedor)
             ->orderBy('articulos.id', 'desc');
 
@@ -387,7 +389,7 @@ class ArticuloController extends Controller
 
         $filtro = $request->filtro;
         $articulos = Articulo::where('codigo', '=', $filtro)
-            ->select('id', 'codigo', 'nombre', 'precio_costo_unid', 'fotografia', 'unidad_envase', 'descripcion')->orderBy('nombre', 'asc')->take(1)->get();
+            ->select('id', 'codigo', 'nombre','marcas.nombre as marca', 'precio_costo_unid', 'fotografia', 'unidad_envase', 'descripcion')->orderBy('nombre', 'asc')->take(1)->get();
 
         return ['articulos' => $articulos];
     }

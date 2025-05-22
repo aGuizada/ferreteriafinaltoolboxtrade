@@ -30,7 +30,12 @@ export default {
 
     data() {
         return {
-            
+            form: {
+                proveedorSeleccionado: null, 
+                tipo_comprobante: "RECIBO", // Cambiado de null a "RECIBO"
+                serie_comprobante: null,
+                num_comprobante: null
+            },
             activeIndex: 0,
             submitted: false,
             form: {
@@ -915,10 +920,14 @@ export default {
                 if (newVal) {
                     this.idproveedor = newVal;
                     this.listarArticulo('');
+                    if (item.marca && !item.nombre_marca) {
+                        item.nombre_marca = item.marca;
+                    }
                 }
             }
+            
         },
-
+        
         buscadorArticulos(newVal) {
             if (newVal) {
                 this.listarArticulo(this.buscadorArticulos);

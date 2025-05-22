@@ -155,6 +155,7 @@
 
                                         <Column field="codigo" header="Codigo" :sortable="true" :styles="{'max-width':'15%'}"></Column>
                                         <Column field="nombre" header="Nombre" :sortable="true" :styles="{'max-width':'35%'}"></Column>
+                                        <Column field="marca" header="Marca" :sortable="true" :styles="{'max-width':'15%'}"></Column>
                                         <Column field="precio_costo_unid" header="Precio Unidad" :sortable="true" :styles="{'max-width':'15%'}">
                                             <template #body="slotProps">
                                                 {{ formatCurrency(slotProps.data.precio_costo_unid) }}
