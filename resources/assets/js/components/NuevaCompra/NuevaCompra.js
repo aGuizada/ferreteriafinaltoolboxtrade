@@ -622,6 +622,7 @@ export default {
                         precio_costo_unid: articulo.precio_costo_unid,
                         precio_costo_paq: articulo.precio_costo_paq,
                         nombre: articulo.nombre,
+                        nombre_marca: articulo.marca 
                     };
                 } else {
                     return {
@@ -635,6 +636,7 @@ export default {
                         subtotal: 0,
                         esPaquetesCantidad: false,
                         esPaquetesBonificacion: false,
+                        nombre_marca: articulo.marca
                     };
                 }
             });
@@ -920,9 +922,6 @@ export default {
                 if (newVal) {
                     this.idproveedor = newVal;
                     this.listarArticulo('');
-                    if (item.marca && !item.nombre_marca) {
-                        item.nombre_marca = item.marca;
-                    }
                 }
             }
             
