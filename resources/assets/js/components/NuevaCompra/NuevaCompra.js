@@ -30,17 +30,12 @@ export default {
 
     data() {
         return {
-            form: {
-                proveedorSeleccionado: null, 
-                tipo_comprobante: "RECIBO", // Cambiado de null a "RECIBO"
-                serie_comprobante: null,
-                num_comprobante: null
-            },
+            editingArticulo: {},
             activeIndex: 0,
             submitted: false,
             form: {
                 proveedorSeleccionado: null, 
-                tipo_comprobante: null,
+                tipo_comprobante: "Recibo",
                 serie_comprobante: null,
                 num_comprobante: null
             },
@@ -203,11 +198,19 @@ export default {
                 articulo.fecha_vencimiento = new Date().toISOString().split('T')[0];
             }
         },
-
+        onRowEditInit(event) {
+            // Guardar el dato original antes de la edición
+            this.objeto_newData = {...event.data};
+        },
         verificarCantidad(data) {
             return data.unidades <= 0;
         },
-
+        onRowEditCancel(event) {
+            // Restaurar los datos originales si se cancela la edición
+            Object.assign(event.data, this.objeto_newData);
+            this.objeto_newData = null;
+        },
+        
         verificarDescuento(data) {
             return data.descuento < 0 || data.descuento > 100;
         },
@@ -329,7 +332,7 @@ export default {
 
             try {
                 this.isLoading = true;
-
+                this.form.tipo_comprobante = "Recibo";
                 const compraResponse = await axios.post('/ingreso/registrarIngreso', {
                     form: this.form,
                     usuario_actual_id: this.usuario_actual_id,
@@ -357,7 +360,7 @@ export default {
                             this.array_articulos_completo = [];
                             this.array_articulos_seleccionados = [];
                             this.array_articulos_proveedor = [];
-                            this.form.tipo_comprobante = null;
+                            this.form.tipo_comprobante = "Recibo";
                             this.form.serie_comprobante = null;
                             this.form.num_comprobante = null;
                             this.form.proveedorSeleccionado = null;
@@ -368,6 +371,10 @@ export default {
 
                             this.closeComprasCredito();
                         }
+                        console.log("Datos a enviar:", {
+                            form: this.form,
+                            // ... resto de los datos
+                        });
                     } catch(error) {
                         let errorInventario = 'Error al actualizar inventario';
                         this.$toast.add({severity:'error', summary: 'Error', detail: errorInventario, life: 3000});
@@ -383,7 +390,7 @@ export default {
                 this.isLoading = false;
             }
         },
-
+        
         generarCuotas() {
             // Validar campos primero
             if (!this.validarCompraCredito()) return;
@@ -480,10 +487,9 @@ export default {
             return 'Efectivo';
           },
           
+          
           // Métodos auxiliares (compatibles con ES5)
-          formatDate(date) {
-            return date.toISOString().split('T')[0];
-          },
+          
           
           calcularFechaPago(fecha, dias) {
             const nuevaFecha = new Date(fecha);
@@ -498,13 +504,7 @@ export default {
             return nuevaFecha;
           },
           
-          getTipoPago() {
-            if (this.form_cuotas.tipoPagoCuotaSeleccionado && 
-                this.form_cuotas.tipoPagoCuotaSeleccionado.nombre) {
-              return this.form_cuotas.tipoPagoCuotaSeleccionado.nombre;
-            }
-            return 'Efectivo';
-          },
+          
         validarCompraCredito() {
           this.submitted = true;
           this.v$.form_cuotas.$touch();
@@ -960,4 +960,5 @@ export default {
     beforeDestroy() {
         
     },
+    
 }

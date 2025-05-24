@@ -283,7 +283,7 @@ class IngresoController extends Controller
             $ingreso = new Ingreso();
             $ingreso->idproveedor = $request->form["proveedorSeleccionado"]["id"] ?? null;
             $ingreso->idusuario = $request->usuario_actual_id ?? auth()->id();
-            $ingreso->tipo_comprobante = $request->form["tipo_comprobante"]["nombre"] ?? "No especificado";
+            $ingreso->tipo_comprobante = is_array($request->form["tipo_comprobante"]) ? ($request->form["tipo_comprobante"]["nombre"] ?? "No especificado") : ($request->form["tipo_comprobante"] ?? "No especificado");
             $ingreso->serie_comprobante = $request->form["serie_comprobante"] ?? "No especificado";
             $ingreso->num_comprobante = $request->form["num_comprobante"] ?? "No especificado";
             $ingreso->fecha_hora = now();
